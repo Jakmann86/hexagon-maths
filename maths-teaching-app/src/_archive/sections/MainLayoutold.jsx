@@ -6,9 +6,16 @@ import { SectionNav } from '../navigation/SectionNav';
 import { useUI } from '../../context/UIContext';
 import { curriculum } from '../../data/curriculum';
 import { getWeekFromTopic } from '../../data/topicMapping';
-
-// Import components from new structure
-import { DiagnosticSection, StarterSection, LearnSection } from '../../content/topics/trigonometry-i/pythagoras';
+import Starter from '../starters/Starter';
+import Learn from '../../content/topics/trigonometry-i/pythagoras/';
+import {
+    generateSquareAreaQuestion,
+    generateSquareSideLengthQuestion,
+    generateSquarePerimeterQuestion,
+    generateSquareRootQuestion,
+    generateInverseSquareRootQuestion
+} from '../../generators/mathematical';
+import DiagnosticSection from '../../content/topics/trigonometry-i/pythagoras/DiagnosticSection';
 
 const MainLayout = () => {
     // Track current topic and lesson
@@ -24,44 +31,46 @@ const MainLayout = () => {
 
     const weekNumber = getWeekFromTopic(currentTopic);
 
+    // Define question generators for Pythagoras topic
+    const pythagorasStarterGenerators = [
+        generateSquareAreaQuestion,
+        generateSquareSideLengthQuestion,
+        generateSquarePerimeterQuestion,
+        generateSquareRootQuestion,
+        generateInverseSquareRootQuestion
+    ];
+
     // Render active section content
     const renderSectionContent = () => {
-        // If we're in Trigonometry I, Lesson 1 (Pythagoras)
-        if (currentTopic === 'Trigonometry I' && currentLessonId === 1) {
-            switch (activeSection) {
-                case 'starter':
-                    return <StarterSection />;
-                case 'diagnostic':
-                    return <DiagnosticSection />;
-                case 'learn':
-                    return <LearnSection />;
-                case 'examples':
-                    return <div>Examples Content - Coming Soon</div>;
-                case 'challenge':
-                    return <div>Challenge Content - Coming Soon</div>;
-                default:
-                    return <div>Select a section</div>;
-            }
-        } else {
-            // For other topics/lessons, use the existing implementation
-            switch (activeSection) {
-                case 'starter':
-                    return (
-                        <div>Starter Content for {currentTopic} - Lesson {currentLessonId}</div>
-                    );
-                case 'diagnostic':
-                    return (
-                        <div>Diagnostic Content for {currentTopic} - Lesson {currentLessonId}</div>
-                    );
-                case 'learn':
-                    return <div>Learn Content for {currentTopic} - Lesson {currentLessonId}</div>;
-                case 'examples':
-                    return <div>Examples Content for {currentTopic} - Lesson {currentLessonId}</div>;
-                case 'challenge':
-                    return <div>Challenge Content for {currentTopic} - Lesson {currentLessonId}</div>;
-                default:
-                    return <div>Select a section</div>;
-            }
+        switch (activeSection) {
+            case 'starter':
+                return (
+                    <Starter
+                        questionGenerators={pythagorasStarterGenerators}
+                        currentTopic={currentTopic}
+                        currentLessonId={currentLessonId}
+                    />
+                );
+            case 'learn':
+                return (
+                    <Learn
+                        currentTopic={currentTopic}
+                        currentLessonId={currentLessonId}
+                    />
+                );
+            case 'diagnostic':
+                return (
+                    <DiagnosticSection
+                        currentTopic={currentTopic}
+                        currentLessonId={currentLessonId}
+                    />
+                );
+            case 'examples':
+                return <div>Examples Content</div>;
+            case 'challenge':
+                return <div>Challenge Content</div>;
+            default:
+                return <div>Select a section</div>;
         }
     };
 

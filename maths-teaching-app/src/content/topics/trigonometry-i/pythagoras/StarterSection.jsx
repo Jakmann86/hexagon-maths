@@ -1,9 +1,9 @@
 // src/content/topics/trigonometry-i/pythagoras/StarterSection.jsx
 import React, { useState } from 'react';
 import { useUI } from '../../../../context/UIContext';
-import QuestionDisplay from '../../../../components/starters/QuestionDisplay';
+import StarterSection from '../../../../components/sections/StarterSection';
 import { RefreshCw } from 'lucide-react';
-import { 
+import {
     generateSquareQuestion,
     generateSquareRootQuestion,
     generateInverseSquareRootQuestion,
@@ -12,7 +12,7 @@ import {
 
 const StarterSection = ({ currentTopic, currentLessonId }) => {
     const { showAnswers } = useUI();
-    
+
     // State to store current questions
     const [questions, setQuestions] = useState(() => ({
         section1: generateSquareQuestion({
@@ -72,7 +72,7 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
                     />
                 ))}
             </div>
-            
+
             <div className="flex justify-center mt-6">
                 <button
                     onClick={regenerateAllQuestions}
