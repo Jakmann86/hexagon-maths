@@ -6,7 +6,7 @@ const generateSquareQuestion = ({ units = 'cm', minSide = 3, maxSide = 12 } = {}
     
     return {
         question: `Describe a square with side length ${side}${units}`,
-        answer: `A square with side length ${side}${units} has area ${side * side}${units}² and perimeter ${side * 4}${units}`
+        answer: `\\text{Area} = ${side}^2 = ${side * side}${units}^2, \\text{ Perimeter} = 4 \\times ${side} = ${side * 4}${units}`
     };
 };
 
