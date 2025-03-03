@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Check } from 'lucide-react';
-import { Card, CardContent } from '../common/Card';
-import { Square, RightTriangle } from '../shapes';
+import { Card, CardContent } from '../components/common/Card';
+import { Square, RightTriangle } from '../components/shapes';
 import { getQuestions } from '../../data/diagnostic';
-import { useUI } from '../../context/UIContext';
+import { useUI } from '../context/UIContext';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
