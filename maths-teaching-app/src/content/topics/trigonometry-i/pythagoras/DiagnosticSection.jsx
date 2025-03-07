@@ -1,99 +1,121 @@
 import React from 'react';
 import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSectionBase';
 import ShapeDisplay from '../../../../components/math/ShapeDisplay';
-import { generateSquareAreaQuestion } from '../../../../generators/mathematical/squareGenerators';
+import { generateSquareAreaQuestion, generateSquareSideLengthQuestion } from '../../../../generators/mathematical/squareGenerators';
 import { generateSquareRootQuestion } from '../../../../generators/mathematical/squareRootGenerators';
-import { generatePythagorasQuestion } from './generators';
+import { pythagoras } from '../../../../content/topics/trigonometry-i/pythagoras/generators';
 
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
+    // Adapter for square area questions
+    const squareAreaAdapter = () => {
+        const generated = generateSquareAreaQuestion({ units: 'cm' });
+        
+        // Extract side length from the question text using regex
+        const sideMatch = generated.question.match(/(\d+)\s*cm/);
+        const side = sideMatch ? parseInt(sideMatch[1]) : 5; // Default to 5 if parsing fails
+        const area = side * side;
+        
+        return {
+            questionDisplay: generated.question,
+            correctAnswer: `${area}\\text{ cm}^2`,
+            options: [
+                `${area}\\text{ cm}^2`,
+                `${area + 2}\\text{ cm}^2`,
+                `${area - 2}\\text{ cm}^2`,
+                `${side * 4}\\text{ cm}^2`  // Common mistake: using perimeter
+            ].sort(() => Math.random() - 0.5),
+            answerDisplay: generated.answer,
+            shape: {
+                component: ShapeDisplay,
+                props: {
+                    shape: {
+                        type: 'square',
+                        sideLength: side,
+                        showDimensions: true,
+                        units: 'cm'
+                    },
+                    height: 200
+                }
+            }
+        };
+    };
+    
+    // Adapter for square root questions
+    const squareRootAdapter = () => {
+        const generated = generateSquareRootQuestion({ units: 'cm' });
+        
+        // Extract area from the question text using regex
+        const areaMatch = generated.question.match(/(\d+)\s*cm²/);
+        const area = areaMatch ? parseInt(areaMatch[1]) : 25; // Default to 25 if parsing fails
+        const side = Math.sqrt(area);
+        
+        return {
+            questionDisplay: generated.question,
+            correctAnswer: `${side}\\text{ cm}`,
+            options: [
+                `${side}\\text{ cm}`,
+                `${side + 1}\\text{ cm}`,
+                `${side - 1}\\text{ cm}`,
+                `${area / 4}\\text{ cm}`  // Common mistake: dividing by 4 instead of square root
+            ].sort(() => Math.random() - 0.5),
+            answerDisplay: generated.answer,
+            shape: {
+                component: ShapeDisplay,
+                props: {
+                    shape: {
+                        type: 'square',
+                        sideLength: '?',
+                        showArea: true,
+                        areaLabel: `${area} cm²`,
+                        units: 'cm'
+                    },
+                    height: 200
+                }
+            }
+        };
+    };
+    
+    // Adapter for Pythagoras concept identification
+    const pythagorasConceptAdapter = () => {
+        return {
+            questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
+            correctAnswer: 'c',
+            options: ['a', 'b', 'c', 'none'].sort(() => Math.random() - 0.5),
+            answerDisplay: '\\text{The hypotenuse (c) is the longest side, opposite to the right angle}',
+            shape: {
+                component: ShapeDisplay,
+                props: {
+                    shape: {
+                        type: 'rightTriangle',
+                        base: 3,
+                        height: 4,
+                        showRightAngle: true,
+                        labelStyle: 'algebraic', // This will trigger algebraic labels
+                        labels: {
+                            sides: ['a', 'b', 'c'], // Explicitly set sides
+                            angles: ['A', 'B', 'C'], // Explicitly set angles
+                            vertices: ['A', 'B', 'C'] // Explicitly set vertices
+                        },
+                        units: 'cm'
+                    },
+                    height: 200
+                }
+            }
+        };
+    };
+
     const questionTypes = {
         squareArea: {
             title: 'Find Square Area',
-            generator: () => {
-                const question = generateSquareAreaQuestion({ units: 'cm' });
-                const area = parseInt(question.side) * parseInt(question.side);
-                return {
-                    questionDisplay: question.question,
-                    correctAnswer: `${area}\\text{ cm}^2`,
-                    options: [
-                        `${area}\\text{ cm}^2`,
-                        `${area + 2}\\text{ cm}^2`,
-                        `${area - 2}\\text{ cm}^2`,
-                        `${area * 2}\\text{ cm}^2`
-                    ],
-                    answerDisplay: `\\text{Area } = ${parseInt(question.side)}^2 = ${area}\\text{ cm}^2`,
-                    shape: {
-                        component: ShapeDisplay,
-                        props: {
-                            height: 200,
-                            shape: {
-                                type: 'square',
-                                sideLength: parseInt(question.side),
-                                showDimensions: true,
-                                units: 'cm'
-                            }
-                        }
-                    }
-                };
-            }
+            generator: squareAreaAdapter
         },
         squareRoot: {
             title: 'Find Side Length',
-            generator: () => {
-                const question = generateSquareRootQuestion({ units: 'cm' });
-                const side = Math.sqrt(parseInt(question.area));
-                return {
-                    questionDisplay: question.question,
-                    correctAnswer: `${side}\\text{ cm}`,
-                    options: [
-                        `${side}\\text{ cm}`,
-                        `${side + 1}\\text{ cm}`,
-                        `${side - 1}\\text{ cm}`,
-                        `${side * 2}\\text{ cm}`
-                    ],
-                    answerDisplay: `\\text{Side length } = \\sqrt{${question.area}} = ${side}\\text{ cm}`,
-                    shape: {
-                        component: ShapeDisplay,
-                        props: {
-                            shape: {
-                                type: 'square',
-                                sideLength: '?',
-                                showArea: true,
-                                area: parseInt(question.area),
-                                units: 'cm',
-                                height: 200
-                            }
-                        }
-                    }
-                };
-            }
+            generator: squareRootAdapter
         },
         pythagorasTheorem: {
             title: 'Identify Hypotenuse',
-            generator: () => {
-                const question = generatePythagorasQuestion({ difficulty: 'basic' });
-                return {
-                    questionDisplay: 'Which side is the hypotenuse?',
-                    correctAnswer: 'c',
-                    options: ['a', 'b', 'c'],
-                    answerDisplay: '\\text{The hypotenuse (c) is the longest side, opposite to the right angle}',
-                    shape: {
-                        component: ShapeDisplay,
-                        props: {
-                            height: 200,  // Moved height to props level
-                            shape: {
-                                type: 'rightTriangle',
-                                base: 3,
-                                height: 4,
-                                hypotenuse: 5,
-                                showRightAngle: true,
-                                labelStyle: 'algebraic',
-                                units: 'cm'
-                            }
-                        }
-                    }
-                };
-            }
+            generator: pythagorasConceptAdapter
         }
     };
 

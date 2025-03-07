@@ -1,32 +1,25 @@
-// src/components/sections/DiagnosticSectionBase.jsx
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Check, X, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
+import MathDisplay from '../common/MathDisplay';
 
 /**
  * DiagnosticSectionBase provides a reusable template for diagnostic assessments
  * across different mathematical topics
- * 
- * @param {Object} questionTypes - Dictionary of question types with their generators
- * @param {string} currentTopic - Current topic identifier
- * @param {number} currentLessonId - Current lesson identifier
- * @param {Component} ShapeComponent - Component to render shapes
- * @param {Function} onQuestionComplete - Optional callback when question is answered
  */
 const DiagnosticSectionBase = ({
     questionTypes = {},
     currentTopic,
     currentLessonId,
-    ShapeComponent = null,
     onQuestionComplete = () => { }
 }) => {
+    // State management for question flow
     const [showAnswer, setShowAnswer] = useState(false);
     const [showFeedback, setShowFeedback] = useState(false);
     const [selectedAnswer, setSelectedAnswer] = useState(null);
     const [currentTypeId, setCurrentTypeId] = useState(null);
     const [currentQuestion, setCurrentQuestion] = useState(null);
-    const [streak, setStreak] = useState(0);
     const { setCurrentSection } = useUI();
 
     // Initialize with the first question type
@@ -48,9 +41,9 @@ const DiagnosticSectionBase = ({
         }
     }, [currentTypeId, questionTypes]);
 
+    // Question generation and management
     const generateNewQuestion = () => {
         if (!currentTypeId || !questionTypes[currentTypeId]) return;
-
         const question = questionTypes[currentTypeId].generator();
         setCurrentQuestion(question);
         setShowAnswer(false);
@@ -58,19 +51,12 @@ const DiagnosticSectionBase = ({
         setSelectedAnswer(null);
     };
 
+    // Answer handling
     const checkAnswer = (option) => {
         setSelectedAnswer(option);
         setShowAnswer(true);
         setShowFeedback(true);
-        
         const isCorrect = option === currentQuestion?.correctAnswer;
-        
-        if (isCorrect) {
-            setStreak(prev => prev + 1);
-        } else {
-            setStreak(0);
-        }
-        
         onQuestionComplete(isCorrect);
     };
 
@@ -78,17 +64,23 @@ const DiagnosticSectionBase = ({
         generateNewQuestion();
     };
 
-    // Render shape component if provided
+    // Shape rendering logic
     const renderShape = () => {
-        if (!currentQuestion?.shape || !ShapeComponent) return null;
-
-        return (
-            <div className="flex justify-center w-full max-w-md mx-auto my-6">
-                <ShapeComponent shape={currentQuestion.shape} />
-            </div>
-        );
+        if (!currentQuestion?.shape) return null;
+        
+        if (currentQuestion.shape.component && currentQuestion.shape.props) {
+            const ShapeComp = currentQuestion.shape.component;
+            return (
+                <div className="flex justify-center w-full max-w-md mx-auto my-6">
+                    <ShapeComp {...currentQuestion.shape.props} />
+                </div>
+            );
+        }
+        
+        return null;
     };
 
+    // Loading state
     if (!currentTypeId || !currentQuestion) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -102,6 +94,7 @@ const DiagnosticSectionBase = ({
         );
     }
 
+    // Main render
     return (
         <div className="space-y-6">
             {/* Question Type Selector */}
@@ -110,41 +103,20 @@ const DiagnosticSectionBase = ({
                     <button
                         key={id}
                         onClick={() => setCurrentTypeId(id)}
-                        className={`px-4 py-2 rounded-lg transition-all transform ${currentTypeId === id
+                        className={`px-4 py-2 rounded-lg transition-all transform ${
+                            currentTypeId === id
                                 ? 'bg-indigo-100 text-indigo-700 shadow-md scale-105'
                                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:scale-105'
-                            }`}
+                        }`}
                     >
                         {title}
                     </button>
                 ))}
             </div>
 
-            {/* Streak indicator */}
-            {streak > 0 && (
-                <div className="flex justify-end">
-                    <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center">
-                        <span className="mr-1">Streak:</span>
-                        <div className="flex">
-                            {[...Array(Math.min(streak, 5))].map((_, i) => (
-                                <div key={i} className="w-2 h-2 rounded-full bg-green-500 mx-0.5"></div>
-                            ))}
-                            {streak > 5 && <span className="ml-1">+{streak - 5}</span>}
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Question Card */}
             <Card className="shadow-lg border-t-4 border-indigo-500 overflow-hidden">
                 <CardContent className="p-0">
-                    {/* Question header */}
-                    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 border-b border-indigo-100">
-                        <h3 className="text-xl font-semibold text-indigo-800 text-center">
-                            {questionTypes[currentTypeId]?.title || 'Question'}
-                        </h3>
-                    </div>
-                    
                     <div className="p-6">
                         {currentQuestion && (
                             <div className="space-y-6 w-full max-w-2xl mx-auto">
@@ -178,15 +150,23 @@ const DiagnosticSectionBase = ({
                                                 ${showAnswer && option === selectedAnswer ? 'scale-105' : ''}
                                             `}
                                         >
-                                            <span className="text-lg">{option}</span>
+                                            {/* Option Display - handles LaTeX formatting */}
+                                            {typeof option === 'string' && option.includes('\\text') ? (
+                                                <div className="text-lg">
+                                                    <MathDisplay math={option} />
+                                                </div>
+                                            ) : (
+                                                <span className="text-lg">{option}</span>
+                                            )}
                                             
-                                            {/* Status indicator */}
+                                            {/* Correct Answer Indicator */}
                                             {showAnswer && option === currentQuestion.correctAnswer && (
                                                 <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1 shadow-md">
                                                     <Check className="w-4 h-4 text-white" />
                                                 </div>
                                             )}
                                             
+                                            {/* Incorrect Answer Indicator */}
                                             {showAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
                                                 <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1 shadow-md">
                                                     <X className="w-4 h-4 text-white" />
@@ -207,7 +187,12 @@ const DiagnosticSectionBase = ({
                                                     : 'bg-amber-50 text-amber-800 border border-amber-200'
                                             }`}>
                                                 <div className="font-medium text-center">
-                                                    {currentQuestion.answerDisplay}
+                                                    {typeof currentQuestion.answerDisplay === 'string' && 
+                                                     currentQuestion.answerDisplay.includes('\\text') ? (
+                                                        <MathDisplay math={currentQuestion.answerDisplay} />
+                                                    ) : (
+                                                        currentQuestion.answerDisplay
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
@@ -223,7 +208,7 @@ const DiagnosticSectionBase = ({
                                     </div>
                                 )}
                                 
-                                {/* Generate New Question Button - Only shown when feedback isn't displayed */}
+                                {/* New Question Button */}
                                 {!showFeedback && (
                                     <div className="flex justify-center mt-6">
                                         <button
