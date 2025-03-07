@@ -159,4 +159,4 @@ const DiagnosticSection = ({
     );
 };
 
-export default DiagnosticSection;
+export default DiagnosticSectionBase;

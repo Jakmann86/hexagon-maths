@@ -1,6 +1,5 @@
 // src/content/topics/trigonometry-i/pythagoras/StarterSection.jsx
 import React from 'react';
-import { useUI } from '../../../../context/UIContext';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
 import {
     generateSquareQuestion,
@@ -10,8 +9,6 @@ import {
 } from '../../../../generators/mathematical';
 
 const StarterSection = ({ currentTopic, currentLessonId }) => {
-    const { showAnswers } = useUI();
-
     const questionGenerators = [
         () => generateSquareQuestion({ minSide: 3, maxSide: 8, units: 'cm' }),
         () => generateSquareRootQuestion({ minRoot: 2, maxRoot: 6, units: 'cm' }),
@@ -24,7 +21,6 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
             questionGenerators={questionGenerators}
             currentTopic={currentTopic}
             currentLessonId={currentLessonId}
-            showAnswers={showAnswers}
         />
     );
 };

@@ -5,7 +5,7 @@ export const curriculum = {
         lessons: [
             {
                 id: 1,
-                title: "Pythagoras' Theorem",
+                title: "Find Missing Sides Using Pythagoras' Theorem",
                 sections: {
                     starter: 'pythagoras/StarterSection',
                     diagnostic: 'pythagoras/DiagnosticSection',

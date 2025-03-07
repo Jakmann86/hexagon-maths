@@ -1,5 +1,5 @@
 // src/components/layout/MainLayout.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { SectionNav } from '../navigation/SectionNav';
@@ -14,7 +14,7 @@ const MainLayout = () => {
     // Track current topic and lesson
     const [currentTopic, setCurrentTopic] = useState('Trigonometry I');
     const [currentLessonId, setCurrentLessonId] = useState(1);
-    const [activeSection, setActiveSection] = useState('starter');
+    const { currentSection, setCurrentSection } = useUI();
 
     const { isSidebarOpen } = useUI();
 
@@ -24,17 +24,33 @@ const MainLayout = () => {
 
     const weekNumber = getWeekFromTopic(currentTopic);
 
+    // Set default section if needed
+    useEffect(() => {
+        if (!currentSection) {
+            setCurrentSection('starter');
+        }
+    }, [currentSection, setCurrentSection]);
+
     // Render active section content
     const renderSectionContent = () => {
         // If we're in Trigonometry I, Lesson 1 (Pythagoras)
         if (currentTopic === 'Trigonometry I' && currentLessonId === 1) {
-            switch (activeSection) {
+            switch (currentSection) {
                 case 'starter':
-                    return <StarterSection />;
+                    return <StarterSection 
+                        currentTopic={currentTopic} 
+                        currentLessonId={currentLessonId} 
+                    />;
                 case 'diagnostic':
-                    return <DiagnosticSection />;
+                    return <DiagnosticSection 
+                        currentTopic={currentTopic} 
+                        currentLessonId={currentLessonId}
+                    />;
                 case 'learn':
-                    return <LearnSection />;
+                    return <LearnSection 
+                        currentTopic={currentTopic} 
+                        currentLessonId={currentLessonId}
+                    />;
                 case 'examples':
                     return <div>Examples Content - Coming Soon</div>;
                 case 'challenge':
@@ -44,7 +60,7 @@ const MainLayout = () => {
             }
         } else {
             // For other topics/lessons, use the existing implementation
-            switch (activeSection) {
+            switch (currentSection) {
                 case 'starter':
                     return (
                         <div>Starter Content for {currentTopic} - Lesson {currentLessonId}</div>
@@ -82,8 +98,8 @@ const MainLayout = () => {
             <main className="max-w-6xl mx-auto mt-10 px-4">
                 <div className="sticky top-0 bg-slate-50 z-10 pb-4">
                     <SectionNav
-                        activeSection={activeSection}
-                        onSectionChange={setActiveSection}
+                        activeSection={currentSection}
+                        onSectionChange={setCurrentSection}
                     />
                 </div>
 

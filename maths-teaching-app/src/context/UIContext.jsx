@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 
 const UIContext = createContext();
 
@@ -6,12 +6,20 @@ export const UIProvider = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showAnswers, setShowAnswers] = useState(false);
     const [currentSection, setCurrentSection] = useState('starter');
+    const [previousSection, setPreviousSection] = useState(null);
 
     // Timer states
     const [currentTime, setCurrentTime] = useState(25); // Default minutes
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [remainingSeconds, setRemainingSeconds] = useState(currentTime * 60);
     const timerRef = useRef(null);
+
+    // When section changes, store the previous section
+    useEffect(() => {
+        if (currentSection !== previousSection) {
+            setPreviousSection(currentSection);
+        }
+    }, [currentSection, previousSection]);
 
     // Timer functions
     const startTimer = useCallback(() => {
@@ -58,11 +66,9 @@ export const UIProvider = ({ children }) => {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    // Global answer handling
+    // Global answer handling - works across all sections
     const toggleAnswers = () => {
-        if (currentSection !== 'diagnostic') {
-            setShowAnswers(prev => !prev);
-        }
+        setShowAnswers(prev => !prev);
     };
 
     // Cleanup interval on unmount
@@ -83,6 +89,7 @@ export const UIProvider = ({ children }) => {
             toggleAnswers,
             currentSection,
             setCurrentSection,
+            previousSection,
             // Timer values and functions
             currentTime,
             isTimerActive,

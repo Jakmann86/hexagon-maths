@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Timer, Eye, Maximize2, Play, Pause, RotateCcw } from 'lucide-react';
+import { Menu, Timer, Eye, EyeOff, Maximize2, Play, Pause, RotateCcw } from 'lucide-react';
 import { DateDisplay } from '../common/DateDisplay';
 import { useUI } from '../../context/UIContext';
 
@@ -143,16 +143,14 @@ export const Header = ({ title, lesson }) => {
                             )}
                         </div>
 
-                        {/* Show/Hide Answers Button */}
-                        {currentSection !== 'diagnostic' && (
-                            <button
-                                onClick={toggleAnswers}
-                                className={`text-indigo-500 hover:text-indigo-600 ${showAnswers ? 'bg-indigo-50' : ''}`}
-                                title={showAnswers ? "Hide Answers" : "Show Answers"}
-                            >
-                                <Eye size={24} />
-                            </button>
-                        )}
+                        {/* Show/Hide Answers Button - Always visible */}
+                        <button
+                            onClick={toggleAnswers}
+                            className={`text-indigo-500 hover:text-indigo-600 ${showAnswers ? 'bg-indigo-50' : ''}`}
+                            title={showAnswers ? "Hide Answers" : "Show Answers"}
+                        >
+                            {showAnswers ? <EyeOff size={24} /> : <Eye size={24} />}
+                        </button>
 
                         {/* Fullscreen Button */}
                         <button
