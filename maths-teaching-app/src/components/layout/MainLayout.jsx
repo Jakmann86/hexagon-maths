@@ -6,6 +6,8 @@ import { SectionNav } from '../navigation/SectionNav';
 import { useUI } from '../../context/UIContext';
 import { curriculum } from '../../data/curriculum';
 import { getWeekFromTopic } from '../../data/topicMapping';
+import WorkingMafs from '../math/WorkingMafs';   
+ 
 
 // Import components from new structure
 import { DiagnosticSection, StarterSection, LearnSection } from '../../content/topics/trigonometry-i/pythagoras';
@@ -52,7 +54,10 @@ const MainLayout = () => {
                         currentLessonId={currentLessonId}
                     />;
                 case 'examples':
-                    return <div>Examples Content - Coming Soon</div>;
+                    return <WorkingMafs 
+                        currentTopic={currentTopic} 
+                        currentLessonId={currentLessonId}
+                    />;
                 case 'challenge':
                     return <div>Challenge Content - Coming Soon</div>;
                 default:

@@ -1,6 +1,8 @@
 // src/components/math/shapes/Rectangle.jsx
 import React from 'react';
-import { Polygon, Line, Text } from '../primitives';
+import * as MafsLib from 'mafs';
+import Polygon from '../primitives/Polygon';
+import Line from '../primitives/Line';
 
 /**
  * Rectangle component that builds on primitive components
@@ -12,7 +14,6 @@ const Rectangle = ({
 
     // Positioning
     center = [0, 0],
-    rotation = 0,
 
     // Styling
     fill = 'none',
@@ -47,19 +48,7 @@ const Rectangle = ({
 
     const vertices = calculateVertices();
 
-    // Calculate midpoints of sides for labels
-    const getSideMidpoints = () => {
-        return [
-            [(vertices[0][0] + vertices[1][0]) / 2, vertices[0][1]], // Top (width)
-            [vertices[1][0], (vertices[1][1] + vertices[2][1]) / 2], // Right (height)
-            [(vertices[2][0] + vertices[3][0]) / 2, vertices[2][1]], // Bottom (width)
-            [vertices[3][0], (vertices[3][1] + vertices[0][1]) / 2]  // Left (height)
-        ];
-    };
-
-    const sideMidpoints = getSideMidpoints();
-
-    // Generate labels based on labelStyle
+    // Generate dimensions text based on labelStyle
     const getWidthLabel = () => {
         if (labelStyle === 'none') return '';
         if (widthLabel) return widthLabel;
@@ -111,7 +100,7 @@ const Rectangle = ({
     const displayAreaLabel = getAreaLabel();
 
     return (
-        <g transform={rotation ? `rotate(${rotation})` : undefined}>
+        <>
             {/* Main rectangle */}
             <Polygon
                 points={vertices}
@@ -128,79 +117,49 @@ const Rectangle = ({
                     <Line
                         from={vertices[0]}
                         to={vertices[2]}
-                        stroke={stroke}
+                        color={stroke}
                         strokeWidth={strokeWidth * 0.5}
                         strokeOpacity={0.7}
-                        strokeDasharray="4,4"
                     />
                     <Line
                         from={vertices[1]}
                         to={vertices[3]}
-                        stroke={stroke}
+                        color={stroke}
                         strokeWidth={strokeWidth * 0.5}
                         strokeOpacity={0.7}
-                        strokeDasharray="4,4"
                     />
                 </>
             )}
 
-            {/* Width labels - top and bottom */}
+            {/* Labels rendered using Mafs.Text */}
             {showDimensions && displayWidthLabel && (
-                <>
-                    <Text
-                        x={sideMidpoints[0][0]}
-                        y={sideMidpoints[0][1]}
-                        text={displayWidthLabel}
-                        fontSize={12}
-                        offset={-10}
-                        align="center"
-                    />
-                    <Text
-                        x={sideMidpoints[2][0]}
-                        y={sideMidpoints[2][1]}
-                        text={displayWidthLabel}
-                        fontSize={12}
-                        offset={10}
-                        align="center"
-                    />
-                </>
+                <MafsLib.Text
+                    x={(vertices[0][0] + vertices[1][0]) / 2}
+                    y={vertices[0][1] - 0.3}
+                >
+                    {displayWidthLabel}
+                </MafsLib.Text>
             )}
 
-            {/* Height labels - left and right */}
             {showDimensions && displayHeightLabel && (
-                <>
-                    <Text
-                        x={sideMidpoints[1][0]}
-                        y={sideMidpoints[1][1]}
-                        text={displayHeightLabel}
-                        fontSize={12}
-                        offset={10}
-                        align="center"
-                        rotation={90}
-                    />
-                    <Text
-                        x={sideMidpoints[3][0]}
-                        y={sideMidpoints[3][1]}
-                        text={displayHeightLabel}
-                        fontSize={12}
-                        offset={-10}
-                        align="center"
-                        rotation={90}
-                    />
-                </>
+                <MafsLib.Text
+                    x={vertices[1][0] + 0.3}
+                    y={(vertices[1][1] + vertices[2][1]) / 2}
+                >
+                    {displayHeightLabel}
+                </MafsLib.Text>
             )}
 
             {/* Area label */}
             {showArea && displayAreaLabel && (
-                <Text
+                <MafsLib.Text
                     x={center[0]}
                     y={center[1]}
-                    text={displayAreaLabel}
-                    fontSize={14}
-                    align="center"
-                />
+                >
+                    {displayAreaLabel}
+                </MafsLib.Text>
             )}
-        </g>
+        </>
     );
 };
 

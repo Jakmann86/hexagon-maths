@@ -3,7 +3,6 @@ import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSec
 import ShapeDisplay from '../../../../components/math/ShapeDisplay';
 import { generateSquareAreaQuestion, generateSquareSideLengthQuestion } from '../../../../generators/mathematical/squareGenerators';
 import { generateSquareRootQuestion } from '../../../../generators/mathematical/squareRootGenerators';
-import { pythagoras } from '../../../../content/topics/trigonometry-i/pythagoras/generators';
 
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     // Adapter for square area questions
@@ -34,7 +33,8 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                         showDimensions: true,
                         units: 'cm'
                     },
-                    height: 200
+                    height: 250, // Explicit height in pixels
+                    className: 'my-4' // Add margin for spacing
                 }
             }
         };
@@ -69,7 +69,8 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                         areaLabel: `${area} cm²`,
                         units: 'cm'
                     },
-                    height: 200
+                    height: 250, // Explicit height in pixels
+                    className: 'my-4' // Add margin for spacing
                 }
             }
         };
@@ -98,7 +99,8 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                         },
                         units: 'cm'
                     },
-                    height: 200
+                    height: 250, // Explicit height in pixels
+                    className: 'my-4' // Add margin for spacing
                 }
             }
         };

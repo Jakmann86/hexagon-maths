@@ -1,4 +1,4 @@
-// src/components/math/shapes/Square.jsx (Updated version)
+// src/components/math/shapes/Square.jsx
 import React from 'react';
 import Rectangle from './Rectangle';
 

@@ -71,7 +71,7 @@ const DiagnosticSectionBase = ({
         if (currentQuestion.shape.component && currentQuestion.shape.props) {
             const ShapeComp = currentQuestion.shape.component;
             return (
-                <div className="flex justify-center w-full max-w-md mx-auto my-6">
+                <div className="flex justify-center items-center w-full my-6" style={{ minHeight: '300px' }}>
                     <ShapeComp {...currentQuestion.shape.props} />
                 </div>
             );

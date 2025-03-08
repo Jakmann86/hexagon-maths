@@ -1,6 +1,6 @@
 // src/components/math/MathView.jsx
 import React from 'react';
-import { Mafs } from 'mafs';
+import * as MafsLib from 'mafs';
 import 'mafs/core.css';
 import 'mafs/font.css';
 
@@ -26,13 +26,13 @@ const MathView = ({
             className={`math-view-container ${className}`}
             style={{ width, height }}
         >
-            <Mafs
+            <MafsLib.Mafs
                 viewBox={viewBox}
-                preserveAspectRatio={true}
+                preserveAspectRatio="contain"
                 {...props}
             >
                 {children}
-            </Mafs>
+            </MafsLib.Mafs>
         </div>
     );
 };
