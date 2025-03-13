@@ -1,119 +1,87 @@
-// src/components/sections/LearnSection.jsx
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '../common/Card';
+import React from 'react';
+import LearnSectionBase from '../../components/sections/LearnSectionBase';
+import PythagorasVisualization from '../../components/math/visualizations/PythagorasVisualization';
+import MathDisplay from '../../components/common/MathDisplay';
 
-/**
- * LearnSection template for presenting mathematical concepts 
- * with visualizations and explanations
- * 
- * @param {Object} visualizationData - The visualization data for this learning section
- * @param {string} currentTopic - Current topic identifier
- * @param {number} currentLessonId - Current lesson identifier
- * @param {boolean} showTeacherNotes - Whether to show teacher notes (controlled by parent)
- */
-const LearnSection = ({
-    visualizationData = { title: '', description: '', visualizations: [] },
-    currentTopic,
-    currentLessonId,
-    showTeacherNotes = false
-}) => {
-    const [currentVisIndex, setCurrentVisIndex] = useState(0);
-
-    // Safety check
-    if (!visualizationData || !visualizationData.visualizations || visualizationData.visualizations.length === 0) {
-        return (
-            <div className="text-center p-6">
-                <p>No visualization data available for this topic.</p>
-            </div>
-        );
-    }
-
-    const { title, description, visualizations } = visualizationData;
-    const currentVis = visualizations[currentVisIndex];
-
-    // Function to render the current visualization
-    const renderVisualization = () => {
-        if (!currentVis || !currentVis.renderComponent) {
-            return (
-                <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
-                    <p className="text-gray-500">Visualization not available</p>
-                </div>
-            );
-        }
-
-        // If renderComponent is a component, render it with its props
-        const VisualizationComponent = currentVis.renderComponent;
-        return (
-            <div className="bg-emerald-50 rounded-lg p-8 shadow-inner min-h-[400px] flex items-center justify-center">
-                <VisualizationComponent {...currentVis.props} />
-            </div>
-        );
-    };
-
-    return (
-        <div className="space-y-6 mb-12">
-            <Card className="overflow-hidden">
-                <CardContent className="p-8">
-                    <div className="flex justify-between items-center mb-6">
-                        <button
-                            onClick={() => setCurrentVisIndex((curr) =>
-                                (curr - 1 + visualizations.length) % visualizations.length
-                            )}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            disabled={visualizations.length <= 1}
-                        >
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
-                        <div className="text-center">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">{currentVis.title || title}</h2>
-                            <p className="text-gray-600">{currentVis.description || description}</p>
-                        </div>
-                        <button
-                            onClick={() => setCurrentVisIndex((curr) =>
-                                (curr + 1) % visualizations.length
-                            )}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            disabled={visualizations.length <= 1}
-                        >
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
-                    </div>
-
-                    {renderVisualization()}
-                </CardContent>
-            </Card>
-
-            {/* Teacher Notes Section */}
-            {showTeacherNotes && currentVis.teacherNotes && (
-                <Card>
-                    <CardContent className="p-8">
-                        <h3 className="text-xl font-semibold mb-4 text-gray-800">Teaching Guidance</h3>
-                        <div className="space-y-6">
-                            <div className="space-y-3">
-                                <h4 className="font-medium text-gray-700">Discussion Questions:</h4>
-                                <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                                    {currentVis.teacherNotes.map((note, index) => (
-                                        <li key={index}>{note}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                            {currentVis.keyPoints && (
-                                <div className="space-y-3">
-                                    <h4 className="font-medium text-gray-700">Key Points:</h4>
-                                    <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                                        {currentVis.keyPoints.map((point, index) => (
-                                            <li key={index}>{point}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+const LearnSection = () => {
+  return (
+    <LearnSectionBase
+      title="Understanding Pythagoras' Theorem"
+      lessonTitle="Pythagoras' Theorem"
+      introduction={
+        <div className="space-y-4">
+          <p>
+            Pythagoras' theorem is a fundamental relationship in Euclidean geometry that relates the 
+            three sides of a right-angled triangle. It states that:
+          </p>
+          <div className="py-2">
+            <MathDisplay
+              math={"a^2 + b^2 = c^2"}
+              size="large"
+              displayMode={true}
+            />
+          </div>
+          <p>
+            Where <em>a</em> and <em>b</em> are the lengths of the two sides that form the right angle
+            (known as the legs or catheti), and <em>c</em> is the length of the hypotenuse (the 
+            side opposite the right angle).
+          </p>
         </div>
-    );
+      }
+      concept={
+        <div className="space-y-4">
+          <p>
+            Pythagoras' theorem can be understood visually by comparing the areas of squares built
+            on each side of a right-angled triangle. The theorem tells us that the sum of the areas
+            of the squares on the legs equals the area of the square on the hypotenuse.
+          </p>
+          <p>
+            This visual approach helps us understand why the formula works. Use the toggle buttons in the 
+            visualization below to show or hide different elements.
+          </p>
+        </div>
+      }
+      visualization={
+        <PythagorasVisualization 
+          base={3} 
+          height={4}
+        />
+      }
+      hints={[
+        "What happens to the areas of the squares when we change the shape of the triangle? Try to visualize how the theorem holds for any right triangle.",
+        "How could you verify that the area of the square on the hypotenuse equals the sum of the areas of the other two squares?",
+        "For the 3-4-5 triangle shown in the visualization, can you calculate each square's area and confirm that a² + b² = c²?",
+        "Can you think of other real-world applications where Pythagoras' theorem might be useful?",
+        "How would you use the theorem to find the length of one side if you know the other two sides?"
+      ]}
+      conclusion={
+        <div className="space-y-4">
+          <p>
+            Pythagoras' theorem is not just a mathematical curiosity—it's a powerful tool with countless practical applications:
+          </p>
+          <ul className="list-disc pl-6">
+            <li>Finding distances between points in coordinate geometry</li>
+            <li>Construction and engineering for ensuring right angles</li>
+            <li>Navigation and mapping</li>
+            <li>Physics and many branches of science</li>
+          </ul>
+          <p>
+            The theorem is often written as:
+          </p>
+          <div className="py-2">
+            <MathDisplay
+              math={"c = \\sqrt{a^2 + b^2}"}
+              size="large"
+              displayMode={true}
+            />
+          </div>
+          <p>
+            This form is especially useful when we know the lengths of the two legs and need to find the hypotenuse.
+          </p>
+        </div>
+      }
+    />
+  );
 };
 
 export default LearnSection;

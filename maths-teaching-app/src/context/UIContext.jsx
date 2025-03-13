@@ -1,108 +1,123 @@
-import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useContext, useCallback } from 'react';
 
+// Extended UI Context
 const UIContext = createContext();
 
 export const UIProvider = ({ children }) => {
+    // Sidebar state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    
+    // Answers visibility state (already used in Header)
     const [showAnswers, setShowAnswers] = useState(false);
+    
+    // Current section tracking
     const [currentSection, setCurrentSection] = useState('starter');
-    const [previousSection, setPreviousSection] = useState(null);
-
-    // Timer states
-    const [currentTime, setCurrentTime] = useState(25); // Default minutes
+    
+    // Timer functionality
+    const [timerSeconds, setTimerSeconds] = useState(300); // Default 5 minutes
     const [isTimerActive, setIsTimerActive] = useState(false);
-    const [remainingSeconds, setRemainingSeconds] = useState(currentTime * 60);
-    const timerRef = useRef(null);
-
-    // When section changes, store the previous section
-    useEffect(() => {
-        if (currentSection !== previousSection) {
-            setPreviousSection(currentSection);
-        }
-    }, [currentSection, previousSection]);
-
+    const [intervalId, setIntervalId] = useState(null);
+    
+    // Toggle answers visibility
+    const toggleAnswers = () => setShowAnswers(!showAnswers);
+    
     // Timer functions
-    const startTimer = useCallback(() => {
-        if (!isTimerActive) {
-            setIsTimerActive(true);
-            setRemainingSeconds(currentTime * 60);
-            timerRef.current = setInterval(() => {
-                setRemainingSeconds(prev => {
-                    if (prev <= 1) {
-                        clearInterval(timerRef.current);
-                        setIsTimerActive(false);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        }
-    }, [currentTime, isTimerActive]);
-
-    const pauseTimer = () => {
-        clearInterval(timerRef.current);
-        setIsTimerActive(false);
-    };
-
-    const resetTimer = () => {
-        clearInterval(timerRef.current);
-        setIsTimerActive(false);
-        setRemainingSeconds(currentTime * 60);
-    };
-
-    const adjustTimer = (minutes) => {
-        setCurrentTime(minutes);
-        setRemainingSeconds(minutes * 60);
-        if (isTimerActive) {
-            clearInterval(timerRef.current);
-            setIsTimerActive(false);
-        }
-    };
-
-    // Format remaining time for display
     const formatTime = () => {
-        const minutes = Math.floor(remainingSeconds / 60);
-        const seconds = remainingSeconds % 60;
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        const minutes = Math.floor(timerSeconds / 60);
+        const seconds = timerSeconds % 60;
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
-
-    // Global answer handling - works across all sections
-    const toggleAnswers = () => {
-        setShowAnswers(prev => !prev);
-    };
-
-    // Cleanup interval on unmount
-    React.useEffect(() => {
-        return () => {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
-        };
-    }, []);
-
+    
+    const startTimer = useCallback(() => {
+        if (isTimerActive) return;
+        
+        const id = setInterval(() => {
+            setTimerSeconds(prev => {
+                if (prev <= 1) {
+                    clearInterval(id);
+                    setIsTimerActive(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        
+        setIntervalId(id);
+        setIsTimerActive(true);
+    }, [isTimerActive]);
+    
+    const pauseTimer = useCallback(() => {
+        if (intervalId) {
+            clearInterval(intervalId);
+            setIntervalId(null);
+        }
+        setIsTimerActive(false);
+    }, [intervalId]);
+    
+    const resetTimer = useCallback(() => {
+        pauseTimer();
+        setTimerSeconds(300); // Reset to default 5 minutes
+    }, [pauseTimer]);
+    
+    const adjustTimer = useCallback((minutes) => {
+        pauseTimer();
+        setTimerSeconds(minutes * 60);
+    }, [pauseTimer]);
+    
+    // Pythagoras visualization specific states
+    const [showBaseSquare, setShowBaseSquare] = useState(true);
+    const [showHeightSquare, setShowHeightSquare] = useState(true);
+    const [showHypotenuseSquare, setShowHypotenuseSquare] = useState(true);
+    const [showLabels, setShowLabels] = useState(true);
+    
     return (
-        <UIContext.Provider value={{
-            isSidebarOpen,
-            setIsSidebarOpen,
-            showAnswers,
-            setShowAnswers,
-            toggleAnswers,
-            currentSection,
-            setCurrentSection,
-            previousSection,
-            // Timer values and functions
-            currentTime,
-            isTimerActive,
-            remainingSeconds,
-            formatTime,
-            startTimer,
-            pauseTimer,
-            resetTimer,
-            adjustTimer
-        }}>
+        <UIContext.Provider
+            value={{
+                // Sidebar
+                isSidebarOpen,
+                setIsSidebarOpen,
+                
+                // Answers visibility
+                showAnswers,
+                setShowAnswers,
+                toggleAnswers,
+                
+                // Current section
+                currentSection,
+                setCurrentSection,
+                
+                // Timer
+                timerSeconds,
+                isTimerActive,
+                formatTime,
+                startTimer,
+                pauseTimer,
+                resetTimer,
+                adjustTimer,
+                
+                // Pythagoras visualization
+                showBaseSquare,
+                setShowBaseSquare,
+                showHeightSquare,
+                setShowHeightSquare,
+                showHypotenuseSquare,
+                setShowHypotenuseSquare,
+                showLabels,
+                setShowLabels
+            }}
+        >
             {children}
         </UIContext.Provider>
     );
 };
 
-export const useUI = () => useContext(UIContext);
+// Custom hook for accessing the UI context
+export const useUI = () => {
+    const context = useContext(UIContext);
+    if (!context) {
+        throw new Error('useUI must be used within a UIProvider');
+    }
+    return context;
+};
+
+export default UIContext;

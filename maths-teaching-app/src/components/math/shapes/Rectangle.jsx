@@ -1,166 +1,109 @@
 // src/components/math/shapes/Rectangle.jsx
 import React from 'react';
 import * as MafsLib from 'mafs';
-import Polygon from '../primitives/Polygon';
-import Line from '../primitives/Line';
+import 'mafs/core.css';
+import 'mafs/font.css';
 
 /**
- * Rectangle component that builds on primitive components
+ * Rectangle - A component for rendering a rectangle with optional labels and dimensions
+ * 
+ * @param {Object} props
+ * @param {number|string} props.width - Width of rectangle (use string '?' for unknown)
+ * @param {number|string} props.height - Height of rectangle (use string '?' for unknown)
+ * @param {boolean} props.showDimensions - Whether to show dimension labels
+ * @param {boolean} props.showArea - Whether to show area label
+ * @param {string} props.areaLabel - Label for area (if showArea is true)
+ * @param {string} props.units - Units for measurements (e.g. "cm", "m")
+ * @param {Object} props.style - Additional styling options
  */
 const Rectangle = ({
-    // Dimensions
-    width = 6,
-    height = 4,
-
-    // Positioning
-    center = [0, 0],
-
-    // Styling
-    fill = 'none',
-    fillOpacity = 0.2,
-    stroke = 'currentColor',
-    strokeWidth = 2,
-
-    // Display options
-    showDimensions = true,
-    showArea = false,
-    showDiagonals = false,
-
-    // Labeling
-    labelStyle = 'numeric', // 'numeric', 'algebraic', or 'none'
-    widthLabel = '',
-    heightLabel = '',
-    areaLabel = '',
-    units = '',
-    ...props
+  width = 6,
+  height = 4,
+  showDimensions = false,
+  showArea = false,
+  areaLabel = '',
+  units = '',
+  style = {}
 }) => {
-    // Calculate rectangle vertices based on width, height, and center
-    const calculateVertices = () => {
-        const halfWidth = width / 2;
-        const halfHeight = height / 2;
-        return [
-            [center[0] - halfWidth, center[1] - halfHeight], // Top left
-            [center[0] + halfWidth, center[1] - halfHeight], // Top right
-            [center[0] + halfWidth, center[1] + halfHeight],  // Bottom right
-            [center[0] - halfWidth, center[1] + halfHeight]   // Bottom left
-        ];
-    };
+  // Parse dimensions or use defaults for display
+  const parsedWidth = width === '?' ? 6 : Number(width);
+  const parsedHeight = height === '?' ? 4 : Number(height);
+  
+  // Default style options
+  const {
+    fillColor = MafsLib.Theme.green,
+    fillOpacity = 0.2,
+    strokeColor = MafsLib.Theme.green,
+    strokeWidth = 2,
+    showGrid = false,
+  } = style;
+  
+  // Calculate viewBox with padding
+  const padding = 1;
+  const viewBox = {
+    x: [-padding, parsedWidth + padding],
+    y: [-padding, parsedHeight + padding]
+  };
 
-    const vertices = calculateVertices();
+  return (
+    <MafsLib.Mafs viewBox={viewBox}>
+      {showGrid && <MafsLib.Coordinates.Cartesian />}
+      
+      {/* Rectangle polygon */}
+      <MafsLib.Polygon
+        points={[
+          [0, 0],
+          [parsedWidth, 0],
+          [parsedWidth, parsedHeight],
+          [0, parsedHeight]
+        ]}
+        color={fillColor}
+        fillOpacity={fillOpacity}
+        strokeOpacity={1}
+        strokeWidth={strokeWidth}
+      />
 
-    // Generate dimensions text based on labelStyle
-    const getWidthLabel = () => {
-        if (labelStyle === 'none') return '';
-        if (widthLabel) return widthLabel;
-
-        if (labelStyle === 'algebraic') {
-            return 'w';
-        }
-
-        if (labelStyle === 'numeric') {
-            return `${width}${units}`;
-        }
-
-        return '';
-    };
-
-    const getHeightLabel = () => {
-        if (labelStyle === 'none') return '';
-        if (heightLabel) return heightLabel;
-
-        if (labelStyle === 'algebraic') {
-            return 'h';
-        }
-
-        if (labelStyle === 'numeric') {
-            return `${height}${units}`;
-        }
-
-        return '';
-    };
-
-    const getAreaLabel = () => {
-        if (!showArea) return '';
-        if (areaLabel) return areaLabel;
-
-        if (labelStyle === 'algebraic') {
-            return 'w × h';
-        }
-
-        if (labelStyle === 'numeric') {
-            const area = width * height;
-            return `${area}${units}²`;
-        }
-
-        return '';
-    };
-
-    const displayWidthLabel = getWidthLabel();
-    const displayHeightLabel = getHeightLabel();
-    const displayAreaLabel = getAreaLabel();
-
-    return (
+      {/* Dimension labels */}
+      {showDimensions && (
         <>
-            {/* Main rectangle */}
-            <Polygon
-                points={vertices}
-                fill={fill}
-                fillOpacity={fillOpacity}
-                stroke={stroke}
-                strokeWidth={strokeWidth}
-                {...props}
-            />
-
-            {/* Diagonals */}
-            {showDiagonals && (
-                <>
-                    <Line
-                        from={vertices[0]}
-                        to={vertices[2]}
-                        color={stroke}
-                        strokeWidth={strokeWidth * 0.5}
-                        strokeOpacity={0.7}
-                    />
-                    <Line
-                        from={vertices[1]}
-                        to={vertices[3]}
-                        color={stroke}
-                        strokeWidth={strokeWidth * 0.5}
-                        strokeOpacity={0.7}
-                    />
-                </>
-            )}
-
-            {/* Labels rendered using Mafs.Text */}
-            {showDimensions && displayWidthLabel && (
-                <MafsLib.Text
-                    x={(vertices[0][0] + vertices[1][0]) / 2}
-                    y={vertices[0][1] - 0.3}
-                >
-                    {displayWidthLabel}
-                </MafsLib.Text>
-            )}
-
-            {showDimensions && displayHeightLabel && (
-                <MafsLib.Text
-                    x={vertices[1][0] + 0.3}
-                    y={(vertices[1][1] + vertices[2][1]) / 2}
-                >
-                    {displayHeightLabel}
-                </MafsLib.Text>
-            )}
-
-            {/* Area label */}
-            {showArea && displayAreaLabel && (
-                <MafsLib.Text
-                    x={center[0]}
-                    y={center[1]}
-                >
-                    {displayAreaLabel}
-                </MafsLib.Text>
-            )}
+          {/* Width label (bottom) */}
+          <MafsLib.Text
+            x={parsedWidth / 2}
+            y={-0.4}
+            attach="center"
+            color={MafsLib.Theme.black}
+          >
+            {width === '?' ? '?' : parsedWidth} {units}
+          </MafsLib.Text>
+          
+          {/* Height label (left) */}
+          <MafsLib.Text
+            x={-0.4}
+            y={parsedHeight / 2}
+            attach="center"
+            color={MafsLib.Theme.black}
+          >
+            {height === '?' ? '?' : parsedHeight} {units}
+          </MafsLib.Text>
         </>
-    );
+      )}
+
+      {/* Area label */}
+      {showArea && (
+        <MafsLib.Text
+          x={parsedWidth / 2}
+          y={parsedHeight / 2}
+          attach="center"
+          color={MafsLib.Theme.black}
+        >
+          {areaLabel || (width !== '?' && height !== '?' 
+            ? `${parsedWidth * parsedHeight} ${units}²` 
+            : `?`
+          )}
+        </MafsLib.Text>
+      )}
+    </MafsLib.Mafs>
+  );
 };
 
 export default Rectangle;

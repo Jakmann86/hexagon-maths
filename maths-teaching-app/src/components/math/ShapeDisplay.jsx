@@ -1,77 +1,54 @@
 // src/components/math/ShapeDisplay.jsx
 import React from 'react';
-import * as MafsLib from 'mafs';
-import MathView from './MathView';
 import Square from './shapes/Square';
-import Rectangle from './shapes/Rectangle';
 import RightTriangle from './shapes/RightTriangle';
-import Coordinates from './primitives/Coordinates';
+import Triangle from './shapes/Triangle';
+import Rectangle from './shapes/Rectangle';
 
 /**
- * A display component for rendering mathematical shapes
- * Provides a wrapper around various shape components
+ * ShapeDisplay - A wrapper component that renders the appropriate shape component
+ * based on the provided shape configuration.
+ * 
+ * @param {Object} props
+ * @param {Object} props.shape - Shape configuration object
+ * @param {string} props.shape.type - Type of shape to render ('square', 'rightTriangle', etc.)
+ * @param {Object} props.shape - Additional shape-specific properties
+ * @param {number} props.height - Height of the shape display container
+ * @param {string} props.className - Additional CSS classes to apply
  */
-const ShapeDisplay = ({ 
-  shape,
-  height = 250,
-  className = '',
-  showAxes = true,
-  showGrid = true,
-  ...props 
-}) => {
-  if (!shape || !shape.type) return null;
-  
-  const { type, ...shapeProps } = shape;
-  
-  // Determine appropriate viewBox based on shape type and dimensions
-  const getViewBox = () => {
-    const defaultPadding = 1;
-    
-    // Extract dimensions
-    let maxX = 5, maxY = 5;
-    
-    switch (type) {
+const ShapeDisplay = ({ shape, height = 100, className = '' }) => {
+  if (!shape || !shape.type) {
+    console.warn('ShapeDisplay: Missing shape configuration or type');
+    return null;
+  }
+
+  // Choose the appropriate shape component based on type
+  const renderShapeComponent = () => {
+    switch (shape.type) {
       case 'square':
-        maxX = maxY = (shapeProps.sideLength || 5) + defaultPadding;
-        break;
-      case 'rectangle':
-        maxX = (shapeProps.width || 6) + defaultPadding;
-        maxY = (shapeProps.height || 4) + defaultPadding;
-        break;
+        return <Square {...shape} />;
+      
       case 'rightTriangle':
-        maxX = (shapeProps.base || 3) + defaultPadding;
-        maxY = (shapeProps.height || 4) + defaultPadding;
-        break;
-      default:
-        maxX = maxY = 5;
-    }
-    
-    return { x: [-defaultPadding, maxX], y: [-defaultPadding, maxY] };
-  };
-  
-  // Render the appropriate shape
-  const renderShape = () => {
-    switch (type) {
-      case 'square':
-        return <Square {...shapeProps} />;
+        return <RightTriangle {...shape} />;
+      
+      case 'triangle':
+        return <Triangle {...shape} />;
+      
       case 'rectangle':
-        return <Rectangle {...shapeProps} />;
-      case 'rightTriangle':
-        return <RightTriangle {...shapeProps} />;
+        return <Rectangle {...shape} />;
+      
       default:
+        console.warn(`ShapeDisplay: Unknown shape type "${shape.type}"`);
         return null;
     }
   };
-  
+
   return (
-    <div className={`shape-display ${className}`} style={{ height }}>
-      <MathView viewBox={getViewBox()} height={height}>
-        <Coordinates
-          showGrid={showGrid}
-          showAxes={showAxes}
-        />
-        {renderShape()}
-      </MathView>
+    <div 
+      className={`math-shape-display ${className}`} 
+      style={{ height: '40%', width: '100%' }}
+    >
+      {renderShapeComponent()}
     </div>
   );
 };

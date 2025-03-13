@@ -64,15 +64,16 @@ const DiagnosticSectionBase = ({
         generateNewQuestion();
     };
 
-    // Shape rendering logic
+    // Shape rendering logic - Fixed to properly handle shape components
     const renderShape = () => {
         if (!currentQuestion?.shape) return null;
         
-        if (currentQuestion.shape.component && currentQuestion.shape.props) {
-            const ShapeComp = currentQuestion.shape.component;
+        const { component: ShapeComponent, props } = currentQuestion.shape;
+        
+        if (ShapeComponent && props) {
             return (
-                <div className="flex justify-center items-center w-full my-6" style={{ minHeight: '300px' }}>
-                    <ShapeComp {...currentQuestion.shape.props} />
+                <div className="flex justify-center items-center w-full my-6" style={{ minHeight: '200px' }}>
+                    <ShapeComponent {...props} />
                 </div>
             );
         }

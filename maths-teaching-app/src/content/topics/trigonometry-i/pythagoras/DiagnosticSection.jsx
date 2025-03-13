@@ -3,6 +3,7 @@ import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSec
 import ShapeDisplay from '../../../../components/math/ShapeDisplay';
 import { generateSquareAreaQuestion, generateSquareSideLengthQuestion } from '../../../../generators/mathematical/squareGenerators';
 import { generateSquareRootQuestion } from '../../../../generators/mathematical/squareRootGenerators';
+import * as MafsLib from 'mafs';
 
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     // Adapter for square area questions
@@ -31,7 +32,11 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                         type: 'square',
                         sideLength: side,
                         showDimensions: true,
-                        units: 'cm'
+                        units: 'cm',
+                        style: {
+                            showGrid: false, // Don't show Cartesian grid
+                            fillColor: MafsLib.Theme.blue
+                        }
                     },
                     height: 250, // Explicit height in pixels
                     className: 'my-4' // Add margin for spacing
@@ -67,7 +72,10 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                         sideLength: '?',
                         showArea: true,
                         areaLabel: `${area} cm²`,
-                        units: 'cm'
+                        units: 'cm',
+                        style: {
+                            showGrid: false
+                        }
                     },
                     height: 250, // Explicit height in pixels
                     className: 'my-4' // Add margin for spacing
@@ -97,7 +105,10 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                             angles: ['A', 'B', 'C'], // Explicitly set angles
                             vertices: ['A', 'B', 'C'] // Explicitly set vertices
                         },
-                        units: 'cm'
+                        units: 'cm',
+                        style: {
+                            showGrid: false
+                        }
                     },
                     height: 250, // Explicit height in pixels
                     className: 'my-4' // Add margin for spacing

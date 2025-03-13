@@ -1,11 +1,10 @@
-// src/components/MathStarters/components/Mathematical/DisplayComponents/MathDisplay.js
 import React from 'react';
 import { InlineMath } from 'react-katex';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
 const MathDisplay = ({
-    math,
+    math = '',  // Default to empty string to prevent undefined errors
     size = 'normal',
     className,
     displayMode = false
@@ -25,6 +24,12 @@ const MathDisplay = ({
         className
     );
 
+    // Defensive check to ensure math is a string
+    if (!math || typeof math !== 'string') {
+        console.warn('MathDisplay: Invalid or missing math expression');
+        return <div className={wrapperClasses}>Invalid expression</div>;
+    }
+
     // Ensure the math expression starts with the appropriate LaTeX size command
     const formattedMath = math.startsWith('\\') ? math : `${sizeMap[size]} ${math}`;
 
@@ -42,7 +47,7 @@ const MathDisplay = ({
 };
 
 MathDisplay.propTypes = {
-    math: PropTypes.string.isRequired,
+    math: PropTypes.string,
     size: PropTypes.oneOf(['normal', 'large', 'x-large', 'huge']),
     className: PropTypes.string,
     displayMode: PropTypes.bool
