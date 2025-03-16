@@ -5,10 +5,20 @@ import classNames from 'classnames';
 
 const MathDisplay = ({
     math = '',  // Default to empty string to prevent undefined errors
+    expression = '',  // Add an alternative prop
     size = 'normal',
     className,
     displayMode = false
 }) => {
+    // Prioritize 'math' prop, fall back to 'expression'
+    const safeExpression = (typeof math === 'string' ? math : 
+        (typeof expression === 'string' ? expression : '')).trim();
+
+    // If expression is empty, return null or a placeholder
+    if (!safeExpression) {
+        return null;
+    }
+
     // Map for LaTeX size commands
     const sizeMap = {
         normal: '\\normalsize',
@@ -24,14 +34,8 @@ const MathDisplay = ({
         className
     );
 
-    // Defensive check to ensure math is a string
-    if (!math || typeof math !== 'string') {
-        console.warn('MathDisplay: Invalid or missing math expression');
-        return <div className={wrapperClasses}>Invalid expression</div>;
-    }
-
     // Ensure the math expression starts with the appropriate LaTeX size command
-    const formattedMath = math.startsWith('\\') ? math : `${sizeMap[size]} ${math}`;
+    const formattedMath = safeExpression.startsWith('\\') ? safeExpression : `${sizeMap[size]} ${safeExpression}`;
 
     return (
         <div className={wrapperClasses}>
@@ -48,6 +52,7 @@ const MathDisplay = ({
 
 MathDisplay.propTypes = {
     math: PropTypes.string,
+    expression: PropTypes.string,
     size: PropTypes.oneOf(['normal', 'large', 'x-large', 'huge']),
     className: PropTypes.string,
     displayMode: PropTypes.bool

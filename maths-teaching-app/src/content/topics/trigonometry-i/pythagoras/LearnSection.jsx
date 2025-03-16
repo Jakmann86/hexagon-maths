@@ -1,84 +1,101 @@
+// src/content/topics/trigonometry-i/pythagoras/LearnSection.jsx
 import React from 'react';
-import LearnSectionBase from '../../../../components/sections/LearnSectionBase';
+import { Card, CardContent } from '../../../../components/common/Card';
 import PythagorasVisualization from '../../../../components/math/visualizations/PythagorasVisualization';
 import MathDisplay from '../../../../components/common/MathDisplay';
+import { useUI } from '../../../../context/UIContext';
 
-const LearnSection = () => {
+const LearnSection = ({ currentTopic, currentLessonId }) => {
+  const { showAnswers } = useUI();
+  
   return (
-    <LearnSectionBase
-      title="Understanding Pythagoras' Theorem"
-      lessonTitle="Pythagoras' Theorem"
-      introduction={
-        <div className="space-y-4">
-          <p>
-            Pythagoras' theorem is a fundamental relationship in Euclidean geometry that relates the 
-            three sides of a right-angled triangle. It states that:
-          </p>
-          <div className="py-2">
-            <MathDisplay
-              expression={"a^2 + b^2 = c^2"}
-              displayMode={true}
-            />
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Pythagoras' Theorem</h2>
+          
+          {/* Main visualization - central focus */}
+          <div className="mb-4">
+            <PythagorasVisualization />
           </div>
-          <p>
-            Where <em>a</em> and <em>b</em> are the lengths of the two sides that form the right angle
-            (known as the legs or catheti), and <em>c</em> is the length of the hypotenuse (the 
-            side opposite the right angle).
-          </p>
-        </div>
-      }
-      concept={
-        <div className="space-y-4">
-          <p>
-            Pythagoras' theorem can be understood visually by comparing the areas of squares built
-            on each side of a right-angled triangle. The theorem tells us that the sum of the areas
-            of the squares on the legs equals the area of the square on the hypotenuse.
-          </p>
-          <p>
-            This visual approach helps us understand why the formula works. Use the toggle buttons in the 
-            visualization below to show or hide different elements.
-          </p>
-        </div>
-      }
-      visualization={
-        <PythagorasVisualization 
-          base={3} 
-          height={4}
-        />
-      }
-      hints={[
-        "What happens to the areas of the squares when we change the shape of the triangle? Try to visualize how the theorem holds for any right triangle.",
-        "How could you verify that the area of the square on the hypotenuse equals the sum of the areas of the other two squares?",
-        "For the 3-4-5 triangle shown in the visualization, can you calculate each square's area and confirm that a² + b² = c²?",
-        "Can you think of other real-world applications where Pythagoras' theorem might be useful?",
-        "How would you use the theorem to find the length of one side if you know the other two sides?"
-      ]}
-      conclusion={
-        <div className="space-y-4">
-          <p>
-            Pythagoras' theorem is not just a mathematical curiosity—it's a powerful tool with countless practical applications:
-          </p>
-          <ul className="list-disc pl-6">
-            <li>Finding distances between points in coordinate geometry</li>
-            <li>Construction and engineering for ensuring right angles</li>
-            <li>Navigation and mapping</li>
-            <li>Physics and many branches of science</li>
-          </ul>
-          <p>
-            The theorem is often written as:
-          </p>
-          <div className="py-2">
-            <MathDisplay
-              expression={"c = \\sqrt{a^2 + b^2}"}
-              displayMode={true}
-            />
-          </div>
-          <p>
-            This form is especially useful when we know the lengths of the two legs and need to find the hypotenuse.
-          </p>
-        </div>
-      }
-    />
+          
+          {/* Teacher hints - only shown when answers/hints are toggled on */}
+          {showAnswers && (
+            <div className="mt-8 border-t pt-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Teacher Notes</h3>
+              
+              {/* Formulas section */}
+              <div className="mb-6 bg-indigo-50 p-4 rounded-lg">
+                <h4 className="font-medium text-indigo-800 mb-2">Key Formulas</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex justify-center">
+                    <MathDisplay math="a^2 + b^2 = c^2" />
+                  </div>
+                  <div className="flex justify-center">
+                    <MathDisplay math="c = \sqrt{a^2 + b^2}" />
+                  </div>
+                  <div className="flex justify-center">
+                    <MathDisplay math="a = \sqrt{c^2 - b^2}" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-amber-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-amber-800 mb-2">Discussion Questions</h4>
+                  <ul className="list-disc list-inside space-y-2 text-amber-700">
+                    <li>What happens to the square areas when we change the triangle dimensions?</li>
+                    <li>How can we verify the relationship a² + b² = c² for a 3-4-5 triangle?</li>
+                    <li>Why does this relationship only work for right triangles?</li>
+                    <li>What real-world applications use this principle?</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-800 mb-2">Key Points</h4>
+                  <ul className="list-disc list-inside space-y-2 text-blue-700">
+                    <li>Pythagorean triples are sets of integers that satisfy the theorem:
+                      <ul className="list-disc list-inside ml-4 mt-1">
+                        <li>(3, 4, 5)</li>
+                        <li>(5, 12, 13)</li>
+                        <li>(8, 15, 17)</li>
+                        <li>(7, 24, 25)</li>
+                      </ul>
+                    </li>
+                    <li>The visualization proves the theorem by directly comparing areas</li>
+                    <li>The theorem only works for right-angled triangles</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="mt-4 bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2">Applications & Activities</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h5 className="font-medium mb-1">Real-World Applications</h5>
+                    <ul className="list-disc list-inside space-y-1 text-green-700">
+                      <li>Construction: Creating right angles</li>
+                      <li>Navigation: Calculating direct distances</li>
+                      <li>Engineering: Structural stability</li>
+                      <li>Computer graphics: Distance calculations</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium mb-1">Classroom Activities</h5>
+                    <ol className="list-decimal list-inside space-y-1 text-green-700">
+                      <li>Create paper squares to physically verify the relationship</li>
+                      <li>Challenge: Find other Pythagorean triples</li>
+                      <li>Measure classroom objects and apply the theorem</li>
+                      <li>Historical connection: Egyptian rope knotting (3-4-5 triangles)</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -1,87 +1,118 @@
-import React from 'react';
-import LearnSectionBase from '../../components/sections/LearnSectionBase';
-import PythagorasVisualization from '../../components/math/visualizations/PythagorasVisualization';
-import MathDisplay from '../../components/common/MathDisplay';
+// src/components/sections/LearnSectionBase.jsx
+import React, { useState } from 'react';
+import { Card, CardContent } from '../common/Card';
+import { ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
 
-const LearnSection = () => {
+/**
+ * LearnSectionBase - A template component for structured lesson content
+ * 
+ * @param {Object} props
+ * @param {string} props.title - Main lesson title
+ * @param {string} props.lessonTitle - Specific lesson name
+ * @param {ReactNode} props.introduction - Introduction content
+ * @param {ReactNode} props.concept - Main concept explanation
+ * @param {ReactNode} props.visualization - Interactive visualization component
+ * @param {string[]} props.hints - Array of teaching hints/questions
+ * @param {ReactNode} props.conclusion - Conclusion or summary content
+ * @param {string} props.currentTopic - Current topic identifier
+ * @param {number} props.currentLessonId - Current lesson identifier
+ */
+const LearnSectionBase = ({
+  title = "Understanding the Concept",
+  lessonTitle = "",
+  introduction,
+  concept,
+  visualization,
+  hints = [],
+  conclusion,
+  currentTopic,
+  currentLessonId
+}) => {
+  // State for expandable sections
+  const [showHints, setShowHints] = useState(false);
+  
   return (
-    <LearnSectionBase
-      title="Understanding Pythagoras' Theorem"
-      lessonTitle="Pythagoras' Theorem"
-      introduction={
-        <div className="space-y-4">
-          <p>
-            Pythagoras' theorem is a fundamental relationship in Euclidean geometry that relates the 
-            three sides of a right-angled triangle. It states that:
-          </p>
-          <div className="py-2">
-            <MathDisplay
-              math={"a^2 + b^2 = c^2"}
-              size="large"
-              displayMode={true}
-            />
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          {/* Lesson Title */}
+          <h2 className="text-2xl font-bold text-gray-800 mb-1">{title}</h2>
+          {lessonTitle && <h3 className="text-lg text-gray-600 mb-6">{lessonTitle}</h3>}
+          
+          <div className="space-y-8">
+            {/* Introduction Section */}
+            {introduction && (
+              <section className="space-y-4">
+                <h3 className="text-xl font-semibold text-gray-700">Introduction</h3>
+                <div className="text-gray-600">
+                  {introduction}
+                </div>
+              </section>
+            )}
+            
+            {/* Main Concept Section */}
+            {concept && (
+              <section className="space-y-4">
+                <h3 className="text-xl font-semibold text-gray-700">Key Concept</h3>
+                <div className="text-gray-600">
+                  {concept}
+                </div>
+              </section>
+            )}
+            
+            {/* Visualization Section */}
+            {visualization && (
+              <section className="space-y-4">
+                <h3 className="text-xl font-semibold text-gray-700">Interactive Visualization</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  {visualization}
+                </div>
+              </section>
+            )}
+            
+            {/* Teaching Hints Section */}
+            {hints && hints.length > 0 && (
+              <section className="space-y-4">
+                <button
+                  onClick={() => setShowHints(!showHints)}
+                  className="flex items-center justify-between w-full p-4 bg-amber-50 text-amber-800 rounded-lg hover:bg-amber-100 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <Lightbulb className="mr-2 h-5 w-5" />
+                    <span className="font-medium">Teaching Prompts & Questions</span>
+                  </div>
+                  {showHints ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </button>
+                
+                {showHints && (
+                  <div className="ml-6 space-y-3 mt-2">
+                    <p className="text-gray-600 italic text-sm">
+                      Use these discussion prompts and questions to guide students' understanding:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                      {hints.map((hint, index) => (
+                        <li key={index}>{hint}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
+            
+            {/* Conclusion Section */}
+            {conclusion && (
+              <section className="space-y-4">
+                <h3 className="text-xl font-semibold text-gray-700">Summary & Applications</h3>
+                <div className="text-gray-600">
+                  {conclusion}
+                </div>
+              </section>
+            )}
           </div>
-          <p>
-            Where <em>a</em> and <em>b</em> are the lengths of the two sides that form the right angle
-            (known as the legs or catheti), and <em>c</em> is the length of the hypotenuse (the 
-            side opposite the right angle).
-          </p>
-        </div>
-      }
-      concept={
-        <div className="space-y-4">
-          <p>
-            Pythagoras' theorem can be understood visually by comparing the areas of squares built
-            on each side of a right-angled triangle. The theorem tells us that the sum of the areas
-            of the squares on the legs equals the area of the square on the hypotenuse.
-          </p>
-          <p>
-            This visual approach helps us understand why the formula works. Use the toggle buttons in the 
-            visualization below to show or hide different elements.
-          </p>
-        </div>
-      }
-      visualization={
-        <PythagorasVisualization 
-          base={3} 
-          height={4}
-        />
-      }
-      hints={[
-        "What happens to the areas of the squares when we change the shape of the triangle? Try to visualize how the theorem holds for any right triangle.",
-        "How could you verify that the area of the square on the hypotenuse equals the sum of the areas of the other two squares?",
-        "For the 3-4-5 triangle shown in the visualization, can you calculate each square's area and confirm that a² + b² = c²?",
-        "Can you think of other real-world applications where Pythagoras' theorem might be useful?",
-        "How would you use the theorem to find the length of one side if you know the other two sides?"
-      ]}
-      conclusion={
-        <div className="space-y-4">
-          <p>
-            Pythagoras' theorem is not just a mathematical curiosity—it's a powerful tool with countless practical applications:
-          </p>
-          <ul className="list-disc pl-6">
-            <li>Finding distances between points in coordinate geometry</li>
-            <li>Construction and engineering for ensuring right angles</li>
-            <li>Navigation and mapping</li>
-            <li>Physics and many branches of science</li>
-          </ul>
-          <p>
-            The theorem is often written as:
-          </p>
-          <div className="py-2">
-            <MathDisplay
-              math={"c = \\sqrt{a^2 + b^2}"}
-              size="large"
-              displayMode={true}
-            />
-          </div>
-          <p>
-            This form is especially useful when we know the lengths of the two legs and need to find the hypotenuse.
-          </p>
-        </div>
-      }
-    />
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-export default LearnSection;
+export default LearnSectionBase;
