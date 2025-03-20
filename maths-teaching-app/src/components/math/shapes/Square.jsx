@@ -13,6 +13,9 @@ import 'mafs/font.css';
  * @param {boolean} props.showArea - Whether to show area label
  * @param {string} props.areaLabel - Label for area (if showArea is true)
  * @param {string} props.units - Units for measurements (e.g. "cm", "m")
+ * @param {Object} props.customLabels - Custom labels for sides and area
+ * @param {string} props.customLabels.side - Custom label for sides
+ * @param {string} props.customLabels.area - Custom label for area
  * @param {Object} props.style - Additional styling options
  * @param {string} props.style.fillColor - Fill color (default: blue)
  * @param {number} props.style.fillOpacity - Fill opacity (default: 0.2)

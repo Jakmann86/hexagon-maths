@@ -46,7 +46,7 @@ const ShapeDisplay = ({ shape, height = 100, className = '' }) => {
   return (
     <div 
       className={`math-shape-display ${className}`} 
-      style={{ height: '40%', width: '100%' }}
+      style={{ height: height ? `${height}px` : '200px', width: '100%' }}
     >
       {renderShapeComponent()}
     </div>

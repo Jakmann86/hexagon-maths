@@ -33,13 +33,17 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                         sideLength: side,
                         showDimensions: true,
                         units: 'cm',
+                        customLabels: {
+                            side: `${side} cm`,
+                            area: null // No area label
+                        },
                         style: {
                             showGrid: false, // Don't show Cartesian grid
                             fillColor: MafsLib.Theme.blue
                         }
                     },
-                    height: 250, // Explicit height in pixels
-                    className: 'my-4' // Add margin for spacing
+                height: 200, // Smaller height for the shape display
+                className: 'my-4' // Original margin
                 }
             }
         };
@@ -69,16 +73,20 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                 props: {
                     shape: {
                         type: 'square',
-                        sideLength: '?',
-                        showArea: true,
-                        areaLabel: `${area} cm²`,
+                        sideLength: side,
+                        showDimensions: true,
                         units: 'cm',
+                        customLabels: {
+                            side: `${side} cm`,
+                            area: null // No area label
+                        },
                         style: {
-                            showGrid: false
+                            showGrid: false, // Don't show Cartesian grid
+                            fillColor: MafsLib.Theme.blue
                         }
                     },
-                    height: 250, // Explicit height in pixels
-                    className: 'my-4' // Add margin for spacing
+                    height: 200, // Consistent height
+                    className: 'my-0' // No additional margin
                 }
             }
         };

@@ -64,22 +64,22 @@ const DiagnosticSectionBase = ({
         generateNewQuestion();
     };
 
-    // Shape rendering logic - Fixed to properly handle shape components
-    const renderShape = () => {
-        if (!currentQuestion?.shape) return null;
-        
-        const { component: ShapeComponent, props } = currentQuestion.shape;
-        
-        if (ShapeComponent && props) {
-            return (
-                <div className="flex justify-center items-center w-full my-6" style={{ minHeight: '200px' }}>
-                    <ShapeComponent {...props} />
-                </div>
-            );
-        }
-        
-        return null;
-    };
+// Shape rendering logic - More compact with reduced margins
+const renderShape = () => {
+    if (!currentQuestion?.shape) return null;
+    
+    const { component: ShapeComponent, props } = currentQuestion.shape;
+    
+    if (ShapeComponent && props) {
+        return (
+            <div className="flex justify-center items-center w-full my-6" style={{ height: '200px' }}>
+                <ShapeComponent {...props} />
+            </div>
+        );
+    }
+    
+    return null;
+};
 
     // Loading state
     if (!currentTypeId || !currentQuestion) {
@@ -135,45 +135,44 @@ const DiagnosticSectionBase = ({
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                                     {currentQuestion.options.map((option, index) => (
                                         <button
-                                            key={index}
-                                            onClick={() => checkAnswer(option)}
-                                            disabled={showAnswer}
-                                            className={`
-                                                relative p-4 rounded-lg border-2 transition-all transform
-                                                ${showAnswer
-                                                    ? option === currentQuestion.correctAnswer
-                                                        ? 'bg-green-50 border-green-500 text-green-700'
-                                                        : option === selectedAnswer
-                                                            ? 'bg-red-50 border-red-500 text-red-700'
-                                                            : 'bg-gray-50 border-gray-200 opacity-70'
-                                                    : 'hover:bg-gray-50 border-gray-200 hover:border-indigo-300 hover:shadow-md'
-                                                }
-                                                ${showAnswer && option === selectedAnswer ? 'scale-105' : ''}
-                                            `}
-                                        >
-                                            {/* Option Display - handles LaTeX formatting */}
-                                            {typeof option === 'string' && option.includes('\\text') ? (
-                                                <div className="text-lg">
-                                                    <MathDisplay math={option} />
-                                                </div>
-                                            ) : (
-                                                <span className="text-lg">{option}</span>
-                                            )}
-                                            
-                                            {/* Correct Answer Indicator */}
-                                            {showAnswer && option === currentQuestion.correctAnswer && (
-                                                <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1 shadow-md">
-                                                    <Check className="w-4 h-4 text-white" />
-                                                </div>
-                                            )}
-                                            
-                                            {/* Incorrect Answer Indicator */}
-                                            {showAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
-                                                <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1 shadow-md">
-                                                    <X className="w-4 h-4 text-white" />
-                                                </div>
-                                            )}
-                                        </button>
+                                        key={index}
+                                        onClick={() => checkAnswer(option)}
+                                        disabled={showAnswer}
+                                        className={`
+                                            relative p-3 rounded-lg border-2 transition-all 
+                                            ${showAnswer
+                                                ? option === currentQuestion.correctAnswer
+                                                    ? 'bg-green-50 border-green-500 text-green-700'
+                                                    : option === selectedAnswer
+                                                        ? 'bg-red-50 border-red-500 text-red-700'
+                                                        : 'bg-gray-50 border-gray-200 opacity-70'
+                                                : 'hover:bg-gray-50 border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                                            }
+                                        `}
+                                    >
+                                        {/* Option Display - handles LaTeX formatting */}
+                                        {typeof option === 'string' && option.includes('\\text') ? (
+                                            <div className="text-lg">
+                                                <MathDisplay math={option} />
+                                            </div>
+                                        ) : (
+                                            <span className="text-lg">{option}</span>
+                                        )}
+                                        
+                                        {/* Correct Answer Indicator */}
+                                        {showAnswer && option === currentQuestion.correctAnswer && (
+                                            <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1 shadow-md">
+                                                <Check className="w-4 h-4 text-white" />
+                                            </div>
+                                        )}
+                                        
+                                        {/* Incorrect Answer Indicator */}
+                                        {showAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
+                                            <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1 shadow-md">
+                                                <X className="w-4 h-4 text-white" />
+                                            </div>
+                                        )}
+                                    </button>
                                     ))}
                                 </div>
 

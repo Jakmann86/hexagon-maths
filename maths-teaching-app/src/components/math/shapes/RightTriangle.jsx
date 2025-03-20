@@ -24,8 +24,10 @@ const RightTriangle = ({
   height = 4,
   showRightAngle = true,
   labelStyle = 'standard',
-  labels = {},
-  units = '',
+  labels = {
+    sides: ['a', 'b', 'c'], // or any custom labels
+  },
+  units = 'cm',
   style = {}
 }) => {
   // Calculate hypotenuse using Pythagoras' theorem
@@ -37,7 +39,11 @@ const RightTriangle = ({
     : [`${base} ${units}`, `${height} ${units}`, `${hypotenuse.toFixed(2)} ${units}`];
     
   // Merge default labels with provided labels
+  // This ensures explicit labels passed in always override the defaults
   const sideLabels = labels.sides || defaultSideLabels;
+  
+  // Prepare custom labeled sides if provided
+  const customVertexLabels = labels.vertices || [];
   
   // Default style options
   const {
