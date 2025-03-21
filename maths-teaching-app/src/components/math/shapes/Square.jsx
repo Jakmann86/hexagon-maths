@@ -17,10 +17,7 @@ import 'mafs/font.css';
  * @param {string} props.customLabels.side - Custom label for sides
  * @param {string} props.customLabels.area - Custom label for area
  * @param {Object} props.style - Additional styling options
- * @param {string} props.style.fillColor - Fill color (default: blue)
- * @param {number} props.style.fillOpacity - Fill opacity (default: 0.2)
- * @param {string} props.style.strokeColor - Stroke color (default: blue)
- * @param {number} props.style.strokeWidth - Stroke width (default: 2)
+ * @param {number} props.mafsHeight - Direct height for the Mafs component
  */
 const Square = ({
   sideLength = 4,
@@ -28,7 +25,9 @@ const Square = ({
   showArea = false,
   areaLabel = '',
   units = '',
-  style = {}
+  style = {},
+  mafsHeight = 250,
+  customLabels = {},
 }) => {
   // Parse side length or use default for display
   const parsedSideLength = sideLength === '?' ? 4 : Number(sideLength);
@@ -40,70 +39,94 @@ const Square = ({
     strokeColor = MafsLib.Theme.blue,
     strokeWidth = 2,
     showGrid = false,
+    backgroundTransparent = true,
   } = style;
   
   // Calculate viewBox with padding
-  const padding = 1;
+  const padding = Math.max(1, parsedSideLength * 0.15); // Dynamic padding
   const viewBox = {
     x: [-padding, parsedSideLength + padding],
     y: [-padding, parsedSideLength + padding]
   };
 
-  return (
-    <MafsLib.Mafs viewBox={viewBox}>
-      {showGrid && <MafsLib.Coordinates.Cartesian />}
-      
-      {/* Square polygon */}
-      <MafsLib.Polygon
-        points={[
-          [0, 0],
-          [parsedSideLength, 0],
-          [parsedSideLength, parsedSideLength],
-          [0, parsedSideLength]
-        ]}
-        color={fillColor}
-        fillOpacity={fillOpacity}
-        strokeOpacity={1}
-        strokeWidth={strokeWidth}
-      />
+  // Custom styles for Mafs component
+  const mafsStyles = backgroundTransparent ? {
+    background: 'transparent',
+    '--mafs-bg': 'transparent',
+    '--mafs-fg': '#333'
+  } : {};
 
-      {/* Dimension labels */}
-      {showDimensions && (
-        <>
-          {/* Bottom side label */}
+  // Override label texts if provided in customLabels
+  const sideLabel = customLabels.side || (sideLength === '?' ? '?' : `${parsedSideLength} ${units}`);
+  const displayedAreaLabel = customLabels.area || 
+    (areaLabel || (sideLength !== '?' ? `${parsedSideLength * parsedSideLength} ${units}²` : `?`));
+
+  return (
+    <div className="w-full h-full" style={{ background: 'transparent', aspectRatio: '1/1' }}>
+      <MafsLib.Mafs 
+        viewBox={viewBox}
+        preserveAspectRatio="xMidYMid meet"
+        height={mafsHeight} // Use explicit height from props
+        width={mafsHeight}  // Make width equal to height for square aspect ratio
+        style={mafsStyles}
+      >
+        {showGrid && <MafsLib.Coordinates.Cartesian 
+          xAxis={{ variant: 'secondary' }}
+          yAxis={{ variant: 'secondary' }}
+        />}
+        
+        {/* Square polygon */}
+        <MafsLib.Polygon
+          points={[
+            [0, 0],
+            [parsedSideLength, 0],
+            [parsedSideLength, parsedSideLength],
+            [0, parsedSideLength]
+          ]}
+          color={fillColor}
+          fillOpacity={fillOpacity}
+          strokeOpacity={1}
+          strokeWidth={strokeWidth}
+        />
+
+        {/* Dimension labels */}
+        {showDimensions && (
+          <>
+            {/* Bottom side label */}
+            <MafsLib.Text
+              x={parsedSideLength / 2}
+              y={-0.5}
+              attach="center"
+              color={MafsLib.Theme.black}
+            >
+              {sideLabel}
+            </MafsLib.Text>
+            
+            {/* Left side label */}
+            <MafsLib.Text
+              x={-0.5}
+              y={parsedSideLength / 2}
+              attach="center"
+              color={MafsLib.Theme.black}
+            >
+              {sideLabel}
+            </MafsLib.Text>
+          </>
+        )}
+
+        {/* Area label */}
+        {showArea && (
           <MafsLib.Text
             x={parsedSideLength / 2}
-            y={-0.4}
-            attach="center"
-            color={MafsLib.Theme.black}
-          >
-            {sideLength === '?' ? '?' : parsedSideLength} {units}
-          </MafsLib.Text>
-          
-          {/* Left side label */}
-          <MafsLib.Text
-            x={-0.4}
             y={parsedSideLength / 2}
             attach="center"
             color={MafsLib.Theme.black}
           >
-            {sideLength === '?' ? '?' : parsedSideLength} {units}
+            {displayedAreaLabel}
           </MafsLib.Text>
-        </>
-      )}
-
-      {/* Area label */}
-      {showArea && (
-        <MafsLib.Text
-          x={parsedSideLength / 2}
-          y={parsedSideLength / 2}
-          attach="center"
-          color={MafsLib.Theme.black}
-        >
-          {areaLabel || (sideLength !== '?' ? `${parsedSideLength * parsedSideLength} ${units}²` : `?`)}
-        </MafsLib.Text>
-      )}
-    </MafsLib.Mafs>
+        )}
+      </MafsLib.Mafs>
+    </div>
   );
 };
 

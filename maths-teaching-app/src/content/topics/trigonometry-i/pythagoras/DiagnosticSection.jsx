@@ -4,6 +4,7 @@ import ShapeDisplay from '../../../../components/math/ShapeDisplay';
 import { generateSquareAreaQuestion, generateSquareSideLengthQuestion } from '../../../../generators/mathematical/squareGenerators';
 import { generateSquareRootQuestion } from '../../../../generators/mathematical/squareRootGenerators';
 import * as MafsLib from 'mafs';
+import _ from 'lodash'; // Ensure lodash is imported
 
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     // Adapter for square area questions
@@ -38,12 +39,12 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                             area: null // No area label
                         },
                         style: {
-                            showGrid: false, // Don't show Cartesian grid
-                            fillColor: MafsLib.Theme.blue
+                            fillColor: MafsLib.Theme.blue,
+                            backgroundTransparent: true
                         }
                     },
-                height: 200, // Smaller height for the shape display
-                className: 'my-4' // Original margin
+                    height: 230, // Match the size of the squares
+                    className: 'my-2' // Reduced margin for better space usage
                 }
             }
         };
@@ -74,19 +75,22 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                     shape: {
                         type: 'square',
                         sideLength: side,
-                        showDimensions: true,
+                        showDimensions: false, // Hide dimensions since we're showing area instead
+                        showArea: true,        // Show the area label
                         units: 'cm',
                         customLabels: {
-                            side: `${side} cm`,
-                            area: null // No area label
+                            side: `?`,         // Side length is unknown
+                            area: `${area} cm²` // Show area as the known value
                         },
                         style: {
-                            showGrid: false, // Don't show Cartesian grid
-                            fillColor: MafsLib.Theme.blue
+                            showGrid: false,
+                            backgroundTransparent: true,
+                            fillColor: MafsLib.Theme.blue,
+                            fillOpacity: 0.3   // Slightly more opaque for better visibility
                         }
                     },
-                    height: 200, // Consistent height
-                    className: 'my-0' // No additional margin
+                    height: 280, // Increased height for better visibility
+                    className: 'my-2' // Reduced margin for better space usage
                 }
             }
         };
@@ -115,11 +119,13 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                         },
                         units: 'cm',
                         style: {
-                            showGrid: false
+                            showGrid: false,
+                            backgroundTransparent: true,
+                            fillColor: MafsLib.Theme.indigo
                         }
                     },
-                    height: 250, // Explicit height in pixels
-                    className: 'my-4' // Add margin for spacing
+                    height: 300, // Increased height for better visibility
+                    className: 'my-2' // Reduced margin for better space usage
                 }
             }
         };

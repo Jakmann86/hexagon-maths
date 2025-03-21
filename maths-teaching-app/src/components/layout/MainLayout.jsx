@@ -101,7 +101,7 @@ const MainLayout = () => {
             />
 
             <main className="max-w-6xl mx-auto mt-10 px-4">
-                <div className="sticky top-0 bg-slate-50 z-10 pb-4">
+                <div className="pb-4">
                     <SectionNav
                         activeSection={currentSection}
                         onSectionChange={setCurrentSection}

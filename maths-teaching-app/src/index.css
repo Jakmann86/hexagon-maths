@@ -75,3 +75,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for Mafs components */
+.mafs-container {
+  --mafs-bg: transparent !important;
+}
+
+.mafs-container .mafs-view {
+  background-color: transparent !important;
+}
+
+/* Optionally improve the contrast of elements against the transparent background */
+.mafs-container .mafs-view svg * {
+  stroke-width: 1.5; /* Slightly thicker lines for better visibility */
+}
+
+/* Hide any grid elements that might still show */
+.mafs-container .mafs-view svg .mafs-grid {
+  stroke-opacity: 0;
+}
+
+/* Ensure text is properly visible */
+.mafs-container .mafs-view svg text {
+  fill: #333;
+  stroke: none;
+}
