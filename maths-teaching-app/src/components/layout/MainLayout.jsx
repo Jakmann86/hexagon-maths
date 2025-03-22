@@ -8,9 +8,9 @@ import { curriculum } from '../../data/curriculum';
 import { getWeekFromTopic } from '../../data/topicMapping';
 import WorkingMafs from '../math/WorkingMafs';   
  
-
 // Import components from new structure
-import { DiagnosticSection, StarterSection, LearnSection } from '../../content/topics/trigonometry-i/pythagoras';
+import { DiagnosticSection, StarterSection, LearnSection, ExamplesSection } from '../../content/topics/trigonometry-i/pythagoras';
+import ChallengeSection from '../../content/topics/trigonometry-i/pythagoras/ChallengeSection';
 
 const MainLayout = () => {
     // Track current topic and lesson
@@ -54,12 +54,15 @@ const MainLayout = () => {
                         currentLessonId={currentLessonId}
                     />;
                 case 'examples':
-                    return <WorkingMafs 
+                    return <ExamplesSection 
                         currentTopic={currentTopic} 
                         currentLessonId={currentLessonId}
                     />;
                 case 'challenge':
-                    return <div>Challenge Content - Coming Soon</div>;
+                    return <ChallengeSection 
+                        currentTopic={currentTopic} 
+                        currentLessonId={currentLessonId}
+                    />;
                 default:
                     return <div>Select a section</div>;
             }
@@ -101,7 +104,7 @@ const MainLayout = () => {
             />
 
             <main className="max-w-6xl mx-auto mt-10 px-4">
-                <div className="pb-4">
+                <div className="sticky top-0 bg-slate-50 z-10 pb-4">
                     <SectionNav
                         activeSection={currentSection}
                         onSectionChange={setCurrentSection}

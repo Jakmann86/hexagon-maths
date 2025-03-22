@@ -3,6 +3,7 @@ import Square from './Square';
 import Rectangle from './Rectangle';
 import RightTriangle from './RightTriangle';
 import Triangle from './Triangle';
+import IsoscelesTriangle from './IsoscelesTriangle';
 import ShapeDisplay from '../ShapeDisplay';
 
 // Export a registry object that maps shape types to their components
@@ -10,7 +11,8 @@ export const ShapeComponents = {
   Square,
   Rectangle,
   RightTriangle,
-  Triangle
+  Triangle,
+  IsoscelesTriangle
 };
 
 // Export individual components
@@ -19,6 +21,7 @@ export {
   Rectangle,
   RightTriangle,
   Triangle,
+  IsoscelesTriangle,
   ShapeDisplay
 };
 

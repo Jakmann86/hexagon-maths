@@ -1,57 +1,71 @@
-// src/components/math/shapes/RightTriangle.jsx
+// src/components/math/shapes/IsoscelesTriangle.jsx
 import React from 'react';
 import * as MafsLib from 'mafs';
 import 'mafs/core.css';
 import 'mafs/font.css';
 
 /**
- * RightTriangle - A component for rendering a right-angled triangle with optional labels
+ * IsoscelesTriangle - A component for rendering an isosceles triangle with height toggle
+ * Sized to match the RightTriangle component
  * 
  * @param {Object} props
- * @param {number} props.base - Length of the base (default: 3)
+ * @param {number} props.base - Length of the base (default: 6)
  * @param {number} props.height - Height of the triangle (default: 4)
- * @param {boolean} props.showRightAngle - Whether to show the right angle marker
- * @param {string} props.labelStyle - Style of labels ('standard' or 'algebraic')
+ * @param {boolean} props.showHeight - Whether to show the height line
+ * @param {string} props.labelStyle - Style of labels ('standard', 'numeric', or 'custom')
  * @param {Object} props.labels - Custom labels for different parts of the triangle
- * @param {Array} props.labels.sides - Labels for sides [base, height, hypotenuse]
- * @param {Array} props.labels.angles - Labels for angles
- * @param {Array} props.labels.vertices - Labels for vertices
+ * @param {Array} props.labels.sides - Labels for sides [base, left side, right side]
+ * @param {Array} props.labels.vertices - Labels for vertices [bottom-left, bottom-right, top]
  * @param {string} props.units - Units for measurements (e.g. "cm", "m")
  * @param {Object} props.style - Additional styling options
  * @param {number} props.mafsHeight - Direct height for the Mafs component
  */
-const RightTriangle = ({
-  base = 3,
+const IsoscelesTriangle = ({
+  base = 6,
   height = 4,
-  showRightAngle = true,
+  showHeight = false,
   labelStyle = 'standard',
   labels = {},
   units = 'cm',
   style = {},
   mafsHeight = 250,
 }) => {
-  // Calculate hypotenuse using Pythagoras' theorem
-  const hypotenuse = Math.sqrt(base * base + height * height);
+  // Calculate equal sides length using Pythagoras' theorem
+  const halfBase = base / 2;
+  const equalSide = Math.sqrt(halfBase * halfBase + height * height);
+  const roundedEqualSide = Math.round(equalSide * 100) / 100; // Round to 2 decimal places
   
   // Default labels based on labelStyle
-  const defaultSideLabels = labelStyle === 'algebraic' 
-    ? ['a', 'b', 'c'] 
-    : [`${base} ${units}`, `${height} ${units}`, `${hypotenuse.toFixed(2)} ${units}`];
-    
+  let defaultSideLabels = [];
+  
+  if (labelStyle === 'numeric') {
+    defaultSideLabels = [
+      `${base} ${units}`,
+      `${roundedEqualSide} ${units}`,
+      `${roundedEqualSide} ${units}`
+    ];
+  } else if (labelStyle === 'standard') {
+    defaultSideLabels = ['base', 'side', 'side'];
+  } else {
+    defaultSideLabels = ['b', 'a', 'a'];
+  }
+  
   // Merge default labels with provided labels
   const sideLabels = labels.sides || defaultSideLabels;
+  const vertexLabels = labels.vertices || ['A', 'B', 'C'];
   
   // Default style options
   const {
-    fillColor = MafsLib.Theme.indigo,
+    fillColor = MafsLib.Theme.green,
     fillOpacity = 0.2,
-    strokeColor = MafsLib.Theme.indigo,
+    strokeColor = MafsLib.Theme.green,
     strokeWidth = 2,
     showGrid = false,
+    heightColor = MafsLib.Theme.blue,
     backgroundTransparent = true,
   } = style;
   
-  // Calculate viewBox with better padding
+  // Calculate viewBox with better padding exactly like RightTriangle
   const maxDim = Math.max(base, height);
   const padding = Math.max(1, maxDim * 0.15); // Dynamic padding based on size
   
@@ -88,7 +102,7 @@ const RightTriangle = ({
           points={[
             [0, 0],
             [base, 0],
-            [0, height]
+            [base/2, height]
           ]}
           color={fillColor}
           fillOpacity={fillOpacity}
@@ -96,46 +110,67 @@ const RightTriangle = ({
           strokeWidth={strokeWidth}
         />
 
-        {/* Right angle marker */}
-        {showRightAngle && (
-          <MafsLib.Polygon
-            points={[
-              [0.5, 0],
-              [0.5, 0.5],
-              [0, 0.5]
-            ]}
-            color={MafsLib.Theme.black}
-            strokeOpacity={1}
-            fillOpacity={0}
-            strokeWidth={1}
-          />
+        {/* Height line (optional) */}
+        {showHeight && (
+          <>
+            <MafsLib.Line.Segment
+              point1={[base/2, height]}
+              point2={[base/2, 0]}
+              color={heightColor}
+              strokeWidth={1}
+              strokeDasharray={4}
+            />
+            
+            {/* Right angle marker at base of height */}
+            <MafsLib.Polygon
+              points={[
+                [base/2 - 0.3, 0],
+                [base/2 - 0.3, 0.3],
+                [base/2, 0.3]
+              ]}
+              color={MafsLib.Theme.black}
+              strokeOpacity={1}
+              fillOpacity={0}
+              strokeWidth={1}
+            />
+            
+            {/* Height label */}
+            <MafsLib.Text
+              x={base/2 + 0.6}
+              y={height/2}
+              attach="center"
+              color={heightColor}
+            >
+              {`h = ${height} ${units}`}
+            </MafsLib.Text>
+          </>
         )}
 
-        {/* Side labels */}
+        {/* Side labels - matching RightTriangle positioning pattern */}
         {/* Base label */}
         <MafsLib.Text
-          x={base / 2 - 0.5}
-          y={-1.2}
+          x={base/2 - 0.75}
+          y={-1}
           attach="center"
           color={MafsLib.Theme.black}
         >
           {sideLabels[0]}
         </MafsLib.Text>
         
-        {/* Height label */}
+        {/* Left equal side label */}
         <MafsLib.Text
-          x={-1.6}
-          y={height / 2}
+          x={base/4 - 2}
+          y={height/2}
           attach="center"
           color={MafsLib.Theme.black}
         >
           {sideLabels[1]}
         </MafsLib.Text>
         
-        {/* Hypotenuse label */}
+        {/* Right equal side label */}
         <MafsLib.Text
-          x={base / 2 - -0.1}
-          y={height / 2 - -0.1}
+          x={3*base/4 + 0.5}
+          y={height/2}
           attach="center"
           color={MafsLib.Theme.black}
         >
@@ -146,13 +181,15 @@ const RightTriangle = ({
         {labels.vertices && (
           <>
             <MafsLib.Text x={0} y={0} attach="southwest" color={MafsLib.Theme.black}>
-              {labels.vertices[0]}
+              {vertexLabels[0]}
             </MafsLib.Text>
+            
             <MafsLib.Text x={base} y={0} attach="southeast" color={MafsLib.Theme.black}>
-              {labels.vertices[1]}
+              {vertexLabels[1]}
             </MafsLib.Text>
-            <MafsLib.Text x={0} y={height} attach="northwest" color={MafsLib.Theme.black}>
-              {labels.vertices[2]}
+            
+            <MafsLib.Text x={base/2} y={height} attach="north" color={MafsLib.Theme.black}>
+              {vertexLabels[2]}
             </MafsLib.Text>
           </>
         )}
@@ -161,4 +198,4 @@ const RightTriangle = ({
   );
 };
 
-export default RightTriangle;
+export default IsoscelesTriangle;

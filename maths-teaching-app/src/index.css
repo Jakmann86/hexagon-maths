@@ -76,27 +76,21 @@
   }
 }
 
-/* Custom styles for Mafs components */
-.mafs-container {
+/* Override Mafs background */
+.mafs-transparent {
   --mafs-bg: transparent !important;
+  background: transparent !important;
 }
 
-.mafs-container .mafs-view {
-  background-color: transparent !important;
+.mafs-transparent svg {
+  background: transparent !important;
 }
 
-/* Optionally improve the contrast of elements against the transparent background */
-.mafs-container .mafs-view svg * {
-  stroke-width: 1.5; /* Slightly thicker lines for better visibility */
+.mafs-transparent foreignObject {
+  background: transparent !important;
 }
 
-/* Hide any grid elements that might still show */
-.mafs-container .mafs-view svg .mafs-grid {
-  stroke-opacity: 0;
-}
-
-/* Ensure text is properly visible */
-.mafs-container .mafs-view svg text {
-  fill: #333;
-  stroke: none;
+/* Make all Mafs text black */
+.mafs-transparent text {
+  fill: #000 !important;
 }
