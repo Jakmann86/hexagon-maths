@@ -31,7 +31,7 @@ export const Slider = ({
 
   return (
     <div className={`w-full ${className}`}>
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{__html: `
         /* Extract the accent color from any accent-{color}-500 class */
         .accent-blue-500 { --slider-accent: #3b82f6; --slider-accent-light: #dbeafe; }
         .accent-green-500 { --slider-accent: #22c55e; --slider-accent-light: #dcfce7; }
@@ -55,7 +55,7 @@ export const Slider = ({
         .slider-input::-moz-range-track {
           background: var(--slider-track);
         }
-      `}</style>
+      `}} />
 
       <div className="flex items-center">
         <input

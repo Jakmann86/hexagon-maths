@@ -1,19 +1,103 @@
 // src/content/topics/trigonometry-i/pythagoras/ChallengeSection.jsx
 import React from 'react';
 import ChallengeSectionBase from '../../../../components/sections/ChallengeSectionBase';
+import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import * as MafsLib from 'mafs';
 import 'mafs/core.css';
 import 'mafs/font.css';
 
+// Import visualizations from the index file
+import { 
+  CoordinateVisualization,
+  NavigationVisualization,
+  StackedTrianglesVisualization
+} from '../../../../components/math/visualizations';
+
+const ChallengeSection = ({ currentTopic, currentLessonId }) => {
+  // Get theme colors for challenge section
+  const theme = useSectionTheme('challenge');
+  
+  // Create modified challenge types with random difficulty selection
+  const challengeTypes = {
+    coordinateDistance: {
+      title: 'Coordinate Distance',
+      generator: () => {
+        const difficulties = ['easy', 'medium', 'hard', 'exam'];
+        const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+        return generateCoordinateDistanceChallenge(randomDifficulty);
+      }
+    },
+    navigation: {
+      title: 'Navigation & Bearings',
+      generator: () => {
+        const difficulties = ['easy', 'medium', 'hard', 'exam'];
+        const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+        return generateNavigationChallenge(randomDifficulty);
+      }
+    },
+    stackedTriangles: {
+      title: 'Stacked Triangles',
+      generator: () => {
+        const difficulties = ['easy', 'medium', 'hard', 'exam'];
+        const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+        return generateStackedTrianglesChallenge(randomDifficulty);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6 mb-8">
+      {/* Themed wrapper div - using red for challenge theme (consistent with other sections) */}
+      <div className="border-2 border-t-4 border-red-500 rounded-lg shadow-md bg-white overflow-hidden">
+        <ChallengeSectionBase
+          challengeTypes={challengeTypes}
+          currentTopic={currentTopic}
+          currentLessonId={currentLessonId}
+        />
+      </div>
+    </div>
+  );
+};
+
 // Component for visualizing the distance between two points
 const CoordinateDistance = ({ point1, point2, showingDistance = false }) => {
-  const xRange = [Math.min(point1[0], point2[0]) - 2, Math.max(point1[0], point2[0]) + 2];
-  const yRange = [Math.min(point1[1], point2[1]) - 2, Math.max(point1[1], point2[1]) + 2];
+  // Calculate x and y ranges with equal scaling and padding
+  const padding = 2;
+  const xMin = Math.min(point1[0], point2[0]) - padding;
+  const xMax = Math.max(point1[0], point2[0]) + padding;
+  const yMin = Math.min(point1[1], point2[1]) - padding;
+  const yMax = Math.max(point1[1], point2[1]) + padding;
+  
+  // Ensure equal scaling by making the range symmetric
+  const xRange = xMax - xMin;
+  const yRange = yMax - yMin;
+  
+  if (xRange > yRange) {
+    // Add to y-range to match x-range
+    const diff = (xRange - yRange) / 2;
+    const yMiddle = (yMax + yMin) / 2;
+    const yViewRange = [yMiddle - xRange/2, yMiddle + xRange/2];
+  } else {
+    // Add to x-range to match y-range
+    const diff = (yRange - xRange) / 2;
+    const xMiddle = (xMax + xMin) / 2;
+    const xViewRange = [xMiddle - yRange/2, xMiddle + yRange/2];
+  }
+  
+  // Final viewbox with equal scaling
+  const viewBox = { 
+    x: [xMin, xMax], 
+    y: [yMin, yMax]
+  };
+  
+  // Calculate triangle sides for Pythagoras
+  const dx = point2[0] - point1[0];
+  const dy = point2[1] - point1[1];
   
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <MafsLib.Mafs
-        viewBox={{ x: xRange, y: yRange }}
+        viewBox={viewBox}
         preserveAspectRatio="contain"
       >
         <MafsLib.Coordinates.Cartesian />
@@ -37,47 +121,64 @@ const CoordinateDistance = ({ point1, point2, showingDistance = false }) => {
           strokeWidth={2}
         />
         
-        {/* If showing distance, draw the right triangle */}
-        {showingDistance && (
-          <>
-            {/* Horizontal line */}
-            <MafsLib.Line.Segment
-              point1={point1}
-              point2={[point2[0], point1[1]]}
-              color={MafsLib.Theme.green}
-              strokeWidth={1.5}
-              strokeOpacity={0.8}
-            />
-            
-            {/* Vertical line */}
-            <MafsLib.Line.Segment
-              point1={[point2[0], point1[1]]}
-              point2={point2}
-              color={MafsLib.Theme.green}
-              strokeWidth={1.5}
-              strokeOpacity={0.8}
-            />
-            
-            {/* Right angle marker */}
-            <MafsLib.Polygon
-              points={[
-                [point2[0], point1[1]],
-                [point2[0] - 0.3, point1[1]],
-                [point2[0] - 0.3, point1[1] + 0.3]
-              ]}
-              color={MafsLib.Theme.green}
-              fillOpacity={0}
-              strokeWidth={1.5}
-            />
-          </>
-        )}
+        {/* Always show the right triangle for Pythagoras visualization */}
+        {/* Horizontal line */}
+        <MafsLib.Line.Segment
+          point1={point1}
+          point2={[point2[0], point1[1]]}
+          color={MafsLib.Theme.green}
+          strokeWidth={1.5}
+          strokeDasharray="5,5"
+          strokeOpacity={0.8}
+        />
+        
+        {/* Vertical line */}
+        <MafsLib.Line.Segment
+          point1={[point2[0], point1[1]]}
+          point2={point2}
+          color={MafsLib.Theme.green}
+          strokeWidth={1.5}
+          strokeDasharray="5,5"
+          strokeOpacity={0.8}
+        />
+        
+        {/* Right angle marker */}
+        <MafsLib.Polygon
+          points={[
+            [point2[0], point1[1]],
+            [point2[0] - 0.3, point1[1]],
+            [point2[0] - 0.3, point1[1] + 0.3]
+          ]}
+          color={MafsLib.Theme.green}
+          fillOpacity={0}
+          strokeWidth={1.5}
+        />
+        
+        {/* Add text labels for sides */}
+        <MafsLib.Text 
+          x={point1[0] + dx/2} 
+          y={point1[1] - 0.3} 
+          attach="center" 
+          color={MafsLib.Theme.green}
+        >
+          a = {Math.abs(dx).toFixed(1)}
+        </MafsLib.Text>
+        
+        <MafsLib.Text 
+          x={point2[0] + 0.5} 
+          y={point1[1] + dy/2} 
+          attach="center" 
+          color={MafsLib.Theme.green}
+        >
+          b = {Math.abs(dy).toFixed(1)}
+        </MafsLib.Text>
       </MafsLib.Mafs>
     </div>
   );
 };
 
 // Component for visualizing a bearing/navigation problem
-const NavigationProblem = ({ start, bearing, distance, secondBearing, secondDistance, showSolution = false }) => {
+const NavigationProblem = ({ start, bearing, distance, secondBearing, secondDistance }) => {
   // Convert bearing to radians
   // Bearings are measured clockwise from North (0°)
   const bearingRadians = (450 - bearing) % 360 * Math.PI / 180;
@@ -108,9 +209,9 @@ const NavigationProblem = ({ start, bearing, distance, secondBearing, secondDist
   
   // Calculate view box
   const maxDistance = Math.max(distance, secondDistance || 0, 5);
-  const viewBox = {
-    x: [start[0] - maxDistance/2, start[0] + maxDistance * 1.5],
-    y: [start[1] - maxDistance/2, start[1] + maxDistance * 1.5]
+      const viewBox = {
+    x: [start[0] - maxDistance/2, start[0] + maxDistance * 1.2],
+    y: [start[1] - maxDistance/2, start[1] + maxDistance * 1.2]
   };
 
   return (
@@ -190,33 +291,29 @@ const NavigationProblem = ({ start, bearing, distance, secondBearing, secondDist
           End
         </MafsLib.Text>
         
-        {/* Direct route if showing solution */}
-        {showSolution && (
-          <>
-            <MafsLib.Line.Segment
-              point1={start}
-              point2={endPoint}
-              color={MafsLib.Theme.red}
-              strokeWidth={1.5}
-              strokeDasharray="5,5"
-            />
-            <MafsLib.Text
-              x={(start[0] + endPoint[0]) / 2 + 0.5}
-              y={(start[1] + endPoint[1]) / 2 + 0.5}
-              attach="center"
-              color={MafsLib.Theme.red}
-            >
-              {directDistance.toFixed(2)}
-            </MafsLib.Text>
-          </>
-        )}
+        {/* Always show the direct route as dashed line */}
+        <MafsLib.Line.Segment
+          point1={start}
+          point2={endPoint}
+          color={MafsLib.Theme.red}
+          strokeWidth={1.5}
+          strokeDasharray="5,5"
+        />
+        <MafsLib.Text
+          x={(start[0] + endPoint[0]) / 2 + 0.5}
+          y={(start[1] + endPoint[1]) / 2 + 0.5}
+          attach="center"
+          color={MafsLib.Theme.red}
+        >
+          d = ?
+        </MafsLib.Text>
       </MafsLib.Mafs>
     </div>
   );
 };
 
 // Component for visualizing stacked right triangles
-const StackedTriangles = ({ triangleData, showSolution = false }) => {
+const StackedTriangles = ({ triangleData }) => {
   // Calculate viewBox
   const points = triangleData.flatMap(t => t.points);
   const xValues = points.map(p => p[0]);
@@ -319,33 +416,43 @@ const StackedTriangles = ({ triangleData, showSolution = false }) => {
 const generateCoordinateDistanceChallenge = (difficulty) => {
   let point1, point2;
   
+  // Always ensure diagonal lines (no vertical or horizontal alignments)
+  const ensureDiagonal = (p1, p2) => {
+    // If points create a horizontal or vertical line, adjust second point
+    if (p1[0] === p2[0] || p1[1] === p2[1]) {
+      p2[0] = p2[0] === p1[0] ? p2[0] + 1 : p2[0];
+      p2[1] = p2[1] === p1[1] ? p2[1] + 1 : p2[1];
+    }
+    return [p1, p2];
+  };
+  
   // Adjust difficulty by using different types of coordinates
   if (difficulty === 'easy') {
-    // Simple integer coordinates with horizontal or vertical alignment
-    const isHorizontal = Math.random() < 0.5;
-    if (isHorizontal) {
-      point1 = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
-      point2 = [Math.floor(Math.random() * 5) + 5, point1[1]];
-    } else {
-      point1 = [Math.floor(Math.random() * 5), Math.floor(Math.random() * 5)];
-      point2 = [point1[0], Math.floor(Math.random() * 5) + 5];
-    }
+    // Simple integer coordinates (always diagonal)
+    point1 = [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1];
+    point2 = [point1[0] + Math.floor(Math.random() * 3) + 2, 
+              point1[1] + Math.floor(Math.random() * 3) + 2];
   } else if (difficulty === 'medium') {
-    // Integer coordinates
-    point1 = [Math.floor(Math.random() * 6), Math.floor(Math.random() * 6)];
-    point2 = [Math.floor(Math.random() * 6) + 3, Math.floor(Math.random() * 6) + 3];
+    // Integer coordinates with more variation
+    point1 = [Math.floor(Math.random() * 5) + 1, Math.floor(Math.random() * 5) + 1];
+    point2 = [point1[0] + Math.floor(Math.random() * 4) + 2, 
+              point1[1] + Math.floor(Math.random() * 4) + 2];
   } else if (difficulty === 'hard') {
     // Integer and negative coordinates
-    point1 = [Math.floor(Math.random() * 8) - 4, Math.floor(Math.random() * 8) - 4];
-    point2 = [Math.floor(Math.random() * 8) - 4, Math.floor(Math.random() * 8) - 4];
+    point1 = [Math.floor(Math.random() * 6) - 3, Math.floor(Math.random() * 6) - 3];
+    point2 = [point1[0] + Math.floor(Math.random() * 6) + 2, 
+              point1[1] + Math.floor(Math.random() * 6) + 2];
   } else { // exam
     // Integer and fractions/decimals
-    point1 = [Math.floor(Math.random() * 10) - 5, Math.floor(Math.random() * 10) - 5];
+    point1 = [Math.floor(Math.random() * 8) - 4, Math.floor(Math.random() * 8) - 4];
     point2 = [
-      Math.floor(Math.random() * 10) - 5 + Math.round(Math.random() * 2) / 2,
-      Math.floor(Math.random() * 10) - 5 + Math.round(Math.random() * 2) / 2
+      point1[0] + Math.floor(Math.random() * 6) + 2 + Math.round(Math.random() * 2) / 2,
+      point1[1] + Math.floor(Math.random() * 6) + 2 + Math.round(Math.random() * 2) / 2
     ];
   }
+  
+  // Final check to ensure points create a diagonal
+  [point1, point2] = ensureDiagonal(point1, point2);
   
   // Calculate horizontal and vertical differences
   const dx = point2[0] - point1[0];
@@ -399,11 +506,10 @@ const generateCoordinateDistanceChallenge = (difficulty) => {
       }
     ],
     shapeConfig: {
-      component: CoordinateDistance,
+      component: CoordinateVisualization,
       props: {
         point1: point1,
-        point2: point2,
-        showingDistance: false
+        point2: point2
       }
     }
   };
@@ -569,14 +675,13 @@ const generateNavigationChallenge = (difficulty) => {
     hints,
     solution,
     shapeConfig: {
-      component: NavigationProblem,
+      component: NavigationVisualization,
       props: {
         start,
         bearing,
         distance,
         secondBearing,
-        secondDistance,
-        showSolution: false
+        secondDistance
       }
     }
   };
@@ -724,39 +829,12 @@ const generateStackedTrianglesChallenge = (difficulty) => {
       }
     ],
     shapeConfig: {
-      component: StackedTriangles,
+      component: StackedTrianglesVisualization,
       props: {
-        triangleData,
-        showSolution: false
+        triangleData
       }
     }
   };
-};
-
-// Main Challenge Section Component
-const ChallengeSection = ({ currentTopic, currentLessonId }) => {
-  const challengeTypes = {
-    coordinateDistance: {
-      title: 'Coordinate Distance',
-      generator: generateCoordinateDistanceChallenge
-    },
-    navigation: {
-      title: 'Navigation & Bearings',
-      generator: generateNavigationChallenge
-    },
-    stackedTriangles: {
-      title: 'Stacked Triangles',
-      generator: generateStackedTrianglesChallenge
-    }
-  };
-
-  return (
-    <ChallengeSectionBase
-      challengeTypes={challengeTypes}
-      currentTopic={currentTopic}
-      currentLessonId={currentLessonId}
-    />
-  );
 };
 
 export default ChallengeSection;

@@ -1,24 +1,24 @@
 // src/components/math/visualizations/index.js
-import CoordinateDistance from './CoordinateDistance';
-import NavigationProblem from './NavigationProblem';
-import StackedTriangles from './StackedTriangles';
 import PythagorasVisualization from './PythagorasVisualization';
+import CoordinateVisualization from './CoordinateVisualization';
+import NavigationVisualization from './NavigationVisualization';
+import StackedTrianglesVisualization from './StackedTrianglesVisualization';
 
 export {
-  CoordinateDistance,
-  NavigationProblem,
-  StackedTriangles,
-  PythagorasVisualization
+  PythagorasVisualization,
+  CoordinateVisualization,
+  NavigationVisualization,
+  StackedTrianglesVisualization
 };
 
 // Export visualization components grouped by category
 export const visualizations = {
   // Pythagoras-related visualizations
   pythagoras: {
-    CoordinateDistance,
-    NavigationProblem,
-    StackedTriangles,
-    PythagorasVisualization
+    PythagorasVisualization,
+    CoordinateVisualization,
+    NavigationVisualization,
+    StackedTrianglesVisualization
   }
 };
 
