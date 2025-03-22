@@ -1,11 +1,11 @@
 // src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
 import React, { useState, useEffect } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
-import { RefreshCw } from 'lucide-react';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import RightTriangle from '../../../../components/math/shapes/RightTriangle';
 import IsoscelesTriangle from '../../../../components/math/shapes/IsoscelesTriangle';
 import _ from 'lodash';
+import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 
 // Pythagorean triples and non-integer examples
 const PYTHAGOREAN_EXAMPLES = [
@@ -25,6 +25,9 @@ const PYTHAGOREAN_EXAMPLES = [
 ];
 
 const ExamplesSection = ({ currentTopic, currentLessonId }) => {
+  // Get theme colors for examples section
+  const theme = useSectionTheme('examples');
+  
   const [examples, setExamples] = useState([]);
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [showHeight, setShowHeight] = useState(false);
@@ -218,6 +221,11 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     if (step && step.toggleHeight) {
       setShowHeight(true);
     }
+    
+    // Reset functionality 
+    if (step && step.reset) {
+      setShowHeight(false);
+    }
   };
   
   // Render function for example content
@@ -238,8 +246,8 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
         
         {/* Question with plenty of space for the teacher to write */}
         <div className="md:w-3/5">
-          <div className="p-5 bg-indigo-50 rounded-lg mb-6">
-            <p className="text-indigo-900 font-medium">{example.question}</p>
+          <div className={`p-5 bg-${theme.pastelBg} rounded-lg mb-6`}>
+            <p className="text-gray-700 font-medium">{example.question}</p>
           </div>
           
           {/* Spacer div for teacher's working area - no text */}
@@ -307,66 +315,24 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       </div>
     );
   };
-  
-  // Fixed the navigation buttons to properly change example types
-  const customHeader = (title, generateNewExamples) => {
-    // Get the current example for the title
-    const currentExample = examples[currentExampleIndex];
-    
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        {/* Title */}
-        <h3 className="text-xl font-semibold text-gray-800">{currentExample?.title || title}</h3>
-        
-        {/* New Question Button - Orange themed */}
-        <button
-          onClick={() => {
-            generateNewExamples();
-            setShowHeight(false); // Reset height toggle when generating new examples
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-all"
-        >
-          <RefreshCw size={18} />
-          <span>New Question</span>
-        </button>
-        
-        {/* Navigation Buttons - Orange themed */}
-        <div className="flex gap-2">
-          {examples.map((_, index) => (
-            <button
-              key={index}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                index === currentExampleIndex
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-              }`}
-              onClick={() => {
-                setCurrentExampleIndex(index);
-                setShowHeight(false); // Reset height toggle when changing examples
-              }}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   return (
-    <ExamplesSectionBase
-      examples={examples}
-      generateExamples={generateExamples}
-      renderExampleContent={renderExampleContent}
-      currentTopic={currentTopic}
-      currentLessonId={currentLessonId}
-      currentExampleIndex={currentExampleIndex}
-      setCurrentExampleIndex={setCurrentExampleIndex}
-      customHeader={customHeader}
-      useCustomHeaderOnly={true} // Only use custom header, no separate navigation
-      hideTitle={true} // Hide the "Worked Examples" title
-      onStepAction={handleStepAction} // Handle step actions like toggling the height
-    />
+    <div className="space-y-6 mb-8">
+      {/* Add a themed container with thicker border */}
+      <div className="border-2 border-t-4 border-orange-500 rounded-lg shadow-md bg-white overflow-hidden">
+        <ExamplesSectionBase
+          examples={examples}
+          generateExamples={generateExamples}
+          renderExampleContent={renderExampleContent}
+          currentTopic={currentTopic}
+          currentLessonId={currentLessonId}
+          currentExampleIndex={currentExampleIndex}
+          setCurrentExampleIndex={setCurrentExampleIndex}
+          onStepAction={handleStepAction}
+          themeKey="examples"
+        />
+      </div>
+    </div>
   );
 };
 

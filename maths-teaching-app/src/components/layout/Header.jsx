@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Timer, Eye, EyeOff, Maximize2, Play, Pause, RotateCcw } from 'lucide-react';
+import {
+    Menu, Timer, Eye, EyeOff, Maximize2, Play, Pause, RotateCcw
+} from 'lucide-react';
 import { DateDisplay } from '../common/DateDisplay';
 import { useUI } from '../../context/UIContext';
 
@@ -49,6 +51,23 @@ export const Header = ({ title, lesson }) => {
         }
     };
 
+    // Handle timer action without side effects
+    const handleTimerAction = (action, value) => {
+        // Close timer settings menu after any action
+        setShowTimerSettings(false);
+        
+        // Perform the requested timer action
+        if (action === 'start') {
+            startTimer();
+        } else if (action === 'pause') {
+            pauseTimer();
+        } else if (action === 'reset') {
+            resetTimer();
+        } else if (action === 'adjust' && value) {
+            adjustTimer(value);
+        }
+    };
+
     return (
         <header className="bg-white shadow-sm">
             <div className="container mx-auto">
@@ -93,10 +112,7 @@ export const Header = ({ title, lesson }) => {
                                             {timerOptions.map((minutes) => (
                                                 <button
                                                     key={minutes}
-                                                    onClick={() => {
-                                                        adjustTimer(minutes);
-                                                        setShowTimerSettings(false);
-                                                    }}
+                                                    onClick={() => handleTimerAction('adjust', minutes)}
                                                     className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
                                                 >
                                                     {minutes} min
@@ -106,10 +122,7 @@ export const Header = ({ title, lesson }) => {
                                         <div className="flex justify-center mt-2 pt-2 border-t border-gray-200">
                                             {!isTimerActive ? (
                                                 <button
-                                                    onClick={() => {
-                                                        startTimer();
-                                                        setShowTimerSettings(false);
-                                                    }}
+                                                    onClick={() => handleTimerAction('start')}
                                                     className="flex items-center px-3 py-1 text-sm text-green-600 hover:bg-green-50 rounded-md"
                                                 >
                                                     <Play size={16} className="mr-1" />
@@ -117,10 +130,7 @@ export const Header = ({ title, lesson }) => {
                                                 </button>
                                             ) : (
                                                 <button
-                                                    onClick={() => {
-                                                        pauseTimer();
-                                                        setShowTimerSettings(false);
-                                                    }}
+                                                    onClick={() => handleTimerAction('pause')}
                                                     className="flex items-center px-3 py-1 text-sm text-orange-600 hover:bg-orange-50 rounded-md"
                                                 >
                                                     <Pause size={16} className="mr-1" />
@@ -128,10 +138,7 @@ export const Header = ({ title, lesson }) => {
                                                 </button>
                                             )}
                                             <button
-                                                onClick={() => {
-                                                    resetTimer();
-                                                    setShowTimerSettings(false);
-                                                }}
+                                                onClick={() => handleTimerAction('reset')}
                                                 className="flex items-center px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md ml-2"
                                             >
                                                 <RotateCcw size={16} className="mr-1" />

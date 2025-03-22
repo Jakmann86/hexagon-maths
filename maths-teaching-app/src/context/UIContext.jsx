@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback, useRef } from 'react';
 
 // Extended UI Context
 const UIContext = createContext();
@@ -16,7 +16,7 @@ export const UIProvider = ({ children }) => {
     // Timer functionality
     const [timerSeconds, setTimerSeconds] = useState(300); // Default 5 minutes
     const [isTimerActive, setIsTimerActive] = useState(false);
-    const [intervalId, setIntervalId] = useState(null);
+    const intervalIdRef = useRef(null); // Use ref to avoid issues with state updates
     
     // Toggle answers visibility
     const toggleAnswers = () => setShowAnswers(!showAnswers);
@@ -31,6 +31,11 @@ export const UIProvider = ({ children }) => {
     const startTimer = useCallback(() => {
         if (isTimerActive) return;
         
+        // Clear any existing interval first
+        if (intervalIdRef.current) {
+            clearInterval(intervalIdRef.current);
+        }
+        
         const id = setInterval(() => {
             setTimerSeconds(prev => {
                 if (prev <= 1) {
@@ -42,17 +47,17 @@ export const UIProvider = ({ children }) => {
             });
         }, 1000);
         
-        setIntervalId(id);
+        intervalIdRef.current = id;
         setIsTimerActive(true);
     }, [isTimerActive]);
     
     const pauseTimer = useCallback(() => {
-        if (intervalId) {
-            clearInterval(intervalId);
-            setIntervalId(null);
+        if (intervalIdRef.current) {
+            clearInterval(intervalIdRef.current);
+            intervalIdRef.current = null;
         }
         setIsTimerActive(false);
-    }, [intervalId]);
+    }, []);
     
     const resetTimer = useCallback(() => {
         pauseTimer();

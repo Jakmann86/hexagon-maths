@@ -153,12 +153,12 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     return (
         <div className="space-y-6 mb-8">
             {/* Use DiagnosticSectionBase with themed wrapper */}
-            <div className={`border-t-4 border-${theme.primary} rounded-lg shadow-md bg-white overflow-hidden`}>
+            <div className="border-2 border-t-4 border-purple-500 rounded-lg shadow-md bg-white overflow-hidden">
                 <DiagnosticSectionBase
                     questionTypes={questionTypes}
                     currentTopic={currentTopic}
                     currentLessonId={currentLessonId}
-                    themeKey={theme.key} // Pass theme key to base component
+                    themeKey="diagnostic" // Pass theme key to base component
                 />
             </div>
         </div>

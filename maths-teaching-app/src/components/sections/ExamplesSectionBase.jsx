@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
+import { useSectionTheme } from '../../hooks/useSectionTheme';
 
 /**
  * ExamplesSectionBase template for displaying worked examples with step-by-step solutions
@@ -12,14 +13,11 @@ import { useUI } from '../../context/UIContext';
  * @param {Function} renderExampleContent - Function to render the content of an example (visualization, etc.)
  * @param {string} currentTopic - Current topic identifier
  * @param {number} currentLessonId - Current lesson identifier
- * @param {string} title - Section title
- * @param {Function} customNavigation - Custom navigation component function (optional)
- * @param {Function} customHeader - Custom header component function (optional)
- * @param {boolean} hideTitle - Whether to hide the default title
- * @param {boolean} useCustomHeaderOnly - Whether to use only the custom header (skipping navigation)
+ * @param {string} title - Section title (optional, uses example title if available)
+ * @param {Function} onStepAction - Callback for handling custom step actions
+ * @param {string} themeKey - Theme key for section colors (default: 'examples')
  * @param {number} currentExampleIndex - Current example index (optional, for controlled component)
  * @param {Function} setCurrentExampleIndex - Function to set current example index (optional, for controlled component)
- * @param {Function} onStepAction - Callback for handling custom step actions
  */
 const ExamplesSectionBase = ({
     examples = [],
@@ -28,14 +26,14 @@ const ExamplesSectionBase = ({
     currentTopic,
     currentLessonId,
     title = "Worked Examples",
-    customNavigation = null,
-    customHeader = null,
-    hideTitle = false,
-    useCustomHeaderOnly = false,
+    onStepAction = null,
+    themeKey = 'examples',
     currentExampleIndex: externalIndex,
-    setCurrentExampleIndex: setExternalIndex,
-    onStepAction = null
+    setCurrentExampleIndex: setExternalIndex
 }) => {
+    // Get theme colors for the section
+    const theme = useSectionTheme(themeKey);
+
     const { showAnswers } = useUI();
     // Use internal state only if external state is not provided
     const [internalIndex, setInternalIndex] = useState(0);
@@ -68,51 +66,15 @@ const ExamplesSectionBase = ({
 
     const currentExample = examples[currentExampleIndex];
 
-    const goToNextExample = () => {
-        setCurrentExampleIndex((prev) => (prev + 1) % examples.length);
+    // Function to regenerate examples and reset state
+    const handleGenerateNew = () => {
+        generateExamples();
+        setVisibleStepIndex(null);
+        if (onStepAction) {
+            // Reset any custom step state via callback
+            onStepAction({ reset: true });
+        }
     };
-
-    const goToPrevExample = () => {
-        setCurrentExampleIndex((prev) => (prev - 1 + examples.length) % examples.length);
-    };
-
-    // Default header component
-    const renderDefaultHeader = () => (
-        <div className="flex justify-between items-center mb-6">
-            {!hideTitle && <h2 className="text-2xl font-bold text-gray-800">{title}</h2>}
-            <button
-                onClick={generateExamples}
-                className="flex items-center gap-2 px-3 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition"
-                title="Generate new examples"
-            >
-                <RefreshCw size={18} />
-                <span className="text-sm font-medium">New Examples</span>
-            </button>
-        </div>
-    );
-
-    // Default navigation component
-    const renderDefaultNavigation = () => (
-        <div className="flex justify-between items-center mb-4">
-            <button
-                onClick={goToPrevExample}
-                className="p-2 rounded hover:bg-gray-100"
-                title="Previous example"
-            >
-                <ChevronLeft size={20} />
-            </button>
-            <span className="flex items-center text-gray-500">
-                {currentExampleIndex + 1} / {examples.length}
-            </span>
-            <button
-                onClick={goToNextExample}
-                className="p-2 rounded hover:bg-gray-100"
-                title="Next example"
-            >
-                <ChevronRight size={20} />
-            </button>
-        </div>
-    );
 
     // Handle steps and step actions
     const handleStepClick = (index, step) => {
@@ -124,17 +86,46 @@ const ExamplesSectionBase = ({
 
     return (
         <div className="space-y-6">
-            {/* Render either custom or default header */}
-            {customHeader 
-                ? customHeader(currentExample?.title, generateExamples) 
-                : renderDefaultHeader()
-            }
-
-            {/* Render navigation if not using custom header only */}
-            {!useCustomHeaderOnly && (customNavigation 
-                ? customNavigation(currentExampleIndex, setCurrentExampleIndex, examples.length) 
-                : renderDefaultNavigation())
-            }
+            {/* Integrated header with title, new question button, and navigation */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 px-6 pt-6">
+                {/* Title - use current example title if available, otherwise use prop title */}
+                <h3 className="text-xl font-semibold text-gray-800">
+                    {currentExample?.title || title}
+                </h3>
+                
+                {/* New Question Button */}
+                <button
+                    onClick={handleGenerateNew}
+                    className={`flex items-center gap-2 px-4 py-2 bg-${theme.pastelBg} text-${theme.secondaryText} rounded-lg hover:bg-${theme.secondary} transition-all`}
+                >
+                    <RefreshCw size={18} />
+                    <span>New Question</span>
+                </button>
+                
+                {/* Navigation Buttons */}
+                <div className="flex gap-2">
+                    {examples.map((_, index) => (
+                        <button
+                            key={index}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                                index === currentExampleIndex
+                                    ? `bg-${theme.primary} text-white`
+                                    : `bg-${theme.pastelBg} text-${theme.secondaryText} hover:bg-${theme.secondary}`
+                            }`}
+                            onClick={() => {
+                                setCurrentExampleIndex(index);
+                                setVisibleStepIndex(null);
+                                if (onStepAction) {
+                                    // Reset any custom step state
+                                    onStepAction({ reset: true });
+                                }
+                            }}
+                        >
+                            {index + 1}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {/* Current example card */}
             <Card>
@@ -145,19 +136,19 @@ const ExamplesSectionBase = ({
                         
                         {/* Solution steps - visible only when showAnswers is true */}
                         {showAnswers && currentExample.steps && (
-                            <div className="mt-6 space-y-3 p-4 bg-green-50 rounded-lg">
-                                <h4 className="font-semibold text-green-800">Solution:</h4>
+                            <div className={`mt-6 space-y-3 p-4 bg-${theme.pastelBg} rounded-lg`}>
+                                <h4 className={`font-semibold text-${theme.secondaryText} mb-4`}>Solution:</h4>
                                 {currentExample.steps.map((step, stepIndex) => (
                                     <div 
                                         key={stepIndex} 
                                         className={`step cursor-pointer p-3 rounded-lg transition-colors ${
                                             visibleStepIndex === stepIndex 
-                                                ? 'bg-green-100 border border-green-200' 
-                                                : 'hover:bg-green-100'
+                                                ? `bg-${theme.secondary} border border-${theme.borderColor}` 
+                                                : `hover:bg-${theme.secondary} hover:bg-opacity-50`
                                         }`}
                                         onClick={() => handleStepClick(stepIndex, step)}
                                     >
-                                        <p className="text-green-700">{step.explanation}</p>
+                                        <p className="text-gray-700">{step.explanation}</p>
                                         <div className="flex justify-center my-2">
                                             {step.math}
                                         </div>
