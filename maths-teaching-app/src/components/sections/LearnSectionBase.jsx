@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '../common/Card';
 import { ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
+import { useSectionTheme } from '../../hooks/useSectionTheme';
 
 /**
  * LearnSectionBase - A template component for structured lesson content
+ * Enhanced with section-specific theming
  * 
  * @param {Object} props
  * @param {string} props.title - Main lesson title
@@ -28,12 +30,15 @@ const LearnSectionBase = ({
   currentTopic,
   currentLessonId
 }) => {
+  // Get theme colors for the 'learn' section
+  const theme = useSectionTheme('learn');
+  
   // State for expandable sections
   const [showHints, setShowHints] = useState(false);
   
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className={`border-t-4 border-${theme.primary}`}>
         <CardContent className="p-6">
           {/* Lesson Title */}
           <h2 className="text-2xl font-bold text-gray-800 mb-1">{title}</h2>
@@ -43,7 +48,7 @@ const LearnSectionBase = ({
             {/* Introduction Section */}
             {introduction && (
               <section className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700">Introduction</h3>
+                <h3 className={`text-xl font-semibold text-${theme.secondaryText}`}>Introduction</h3>
                 <div className="text-gray-600">
                   {introduction}
                 </div>
@@ -53,8 +58,8 @@ const LearnSectionBase = ({
             {/* Main Concept Section */}
             {concept && (
               <section className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700">Key Concept</h3>
-                <div className="text-gray-600">
+                <h3 className={`text-xl font-semibold text-${theme.secondaryText}`}>Key Concept</h3>
+                <div className={`bg-${theme.pastelBg} p-4 rounded-lg`}>
                   {concept}
                 </div>
               </section>
@@ -63,7 +68,7 @@ const LearnSectionBase = ({
             {/* Visualization Section */}
             {visualization && (
               <section className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700">Interactive Visualization</h3>
+                <h3 className={`text-xl font-semibold text-${theme.secondaryText}`}>Interactive Visualization</h3>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   {visualization}
                 </div>
@@ -75,7 +80,7 @@ const LearnSectionBase = ({
               <section className="space-y-4">
                 <button
                   onClick={() => setShowHints(!showHints)}
-                  className="flex items-center justify-between w-full p-4 bg-amber-50 text-amber-800 rounded-lg hover:bg-amber-100 transition-colors"
+                  className={`flex items-center justify-between w-full p-4 bg-${theme.pastelBg} text-${theme.pastelText} rounded-lg hover:bg-${theme.secondary} transition-colors`}
                 >
                   <div className="flex items-center">
                     <Lightbulb className="mr-2 h-5 w-5" />
@@ -89,7 +94,7 @@ const LearnSectionBase = ({
                     <p className="text-gray-600 italic text-sm">
                       Use these discussion prompts and questions to guide students' understanding:
                     </p>
-                    <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <ul className={`list-disc list-inside space-y-2 text-${theme.secondaryText}`}>
                       {hints.map((hint, index) => (
                         <li key={index}>{hint}</li>
                       ))}
@@ -102,8 +107,8 @@ const LearnSectionBase = ({
             {/* Conclusion Section */}
             {conclusion && (
               <section className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700">Summary & Applications</h3>
-                <div className="text-gray-600">
+                <h3 className={`text-xl font-semibold text-${theme.secondaryText}`}>Summary & Applications</h3>
+                <div className={`bg-${theme.pastelBg} border border-${theme.borderColor} p-4 rounded-lg`}>
                   {conclusion}
                 </div>
               </section>

@@ -4,13 +4,16 @@ import { Card, CardContent } from '../../../../components/common/Card';
 import PythagorasVisualization from '../../../../components/math/visualizations/PythagorasVisualization';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import { useUI } from '../../../../context/UIContext';
+import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 
 const LearnSection = ({ currentTopic, currentLessonId }) => {
   const { showAnswers } = useUI();
+  // Get theme colors for learn section
+  const theme = useSectionTheme('learn');
   
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className={`border-t-4 border-${theme.primary}`}>
         <CardContent className="p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Pythagoras' Theorem</h2>
           
@@ -21,12 +24,12 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
           
           {/* Teacher hints - only shown when answers/hints are toggled on */}
           {showAnswers && (
-            <div className="mt-8 border-t pt-6">
+            <div className={`mt-8 border-t border-${theme.borderColor} pt-6`}>
               <h3 className="text-lg font-semibold text-gray-700 mb-4">Teacher Notes</h3>
               
               {/* Formulas section */}
-              <div className="mb-6 bg-indigo-50 p-4 rounded-lg">
-                <h4 className="font-medium text-indigo-800 mb-2">Key Formulas</h4>
+              <div className={`mb-6 bg-${theme.pastelBg} p-4 rounded-lg`}>
+                <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Key Formulas</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex justify-center">
                     <MathDisplay math="a^2 + b^2 = c^2" />
@@ -51,9 +54,9 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
                   </ul>
                 </div>
                 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-800 mb-2">Key Points</h4>
-                  <ul className="list-disc list-inside space-y-2 text-blue-700">
+                <div className={`bg-${theme.pastelBg} p-4 rounded-lg`}>
+                  <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Key Points</h4>
+                  <ul className={`list-disc list-inside space-y-2 text-${theme.secondaryText}`}>
                     <li>Pythagorean triples are sets of integers that satisfy the theorem:
                       <ul className="list-disc list-inside ml-4 mt-1">
                         <li>(3, 4, 5)</li>
@@ -68,12 +71,12 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
                 </div>
               </div>
               
-              <div className="mt-4 bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-green-800 mb-2">Applications & Activities</h4>
+              <div className={`mt-4 bg-${theme.pastelBg} p-4 rounded-lg`}>
+                <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Applications & Activities</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h5 className="font-medium mb-1">Real-World Applications</h5>
-                    <ul className="list-disc list-inside space-y-1 text-green-700">
+                    <ul className={`list-disc list-inside space-y-1 text-${theme.secondaryText}`}>
                       <li>Construction: Creating right angles</li>
                       <li>Navigation: Calculating direct distances</li>
                       <li>Engineering: Structural stability</li>
@@ -82,7 +85,7 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
                   </div>
                   <div>
                     <h5 className="font-medium mb-1">Classroom Activities</h5>
-                    <ol className="list-decimal list-inside space-y-1 text-green-700">
+                    <ol className={`list-decimal list-inside space-y-1 text-${theme.secondaryText}`}>
                       <li>Create paper squares to physically verify the relationship</li>
                       <li>Challenge: Find other Pythagorean triples</li>
                       <li>Measure classroom objects and apply the theorem</li>

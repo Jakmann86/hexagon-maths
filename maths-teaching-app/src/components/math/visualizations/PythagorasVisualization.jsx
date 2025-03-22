@@ -5,8 +5,12 @@ import 'mafs/core.css';
 import 'mafs/font.css';
 import { Type } from 'lucide-react';
 import { Slider } from '../../common/Slider';
+import { useSectionTheme } from '../../../hooks/useSectionTheme';
 
 const PythagorasVisualization = () => {
+  // Get learn section theme colors
+  const theme = useSectionTheme('learn');
+  
   // State for triangle dimensions - using integers to avoid visualization issues
   const [base, setBase] = useState(3);
   const [height, setHeight] = useState(4);
@@ -14,7 +18,7 @@ const PythagorasVisualization = () => {
   // Calculate hypotenuse using Pythagoras' theorem
   const hypotenuse = Math.sqrt(base * base + height * height);
   
-  // State for labels toggle (squares always show)
+  // State for labels toggle
   const [showLabels, setShowLabels] = useState(true);
   
   // Calculate square points
@@ -32,7 +36,7 @@ const PythagorasVisualization = () => {
     [-height, 0]
   ];
   
-  // Improved direct coordinate calculation for hypotenuse square
+  // Calculate hypotenuse square
   const hypotenuseSquarePoints = calculateHypotenuseSquareDirect(base, height);
   
   // Calculate areas
@@ -40,37 +44,47 @@ const PythagorasVisualization = () => {
   const heightSquareArea = Math.round(height * height * 100) / 100;
   const hypotenuseSquareArea = Math.round(hypotenuse * hypotenuse * 100) / 100;
   
-  // Calculate viewBox with adjusted proportions (10% taller, 20% narrower)
-  const maxHeight = Math.max(height, base, hypotenuse) * 1.65; // 10% more height
-  const maxWidth = Math.max(height, base, hypotenuse) * 1.2;   // 20% less width
+  // Calculate viewBox with adjusted proportions
+  const maxHeight = Math.max(height, base, hypotenuse) * 1.65;
+  const maxWidth = Math.max(height, base, hypotenuse) * 1.2;
   const viewBox = { 
     x: [-Math.max(height, maxWidth/2), maxWidth], 
     y: [-Math.max(base, maxHeight/2), maxHeight] 
+  };
+
+  // Theme-specific colors for the visualization
+  const visualColors = {
+    triangleFill: `${theme.key}`,
+    baseSquareFill: 'red',
+    heightSquareFill: 'blue',
+    hypotenuseSquareFill: `${theme.key}`
   };
   
   return (
     <div className="pythagoras-visualization space-y-4">
       {/* Controls for side lengths - using integers only */}
-      <div className="controls grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+      <div className={`controls grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-${theme.pastelBg} rounded-lg`}>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Base length: {base}</label>
+          <label className={`text-sm font-medium text-${theme.pastelText}`}>Base length: {base}</label>
           <Slider 
             value={base} 
             onChange={(value) => setBase(Math.round(value))} 
             min={1} 
             max={10} 
-            step={1} 
+            step={1}
+            className={`accent-${theme.primary}`}
           />
         </div>
         
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Height: {height}</label>
+          <label className={`text-sm font-medium text-${theme.pastelText}`}>Height: {height}</label>
           <Slider 
             value={height} 
             onChange={(value) => setHeight(Math.round(value))} 
             min={1} 
             max={10} 
-            step={1} 
+            step={1}
+            className={`accent-${theme.primary}`}
           />
         </div>
       </div>
@@ -80,7 +94,7 @@ const PythagorasVisualization = () => {
         <button
           onClick={() => setShowLabels(!showLabels)}
           className={`px-3 py-2 rounded-md flex items-center ${
-            showLabels ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500'
+            showLabels ? `bg-${theme.secondary} text-${theme.secondaryText}` : 'bg-gray-100 text-gray-500'
           } hover:opacity-80 transition-colors`}
           title="Toggle labels"
         >
@@ -95,11 +109,11 @@ const PythagorasVisualization = () => {
         <span className="mx-1">+</span>
         <span className="text-blue-500">{heightSquareArea}</span>
         <span className="mx-1">=</span>
-        <span className="text-green-500">{hypotenuseSquareArea}</span>
+        <span className={`text-${theme.secondaryText}`}>{hypotenuseSquareArea}</span>
       </div>
       
       {/* Visualization */}
-      <div className="bg-white border rounded-lg shadow-sm">
+      <div className={`bg-white border border-${theme.borderColor} rounded-lg shadow-sm`}>
         <MafsLib.Mafs
           viewBox={viewBox}
           preserveAspectRatio="contain"
@@ -111,7 +125,7 @@ const PythagorasVisualization = () => {
           {/* Right triangle */}
           <MafsLib.Polygon
             points={[[0, 0], [base, 0], [0, height]]}
-            color="purple"
+            color={visualColors.triangleFill}
             fillOpacity={0.1}
             strokeWidth={2.5}
           />
@@ -131,7 +145,7 @@ const PythagorasVisualization = () => {
           {/* Base square */}
           <MafsLib.Polygon
             points={baseSquarePoints}
-            color="red"
+            color={visualColors.baseSquareFill}
             fillOpacity={0.2}
             strokeWidth={2}
           />
@@ -139,7 +153,7 @@ const PythagorasVisualization = () => {
           {/* Height square */}
           <MafsLib.Polygon
             points={heightSquarePoints}
-            color="blue"
+            color={visualColors.heightSquareFill}
             fillOpacity={0.2}
             strokeWidth={2}
           />
@@ -147,15 +161,14 @@ const PythagorasVisualization = () => {
           {/* Hypotenuse square */}
           <MafsLib.Polygon
             points={hypotenuseSquarePoints}
-            color="green"
+            color={visualColors.hypotenuseSquareFill}
             fillOpacity={0.2}
             strokeWidth={2}
           />
           
-          {/* Labels - only shown when toggled on, with refined positions */}
+          {/* Labels - only shown when toggled on */}
           {showLabels && (
             <>
-              {/* Area labels only (no side length labels with a, b, c) */}
               <MafsLib.Text x={base/2} y={-base/2} attach="center" color="red">
                 {baseSquareArea}
               </MafsLib.Text>
@@ -164,12 +177,11 @@ const PythagorasVisualization = () => {
                 {heightSquareArea}
               </MafsLib.Text>
               
-              {/* Center the hypotenuse square label for better visibility */}
               <MafsLib.Text 
                 x={(hypotenuseSquarePoints[0][0] + hypotenuseSquarePoints[2][0])/2} 
                 y={(hypotenuseSquarePoints[0][1] + hypotenuseSquarePoints[2][1])/2} 
                 attach="center"
-                color="green"
+                color={visualColors.hypotenuseSquareFill}
               >
                 {hypotenuseSquareArea}
               </MafsLib.Text>

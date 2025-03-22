@@ -5,8 +5,12 @@ import { generateSquareAreaQuestion, generateSquareSideLengthQuestion } from '..
 import { generateSquareRootQuestion } from '../../../../generators/mathematical/squareRootGenerators';
 import * as MafsLib from 'mafs';
 import _ from 'lodash'; // Ensure lodash is imported
+import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
+    // Get theme colors for diagnostic section
+    const theme = useSectionTheme('diagnostic');
+
     // Adapter for square area questions
     const squareAreaAdapter = () => {
         const generated = generateSquareAreaQuestion({ units: 'cm' });
@@ -147,11 +151,17 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     };
 
     return (
-        <DiagnosticSectionBase
-            questionTypes={questionTypes}
-            currentTopic={currentTopic}
-            currentLessonId={currentLessonId}
-        />
+        <div className="space-y-6 mb-8">
+            {/* Use DiagnosticSectionBase with themed wrapper */}
+            <div className={`border-t-4 border-${theme.primary} rounded-lg shadow-md bg-white overflow-hidden`}>
+                <DiagnosticSectionBase
+                    questionTypes={questionTypes}
+                    currentTopic={currentTopic}
+                    currentLessonId={currentLessonId}
+                    themeKey={theme.key} // Pass theme key to base component
+                />
+            </div>
+        </div>
     );
 };
 

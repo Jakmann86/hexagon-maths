@@ -3,17 +3,22 @@ import { RefreshCw, Check, X, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
 import MathDisplay from '../common/MathDisplay';
+import { useSectionTheme } from '../../hooks/useSectionTheme';
 
 /**
  * DiagnosticSectionBase provides a reusable template for diagnostic assessments
- * across different mathematical topics
+ * across different mathematical topics with theming support
  */
 const DiagnosticSectionBase = ({
     questionTypes = {},
     currentTopic,
     currentLessonId,
-    onQuestionComplete = () => { }
+    onQuestionComplete = () => { },
+    themeKey = 'diagnostic' // Default to diagnostic theme
 }) => {
+    // Get theme colors for the section
+    const theme = useSectionTheme(themeKey);
+    
     // State management for question flow
     const [showAnswer, setShowAnswer] = useState(false);
     const [showFeedback, setShowFeedback] = useState(false);
@@ -90,8 +95,8 @@ const DiagnosticSectionBase = ({
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-pulse flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex justify-center items-center mb-4">
-                        <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+                    <div className={`w-12 h-12 rounded-full bg-${theme.pastelBg} flex justify-center items-center mb-4`}>
+                        <RefreshCw className={`w-6 h-6 text-${theme.secondaryText} animate-spin`} />
                     </div>
                     <div className="text-gray-600">Loading diagnostic questions...</div>
                 </div>
@@ -101,7 +106,7 @@ const DiagnosticSectionBase = ({
 
     // Main render
     return (
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
             {/* Question Type Selector */}
             <div className="flex flex-wrap gap-2 justify-center sm:justify-start overflow-x-auto pb-2">
                 {Object.entries(questionTypes).map(([id, { title }]) => (
@@ -110,7 +115,7 @@ const DiagnosticSectionBase = ({
                         onClick={() => setCurrentTypeId(id)}
                         className={`px-4 py-2 rounded-lg transition-all transform ${
                             currentTypeId === id
-                                ? 'bg-indigo-100 text-indigo-700 shadow-md scale-105'
+                                ? `bg-${theme.secondary} text-${theme.secondaryText} shadow-md scale-105`
                                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:scale-105'
                         }`}
                     >
@@ -120,7 +125,7 @@ const DiagnosticSectionBase = ({
             </div>
 
             {/* Question Card */}
-            <Card className="shadow-lg border-t-4 border-indigo-500 overflow-hidden">
+            <Card className={`shadow-md overflow-hidden`}>
                 <CardContent className="p-0">
                     <div className="p-6">
                         {currentQuestion && (
@@ -150,7 +155,7 @@ const DiagnosticSectionBase = ({
                                                         : option === selectedAnswer
                                                             ? 'bg-red-50 border-red-500 text-red-700'
                                                             : 'bg-gray-50 border-gray-200 opacity-70'
-                                                    : 'hover:bg-gray-50 border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                                                    : `hover:bg-${theme.pastelBg} border-gray-200 hover:border-${theme.borderColor} hover:shadow-md`
                                                 }
                                             `}
                                         >
@@ -204,7 +209,7 @@ const DiagnosticSectionBase = ({
                                         {/* Next Question Button */}
                                         <button
                                             onClick={nextQuestion}
-                                            className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg transform hover:translate-y-[-2px]"
+                                            className={`flex items-center space-x-2 px-6 py-3 bg-${theme.primary} text-white rounded-lg hover:bg-${theme.primaryHover} transition-colors shadow-md hover:shadow-lg transform hover:translate-y-[-2px]`}
                                         >
                                             <span>Next Question</span>
                                             <ArrowRight className="w-5 h-5" />
@@ -217,7 +222,7 @@ const DiagnosticSectionBase = ({
                                     <div className="flex justify-center mt-6">
                                         <button
                                             onClick={generateNewQuestion}
-                                            className="flex items-center space-x-2 px-6 py-3 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
+                                            className={`flex items-center space-x-2 px-6 py-3 bg-${theme.pastelBg} text-${theme.pastelText} rounded-lg hover:bg-${theme.secondary} transition-colors`}
                                         >
                                             <RefreshCw className="w-5 h-5" />
                                             <span>New Question</span>
