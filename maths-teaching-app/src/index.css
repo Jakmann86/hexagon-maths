@@ -1,6 +1,8 @@
+@import './styles/mafs-overrides.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 @layer base {
   :root {
@@ -76,21 +78,38 @@
   }
 }
 
-/* Override Mafs background */
-.mafs-transparent {
+/* Force Mafs background transparency - add to index.css */
+
+/* Target the root SVG element directly */
+.mafs-wrapper svg {
+  background: transparent !important;
+}
+
+/* Target the root background rectangle that Mafs creates */
+.mafs-wrapper svg > rect:first-child {
+  fill: transparent !important;
+}
+
+/* Force the mafs-container to be transparent */
+.mafs-container {
   --mafs-bg: transparent !important;
   background: transparent !important;
 }
 
-.mafs-transparent svg {
-  background: transparent !important;
+/* Add !important to all our existing overrides */
+.mafs-wrapper * {
+  background: inherit !important;
 }
 
-.mafs-transparent foreignObject {
-  background: transparent !important;
+/* Force dark text on all text elements */
+.mafs-wrapper text {
+  fill: #000000 !important;
+  color: #000000 !important;
 }
 
-/* Make all Mafs text black */
-.mafs-transparent text {
-  fill: #000 !important;
+/* Override SVG styles using more specific selectors */
+.MafsView-extension svg,
+.MafsView svg,
+.MafsView * {
+  background: transparent !important;
 }

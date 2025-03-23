@@ -5,8 +5,7 @@ import { Sidebar } from './Sidebar';
 import { SectionNav } from '../navigation/SectionNav';
 import { useUI } from '../../context/UIContext';
 import { curriculum } from '../../data/curriculum';
-import { getWeekFromTopic } from '../../data/topicMapping';
-import WorkingMafs from '../math/WorkingMafs';   
+import { getWeekFromTopic } from '../../data/topicMapping';   
  
 // Import components from new structure
 import { DiagnosticSection, StarterSection, LearnSection, ExamplesSection } from '../../content/topics/trigonometry-i/pythagoras';

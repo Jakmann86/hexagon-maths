@@ -18,8 +18,10 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Pythagoras' Theorem</h2>
           
           {/* Main visualization - central focus */}
-          <div className="mb-4">
-            <PythagorasVisualization />
+          <div className="mb-4 flex justify-center">
+            <div className="w-full max-w-2xl">
+              <PythagorasVisualization />
+            </div>
           </div>
           
           {/* Teacher hints - only shown when answers/hints are toggled on */}

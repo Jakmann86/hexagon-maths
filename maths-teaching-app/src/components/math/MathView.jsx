@@ -1,8 +1,6 @@
 // src/components/math/MathView.jsx
 import React from 'react';
-import * as MafsLib from 'mafs';
-import 'mafs/core.css';
-import 'mafs/font.css';
+import MafsWrapper from './MafsWrapper';
 
 /**
  * A container component for all mathematical visualizations
@@ -12,27 +10,34 @@ import 'mafs/font.css';
  * @param {number} width - Container width
  * @param {number} height - Container height
  * @param {string} className - Additional CSS classes
+ * @param {string} background - Background color ('transparent', 'white', etc.)
+ * @param {string} textColor - Text color
  */
 const MathView = ({
     viewBox = { x: [-5, 5], y: [-5, 5] },
     width = '100%',
     height = 300,
     className = '',
+    background = 'transparent',
+    textColor = 'black',
     children,
     ...props
 }) => {
     return (
         <div
             className={`math-view-container ${className}`}
-            style={{ width, height }}
+            style={{ width, height: typeof height === 'number' ? `${height}px` : height }}
         >
-            <MafsLib.Mafs
+            <MafsWrapper
                 viewBox={viewBox}
                 preserveAspectRatio="contain"
+                height={typeof height === 'number' ? height : parseInt(height)}
+                background={background}
+                textColor={textColor}
                 {...props}
             >
                 {children}
-            </MafsLib.Mafs>
+            </MafsWrapper>
         </div>
     );
 };
