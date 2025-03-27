@@ -413,46 +413,53 @@ const StackedTriangles = ({ triangleData }) => {
 };
 
 // Challenge generators
+// Challenge generators
 const generateCoordinateDistanceChallenge = (difficulty) => {
   let point1, point2;
   
-  // Always ensure diagonal lines (no vertical or horizontal alignments)
-  const ensureDiagonal = (p1, p2) => {
-    // If points create a horizontal or vertical line, adjust second point
-    if (p1[0] === p2[0] || p1[1] === p2[1]) {
-      p2[0] = p2[0] === p1[0] ? p2[0] + 1 : p2[0];
-      p2[1] = p2[1] === p1[1] ? p2[1] + 1 : p2[1];
-    }
-    return [p1, p2];
+  // Function to ensure we get varied coordinate arrangements
+  const generateVariedPoints = (minRange, maxRange) => {
+    // Generate first point
+    const x1 = Math.floor(Math.random() * minRange) - Math.floor(minRange/2);
+    const y1 = Math.floor(Math.random() * minRange) - Math.floor(minRange/2);
+    
+    // Generate offsets for second point
+    const xOffset = Math.floor(Math.random() * maxRange) + 2; // At least 2 units apart
+    const yOffset = Math.floor(Math.random() * maxRange) + 2; // At least 2 units apart
+    
+    // Randomly decide if x and y offsets should be positive or negative
+    // This ensures we get all four quadrant possibilities
+    const xDirection = Math.random() < 0.5 ? 1 : -1;
+    const yDirection = Math.random() < 0.5 ? 1 : -1;
+    
+    // Calculate second point coordinates
+    const x2 = x1 + (xOffset * xDirection);
+    const y2 = y1 + (yOffset * yDirection);
+    
+    return [[x1, y1], [x2, y2]];
   };
   
-  // Adjust difficulty by using different types of coordinates
+  // Adjust difficulty by using different ranges
   if (difficulty === 'easy') {
-    // Simple integer coordinates (always diagonal)
-    point1 = [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1];
-    point2 = [point1[0] + Math.floor(Math.random() * 3) + 2, 
-              point1[1] + Math.floor(Math.random() * 3) + 2];
+    [point1, point2] = generateVariedPoints(4, 3);
   } else if (difficulty === 'medium') {
-    // Integer coordinates with more variation
-    point1 = [Math.floor(Math.random() * 5) + 1, Math.floor(Math.random() * 5) + 1];
-    point2 = [point1[0] + Math.floor(Math.random() * 4) + 2, 
-              point1[1] + Math.floor(Math.random() * 4) + 2];
+    [point1, point2] = generateVariedPoints(5, 4);
   } else if (difficulty === 'hard') {
-    // Integer and negative coordinates
-    point1 = [Math.floor(Math.random() * 6) - 3, Math.floor(Math.random() * 6) - 3];
-    point2 = [point1[0] + Math.floor(Math.random() * 6) + 2, 
-              point1[1] + Math.floor(Math.random() * 6) + 2];
+    [point1, point2] = generateVariedPoints(6, 5);
   } else { // exam
-    // Integer and fractions/decimals
-    point1 = [Math.floor(Math.random() * 8) - 4, Math.floor(Math.random() * 8) - 4];
-    point2 = [
-      point1[0] + Math.floor(Math.random() * 6) + 2 + Math.round(Math.random() * 2) / 2,
-      point1[1] + Math.floor(Math.random() * 6) + 2 + Math.round(Math.random() * 2) / 2
-    ];
+    // For exam difficulty, occasionally add decimal values
+    [point1, point2] = generateVariedPoints(8, 6);
+    
+    // Add decimal component 30% of the time
+    if (Math.random() < 0.3) {
+      point2[0] += Math.round(Math.random() * 2) / 2; // Add 0.5 or 1.0
+      point2[1] += Math.round(Math.random() * 2) / 2; // Add 0.5 or 1.0
+    }
   }
   
-  // Final check to ensure points create a diagonal
-  [point1, point2] = ensureDiagonal(point1, point2);
+  // Ensure no straight horizontal or vertical lines
+  if (point1[0] === point2[0]) point2[0] += 1;
+  if (point1[1] === point2[1]) point2[1] += 1;
   
   // Calculate horizontal and vertical differences
   const dx = point2[0] - point1[0];
@@ -471,8 +478,8 @@ const generateCoordinateDistanceChallenge = (difficulty) => {
     problemText: `Find the distance between the points A(${point1[0]}, ${point1[1]}) and B(${point2[0]}, ${point2[1]}) on the coordinate plane.`,
     hints: [
       "Remember that you can use the Pythagorean theorem to find the distance between two points.",
-      `Find the horizontal distance (difference in x-coordinates) between the points: ${point2[0]} - ${point1[0]} = ${dx}`,
-      `Find the vertical distance (difference in y-coordinates) between the points: ${point2[1]} - ${point1[1]} = ${dy}`,
+      `Find the horizontal distance (difference in x-coordinates) between the points: |${point2[0]} - ${point1[0]}| = ${Math.abs(dx)}`,
+      `Find the vertical distance (difference in y-coordinates) between the points: |${point2[1]} - ${point1[1]}| = ${Math.abs(dy)}`,
       "Apply the Pythagorean theorem: distance² = horizontal² + vertical²"
     ],
     solution: [
@@ -489,19 +496,19 @@ const generateCoordinateDistanceChallenge = (difficulty) => {
         formula: `\\Delta y = ${point2[1]} - ${point1[1]} = ${dy}`
       },
       {
-        explanation: "Square both differences:",
-        formula: `\\Delta x^2 = ${dx}^2 = ${dx * dx}`
+        explanation: "Square the differences:",
+        formula: `(\\Delta x)^2 = ${dx}^2 = ${dx * dx}`
       },
       {
-        explanation: "Square both differences:",
-        formula: `\\Delta y^2 = ${dy}^2 = ${dy * dy}`
+        explanation: "Square the differences:",
+        formula: `(\\Delta y)^2 = ${dy}^2 = ${dy * dy}`
       },
       {
-        explanation: "Apply the Pythagorean theorem by adding the squares:",
+        explanation: "Add the squares:",
         formula: `d^2 = ${dx * dx} + ${dy * dy} = ${dx * dx + dy * dy}`
       },
       {
-        explanation: "Find the distance by taking the square root:",
+        explanation: "Take the square root to find the distance:",
         formula: `d = \\sqrt{${dx * dx + dy * dy}} = ${formattedDistance}`
       }
     ],

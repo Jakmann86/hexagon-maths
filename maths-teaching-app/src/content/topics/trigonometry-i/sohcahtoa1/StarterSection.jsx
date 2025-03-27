@@ -1,77 +1,105 @@
-// src/content/topics/trigonometry-i/sohcahtoa1/StarterSection.jsx
 import React from 'react';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
-import {
-    generateSquareQuestion,
-    generateSquareRootQuestion,
-    generateSquarePerimeterQuestion
-} from '../../../../generators/mathematical';
+import RightTriangle from '../../../../components/math/shapes/RightTriangle';
 
-// Let's create some simple trig-related question generators
-const generateSineQuestion = ({ units = 'cm' } = {}) => {
-    const angles = [30, 45, 60];
-    const angle = angles[Math.floor(Math.random() * angles.length)];
-    const hypotenuse = Math.floor(Math.random() * 8) + 3; // 3 to 10
+// Utility to generate random integers within a range
+const randomInt = (min, max) => 
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+// Generates Pythagoras questions for review from last lesson
+const generatePythagorasQuestions = ({ units = 'cm' } = {}) => [
+    // Question 1: Find the hypotenuse with visual representation
+    () => {
+        const base = randomInt(3, 7);
+        const height = randomInt(3, 7);
+        const hypotenuse = Math.sqrt(base*base + height*height).toFixed(2);
+        
+        return {
+            question: `Using Pythagoras' theorem, find the length of the hypotenuse in a right-angled triangle with base ${base}${units} and height ${height}${units}.`,
+            answer: `\\sqrt{${base}^2 + ${height}^2} = ${hypotenuse}${units}`,
+            difficulty: 'medium',
+            visualization: (
+                <RightTriangle 
+                    base={base} 
+                    height={height} 
+                    units={units}
+                    labels={{
+                        sides: [`${base} ${units}`, `${height} ${units}`, `x ${units}`]
+                    }}
+                />
+            )
+        };
+    },
+    // Question 2: Known hypotenuse with visual representation
+    () => {
+        const c = randomInt(7, 15);
+        const a = randomInt(3, Math.floor(Math.sqrt(c*c/2)));
+        const b = Math.sqrt(c*c - a*a).toFixed(2);
+        
+        return {
+            question: `The hypotenuse of a right-angled triangle is ${c}${units}, and one side is ${a}${units}. Calculate the length of the other side.`,
+            answer: `\\sqrt{${c}^2 - ${a}^2} = ${b}${units}`,
+            difficulty: 'hard',
+            visualization: (
+                <RightTriangle 
+                    base={a} 
+                    height={Number(b)} 
+                    units={units}
+                    labels={{
+                        sides: [`${a} ${units}`, `x ${units}`, `${c} ${units}`]
+                    }}
+                />
+            )
+        };
+    }
+];
+
+// Simple algebra question 
+const generateAlgebraQuestion = () => {
+    // Generate a linear equation solving problem
+    const a = randomInt(2, 9);
+    const b = randomInt(1, 6);
+    const solution = randomInt(3, 12);
     
-    // Calculate the opposite side using sine
-    let opposite;
-    if (angle === 30) opposite = hypotenuse * 0.5;
-    else if (angle === 45) opposite = hypotenuse * 0.7071;
-    else opposite = hypotenuse * 0.866;
-    
-    opposite = Math.round(opposite * 10) / 10; // Round to 1 decimal place
+    const equation = `${a}x + ${b} = ${a * solution + b}`;
     
     return {
-        question: `In a right-angled triangle, if the hypotenuse is ${hypotenuse}${units} and one angle is ${angle}°, what is the length of the opposite side?`,
-        answer: `\\sin(${angle}°) \\times ${hypotenuse} = ${opposite}${units}`
+        question: `Solve the following equation for x:`,
+        answer: `x = ${solution}`,
+        difficulty: 'medium',
+        question: `Solve the following equation for x: ${equation}`,
+        explanation: `To solve this equation:
+1. Subtract ${b} from both sides
+2. Divide both sides by ${a}
+3. Find the value of x`
     };
 };
 
-const generateCosineQuestion = ({ units = 'cm' } = {}) => {
-    const angles = [30, 45, 60];
-    const angle = angles[Math.floor(Math.random() * angles.length)];
-    const hypotenuse = Math.floor(Math.random() * 8) + 3; // 3 to 10
-    
-    // Calculate the adjacent side using cosine
-    let adjacent;
-    if (angle === 30) adjacent = hypotenuse * 0.866;
-    else if (angle === 45) adjacent = hypotenuse * 0.7071;
-    else adjacent = hypotenuse * 0.5;
-    
-    adjacent = Math.round(adjacent * 10) / 10; // Round to 1 decimal place
-    
+// Number construction puzzle
+const generateNumberConstructionPuzzle = () => {
     return {
-        question: `In a right-angled triangle, if the hypotenuse is ${hypotenuse}${units} and one angle is ${angle}°, what is the length of the adjacent side?`,
-        answer: `\\cos(${angle}°) \\times ${hypotenuse} = ${adjacent}${units}`
-    };
-};
+        question: `Using only the operations +, -, ×, ÷, and the numbers 1, 2, 3, 4, how many different ways can you create the number 24? 
 
-const generateTangentQuestion = ({ units = 'cm' } = {}) => {
-    const angles = [30, 45, 60];
-    const angle = angles[Math.floor(Math.random() * angles.length)];
-    const adjacent = Math.floor(Math.random() * 8) + 3; // 3 to 10
-    
-    // Calculate the opposite side using tangent
-    let opposite;
-    if (angle === 30) opposite = adjacent * 0.5774;
-    else if (angle === 45) opposite = adjacent * 1;
-    else opposite = adjacent * 1.732;
-    
-    opposite = Math.round(opposite * 10) / 10; // Round to 1 decimal place
-    
-    return {
-        question: `In a right-angled triangle, if the adjacent side is ${adjacent}${units} and one angle is ${angle}°, what is the length of the opposite side?`,
-        answer: `\\tan(${angle}°) \\times ${adjacent} = ${opposite}${units}`
+Rules:
+- You must use each number exactly once
+- You can use each operation 
+- Intermediate steps can be any number
+
+Submit your unique solutions!`,
+        answer: 'Open-ended problem with multiple possible solutions',
+        difficulty: 'puzzle'
     };
 };
 
 const StarterSection = ({ currentTopic, currentLessonId }) => {
-    // Use our new trig question generators plus one from Pythagoras for review
+    // Question generators
     const questionGenerators = [
-        () => generatePythagorasQuestion({ units: 'cm' }), // Review from last lesson
-        () => generateSineQuestion({ units: 'cm' }),
-        () => generateCosineQuestion({ units: 'cm' }),
-        () => generateTangentQuestion({ units: 'cm' })
+        // Pythagoras questions with visual representations
+        ...generatePythagorasQuestions(),
+        // Algebra question
+        generateAlgebraQuestion,
+        // Puzzle question
+        generateNumberConstructionPuzzle
     ];
 
     return (
@@ -81,18 +109,6 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
             currentLessonId={currentLessonId}
         />
     );
-};
-
-// A review question from previous lesson
-const generatePythagorasQuestion = ({ units = 'cm' } = {}) => {
-    const a = Math.floor(Math.random() * 5) + 3; // 3 to 7
-    const b = Math.floor(Math.random() * 5) + 3; // 3 to 7
-    const c = Math.sqrt(a*a + b*b).toFixed(2);
-    
-    return {
-        question: `Using Pythagoras' theorem, find the length of the hypotenuse in a right-angled triangle with sides ${a}${units} and ${b}${units}.`,
-        answer: `c = \\sqrt{${a}^2 + ${b}^2} = ${c}${units}`
-    };
 };
 
 export default StarterSection;

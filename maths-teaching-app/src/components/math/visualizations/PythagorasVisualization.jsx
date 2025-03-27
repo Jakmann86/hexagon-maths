@@ -1,4 +1,3 @@
-// src/components/math/visualizations/PythagorasVisualization.jsx
 import React, { useState } from 'react';
 import * as MafsLib from 'mafs';
 import 'mafs/core.css';
@@ -45,9 +44,9 @@ const PythagorasVisualization = () => {
   const heightSquareArea = Math.round(height * height * 100) / 100;
   const hypotenuseSquareArea = Math.round(hypotenuse * hypotenuse * 100) / 100;
   
-  // Calculate viewBox with adjusted proportions
-  const maxHeight = Math.max(height, base, hypotenuse) * 1.65;
-  const maxWidth = Math.max(height, base, hypotenuse) * 1.2;
+  // Calculate viewBox with adjusted proportions - increased by 20%
+  const maxHeight = Math.max(height, base, hypotenuse) * 1.98; // Increased from 1.65 to 1.98
+  const maxWidth = Math.max(height, base, hypotenuse) * 1.44; // Increased from 1.2 to 1.44
   const viewBox = { 
     x: [-Math.max(height, maxWidth/2), maxWidth], 
     y: [-Math.max(base, maxHeight/2), maxHeight] 
@@ -55,7 +54,7 @@ const PythagorasVisualization = () => {
 
   // Theme-specific colors for the visualization
   const visualColors = {
-    triangleFill: 'purple', // Different from the squares
+    triangleFill: 'purple',
     baseSquareFill: 'red',
     heightSquareFill: 'blue',
     hypotenuseSquareFill: `${theme.key}`
@@ -68,7 +67,7 @@ const PythagorasVisualization = () => {
   
   return (
     <div className="pythagoras-visualization space-y-4">
-      {/* Controls for side lengths - using integers only */}
+      {/* Controls remain the same */}
       <div className={`controls grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-${theme.pastelBg} rounded-lg`}>
         <div className="space-y-2">
           <label className={`text-sm font-medium text-${theme.pastelText}`}>Base length: {base}</label>
@@ -95,7 +94,7 @@ const PythagorasVisualization = () => {
         </div>
       </div>
       
-      {/* Display toggles - now with side lengths toggle */}
+      {/* Display toggles remain the same */}
       <div className="flex justify-center p-4 bg-gray-50 rounded-lg gap-4">
         <button
           onClick={() => setShowLabels(!showLabels)}
@@ -120,39 +119,35 @@ const PythagorasVisualization = () => {
         </button>
       </div>
       
-      {/* Formula display REMOVED as requested */}
-      
-      {/* Visualization - with centered container */}
+      {/* Visualization - with increased container size */}
       <div className="flex justify-center items-center">
-        <div className={`bg-[#f9f7f2] border border-${theme.borderColor} rounded-lg shadow-sm w-full max-w-xl`} style={{ height: "380px" }}>
+        <div className={`bg-[#f9f7f2] border border-${theme.borderColor} rounded-lg shadow-sm w-full max-w-2xl`} style={{ height: "460px" }}> {/* Increased from 380px to 460px */}
           <MafsLib.Mafs
             viewBox={viewBox}
             preserveAspectRatio="contain"
-            height={380}
+            height={460} 
             background="#f9f7f2"
           >
-            {/* Right triangle - with full opacity */}
+            {/* Rest of the content remains the same */}
             <MafsLib.Polygon
               points={[[0, 0], [base, 0], [0, height]]}
               color={visualColors.triangleFill}
-              fillOpacity={1.0} // Fully opaque
+              fillOpacity={1.0}
               strokeWidth={2}
             />
             
-            {/* Fixed right angle marker - now a proper square */}
             <MafsLib.Polygon
               points={[
-                [0, 0],     // Origin point
-                [0, 0.5],   // Up 0.5 units
-                [0.5, 0.5], // Right 0.5 units
-                [0.5, 0]    // Down to x-axis
+                [0, 0],
+                [0, 0.5],
+                [0.5, 0.5],
+                [0.5, 0]
               ]}
               color="black"
               fillOpacity={0}
               strokeWidth={1.5}
             />
             
-            {/* Base square */}
             <MafsLib.Polygon
               points={baseSquarePoints}
               color={visualColors.baseSquareFill}
@@ -160,7 +155,6 @@ const PythagorasVisualization = () => {
               strokeWidth={2}
             />
             
-            {/* Height square */}
             <MafsLib.Polygon
               points={heightSquarePoints}
               color={visualColors.heightSquareFill}
@@ -168,7 +162,6 @@ const PythagorasVisualization = () => {
               strokeWidth={2}
             />
             
-            {/* Hypotenuse square */}
             <MafsLib.Polygon
               points={hypotenuseSquarePoints}
               color={visualColors.hypotenuseSquareFill}
@@ -176,7 +169,6 @@ const PythagorasVisualization = () => {
               strokeWidth={2}
             />
             
-            {/* Area Labels - only shown when toggled on */}
             {showLabels && (
               <>
                 <MafsLib.Text 
@@ -211,10 +203,8 @@ const PythagorasVisualization = () => {
               </>
             )}
             
-            {/* Side Length Labels - only shown when toggled on */}
             {showSideLengths && (
               <>
-                {/* Base length - manually adjusted position */}
                 <MafsLib.Text 
                   x={base/2 - 0.5} 
                   y={-0.7} 
@@ -225,7 +215,6 @@ const PythagorasVisualization = () => {
                   {base} cm
                 </MafsLib.Text>
                 
-                {/* Height length - manually adjusted position */}
                 <MafsLib.Text 
                   x={-1.2}
                   y={height/2} 
@@ -236,7 +225,6 @@ const PythagorasVisualization = () => {
                   {height} cm
                 </MafsLib.Text>
                 
-                {/* Hypotenuse length - manually adjusted position */}
                 <MafsLib.Text 
                   x={base/2 + 0.3}
                   y={height/2 + 0.4}
@@ -255,7 +243,7 @@ const PythagorasVisualization = () => {
   );
 };
 
-// Direct coordinate calculation for hypotenuse square
+// Existing calculateHypotenuseSquareDirect function remains unchanged
 function calculateHypotenuseSquareDirect(base, height) {
   // For the 1x1 case, we know exactly what we want:
   if (base === 1 && height === 1) {

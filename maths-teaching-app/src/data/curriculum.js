@@ -16,7 +16,14 @@ export const curriculum = {
             },
             {
                 id: 2,
-                title: "Find Missing Sides Using Trigonometry"
+                title: "Find Missing Sides Using SOHCAHTOA",
+                sections: {
+                    starter: 'sohcahtoa1/StarterSection',
+                    diagnostic: 'sohcahtoa1/DiagnosticSection',
+                    learn: 'sohcahtoa1/LearnSection',
+                    examples: 'sohcahtoa1/ExamplesSection',
+                    challenge: 'sohcahtoa1/ChallengeSection'
+                }
             },
             {
                 id: 3,
