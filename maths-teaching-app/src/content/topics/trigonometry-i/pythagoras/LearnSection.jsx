@@ -5,6 +5,7 @@ import PythagorasVisualization from '../../../../components/math/visualizations/
 import MathDisplay from '../../../../components/common/MathDisplay';
 import { useUI } from '../../../../context/UIContext';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
+import PythagorasVisualizationGraph from '../../../../components/math/visualizations/PythagorasVisualizationGraph';
 
 const LearnSection = ({ currentTopic, currentLessonId }) => {
   const { showAnswers } = useUI();
@@ -20,7 +21,7 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
           {/* Main visualization - central focus */}
           <div className="mb-4 flex justify-center">
             <div className="w-full max-w-2xl">
-              <PythagorasVisualization />
+              <PythagorasVisualizationGraph />
             </div>
           </div>
           

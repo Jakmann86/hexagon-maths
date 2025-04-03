@@ -113,3 +113,66 @@
 .MafsView * {
   background: transparent !important;
 }
+
+/* JSXGraph custom styles */
+.jxgbox {
+  border: none !important;
+  background-color: transparent !important;
+}
+
+.jxgraph-label {
+  font-weight: 500;
+}
+
+.jxgraph-length {
+  font-weight: 400;
+}
+
+/* Additional JSXGraph styling */
+.jxgbox {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Style for JSXGraph text elements */
+.jxgraph-label {
+  font-family: inherit;
+  font-size: 14px !important;
+}
+
+.jxgraph-length {
+  font-family: inherit;
+  font-size: 12px !important;
+}
+
+/* Enhanced JSXGraph styling */
+.jxgbox {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Style for JSXGraph text elements */
+.jxgraph-label {
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+.jxgraph-length {
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+/* Prevent any pointer events/interactions with JSXGraph elements */
+.JXGtext {
+  pointer-events: none !important;
+}
+
+/* Improved contrast for text */
+text.JXGtext {
+  fill-opacity: 1 !important;
+  stroke: none !important;
+}
