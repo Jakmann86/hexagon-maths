@@ -4,9 +4,10 @@ import MathDisplay from '../common/MathDisplay';
 import { useUI } from '../../context/UIContext';
 
 /**
- * Internal QuestionDisplay component
+ * Enhanced QuestionDisplay component with styling closer to standalone version
  */
 const QuestionDisplay = ({ type, title, data, showAnswers }) => {
+    // Match the standalone styling more exactly
     const typeStyles = {
         section1: 'bg-pink-100 hover:bg-pink-200',
         section2: 'bg-blue-100 hover:bg-blue-200',
@@ -35,23 +36,46 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
         if (isMath) {
             return <MathDisplay math={content} />;
         }
-        return <div>{addPeriod(content)}</div>;
+        return <div className="text-gray-800">{addPeriod(content)}</div>;
+    };
+
+    // Calculate dynamic height based on content - scaled down by ~10%
+    const calculateAspectRatio = () => {
+        // If the content includes a visualization, use a more square aspect ratio
+        const hasVisualization = data?.visualization || data?.shape;
+        return hasVisualization ? 'aspect-[1.5/0.9]' : 'aspect-[2/0.9]';
     };
 
     return (
-        <div className={`${typeStyles[type]} pt-3 pb-3 pl-4 pr-4 rounded-lg aspect-[1.6/0.7] flex flex-col mt-2`}>
-            <h3 className="font-bold mb-2 text-xl text-gray-600">
+        <div 
+            className={`${typeStyles[type]} 
+                pt-5 pb-4 px-5
+                rounded-lg shadow-md
+                ${calculateAspectRatio()}
+                flex flex-col
+                transform transition-all duration-200
+                hover:shadow-lg hover:translate-y-[-2px]
+                mt-2 text-[0.95rem]`}
+        >
+            <h3 className="font-bold mb-2 text-lg text-gray-600">
                 {title}
             </h3>
 
-            <div className="flex-grow overflow-auto">
-                <div className="text-base text-gray-800 mb-2">
+            <div className="flex-grow overflow-auto space-y-3">
+                <div className="text-base mb-2">
                     {renderContent(data?.question, false)}
                 </div>
 
+                {/* Visualization or shape if available */}
+                {data?.visualization && (
+                    <div className="flex justify-center my-2">
+                        {data.visualization}
+                    </div>
+                )}
+
                 {showAnswers && data?.answer && (
-                    <div className="mt-2 pt-2 border-t border-gray-300">
-                        <div className="text-base text-gray-700">
+                    <div className="mt-3 pt-3 border-t border-gray-300">
+                        <div className="text-base text-gray-700 font-medium">
                             {renderContent(data?.answer, true)}
                         </div>
                     </div>
@@ -62,21 +86,20 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
 };
 
 /**
- * StarterSection template provides a standardized way to display 
- * starter/warm-up questions across different topics
+ * Enhanced StarterSectionBase component - without title and with bottom button
  */
 const StarterSectionBase = ({
     questionGenerators = [],
     currentTopic,
     currentLessonId
 }) => {
-    const { showAnswers } = useUI();  // Only get showAnswers from context, not the toggle function
+    const { showAnswers } = useUI();
 
     // Default section titles
     const sectionTitles = {
         section1: 'Last Lesson',
         section2: 'Last Week',
-        section3: 'Lasst Topic',
+        section3: 'Last Topic',
         section4: 'Last Year'
     };
 
@@ -108,29 +131,31 @@ const StarterSectionBase = ({
     };
 
     return (
-        <div className="space-y-4">
-            {/* Question grid with regenerate button in corner */}
-            <div className="relative">
+        <div className="pt-0 -mt-1 pb-4 px-2 bg-white rounded-xl shadow-lg overflow-hidden max-w-[90%] mx-auto">
+            {/* Question grid with more responsive layout - scaled down 10% */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
+                {Object.entries(questions).map(([sectionKey, questionData]) => (
+                    <QuestionDisplay
+                        key={sectionKey}
+                        type={sectionKey}
+                        title={sectionTitles[sectionKey]}
+                        data={questionData}
+                        showAnswers={showAnswers}
+                    />
+                ))}
+            </div>
+            
+            {/* New Questions button at the bottom - slightly smaller */}
+            <div className="px-3 pb-3 pt-1 flex justify-center">
                 <button
                     onClick={regenerateAllQuestions}
-                    className="absolute -bottom-2 -right-2 p-2 text-gray-600 hover:text-gray-800 bg-white rounded-full shadow-md hover:shadow-lg transition-all z-10"
+                    className="px-3 py-1.5 text-gray-600 hover:text-gray-900 bg-white rounded-full 
+                            hover:bg-gray-100 transition-all flex items-center gap-2 shadow-sm"
                     title="Generate New Questions"
                 >
-                    <RefreshCw className="w-5 h-5" />
+                    <RefreshCw className="w-4 h-4" />
+                    <span className="text-sm font-medium">New Questions</span>
                 </button>
-
-                {/* Question grid - fixed to always be 2 columns on md and up */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                    {Object.entries(questions).map(([sectionKey, questionData]) => (
-                        <QuestionDisplay
-                            key={sectionKey}
-                            type={sectionKey}
-                            title={sectionTitles[sectionKey]}
-                            data={questionData}
-                            showAnswers={showAnswers}
-                        />
-                    ))}
-                </div>
             </div>
         </div>
     );
