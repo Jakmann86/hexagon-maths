@@ -62,30 +62,32 @@ const JSXGraphBoard = ({
   }, [id]); // Only recreate board if ID changes
 
   // Handle updates to the board
-// Handle updates to the board
-useEffect(() => {
-  if (boardRef.current && onUpdate) {
-    // Clear the board before updating
-    boardRef.current.suspendUpdate();
-    
-    try {
-      // This is a safer way to clear elements
-      Object.keys(boardRef.current.objects).forEach(key => {
-        const obj = boardRef.current.objects[key];
-        if (obj && obj.type !== undefined && obj.board !== undefined) {
-          boardRef.current.removeObject(obj);
-        }
-      });
-    } catch (e) {
-      console.log("Error clearing board:", e);
+  useEffect(() => {
+    if (boardRef.current && onUpdate) {
+      // Suspend updates to improve performance
+      boardRef.current.suspendUpdate();
+      
+      try {
+        // Manually remove all elements
+        const board = boardRef.current;
+        const elements = Object.values(board.objects);
+        
+        elements.forEach(el => {
+          if (el && el.remove) {
+            el.remove();
+          }
+        });
+        
+        // Run the update function
+        onUpdate(board);
+      } catch (error) {
+        console.error("Error in board update:", error);
+      }
+      
+      // Resume updates
+      boardRef.current.unsuspendUpdate();
     }
-    
-    // Run the update function
-    onUpdate(boardRef.current);
-    
-    boardRef.current.unsuspendUpdate();
-  }
-}, [...dependencies]);
+  }, [...dependencies]);
 
   return <div id={id} className="jxgbox" ref={containerRef} style={{ width, height }} />;
 };

@@ -1,25 +1,7 @@
-// src/components/math/shapes/RightTriangle.jsx
-import React from 'react';
-import * as MafsLib from 'mafs';
-import 'mafs/core.css';
-import 'mafs/font.css';
+import React, { useMemo } from 'react';
+import JSXGraphBoard from '../JSXGraphBoard';
+import { getBoardConfig } from '../../../config/boardSizes';
 
-/**
- * RightTriangle - A component for rendering a right-angled triangle with optional labels
- * 
- * @param {Object} props
- * @param {number} props.base - Length of the base (default: 3)
- * @param {number} props.height - Height of the triangle (default: 4)
- * @param {boolean} props.showRightAngle - Whether to show the right angle marker
- * @param {string} props.labelStyle - Style of labels ('standard' or 'algebraic')
- * @param {Object} props.labels - Custom labels for different parts of the triangle
- * @param {Array} props.labels.sides - Labels for sides [base, height, hypotenuse]
- * @param {Array} props.labels.angles - Labels for angles
- * @param {Array} props.labels.vertices - Labels for vertices
- * @param {string} props.units - Units for measurements (e.g. "cm", "m")
- * @param {Object} props.style - Additional styling options
- * @param {number} props.mafsHeight - Direct height for the Mafs component
- */
 const RightTriangle = ({
   base = 3,
   height = 4,
@@ -28,135 +10,136 @@ const RightTriangle = ({
   labels = {},
   units = 'cm',
   style = {},
-  mafsHeight = 250,
+  size = 'starter',
+  containerHeight // Optional override
 }) => {
   // Calculate hypotenuse using Pythagoras' theorem
   const hypotenuse = Math.sqrt(base * base + height * height);
   
-  // Default labels based on labelStyle
-  const defaultSideLabels = labelStyle === 'algebraic' 
-    ? ['a', 'b', 'c'] 
-    : [`${base} ${units}`, `${height} ${units}`, `${hypotenuse.toFixed(2)} ${units}`];
-    
-  // Merge default labels with provided labels
+  // Get board configuration
+  const boardConfig = getBoardConfig(size);
+  const finalHeight = containerHeight || boardConfig.height;
+
+  // Memoized label generation
+  const defaultSideLabels = useMemo(() => 
+    labelStyle === 'algebraic' 
+      ? ['a', 'b', 'c'] 
+      : [`${base} ${units}`, `${height} ${units}`, `${hypotenuse.toFixed(2)} ${units}`]
+  , [base, height, labelStyle, units]);
+  
   const sideLabels = labels.sides || defaultSideLabels;
-  
-  // Default style options
-  const {
-    fillColor = MafsLib.Theme.indigo,
-    fillOpacity = 0.2,
-    strokeColor = MafsLib.Theme.indigo,
-    strokeWidth = 2,
-    showGrid = false,
-    backgroundTransparent = true,
-  } = style;
-  
-  // Calculate viewBox with better padding
-  const maxDim = Math.max(base, height);
-  const padding = Math.max(1, maxDim * 0.15); // Dynamic padding based on size
-  
-  const viewBox = {
-    x: [-padding, base + padding],
-    y: [-padding, height + padding]
+
+  // Rendering method specific to right triangle
+  const updateBoard = (board) => {
+    // No need to remove objects explicitly
+    board.suspendUpdate();
+
+    // Create points for the triangle
+    const points = [
+      board.create('point', [0, 0], { 
+        visible: false,
+        withLabel: false
+      }),
+      board.create('point', [base, 0], { 
+        visible: false,
+        withLabel: false
+      }),
+      board.create('point', [0, height], { 
+        visible: false,
+        withLabel: false
+      })
+    ];
+
+    // Destructure style with defaults
+    const {
+      fillColor = 'indigo',
+      fillOpacity = 0.2,
+      strokeColor = 'indigo',
+      strokeWidth = 2
+    } = style;
+
+    // Create the polygon (triangle)
+    board.create('polygon', points, {
+      fillColor: fillColor,
+      fillOpacity: fillOpacity,
+      strokeColor: strokeColor,
+      strokeWidth: strokeWidth
+    });
+
+    // Side labels
+    board.create('text', [base/2 - 0.7, -0.6, sideLabels[0]], {
+      color: '#333',
+      fontSize: 14
+    });
+    
+    board.create('text', [-0.6, height/2 - 0.75, sideLabels[1]], {
+      color: '#333',
+      fontSize: 14,
+      rotate: 90
+    });
+    
+    board.create('text', [base/2 + 0.2, height/2 + 0.2, sideLabels[2]], {
+      color: '#333',
+      fontSize: 14,
+      rotate: Math.atan2(height, base) * 180 / Math.PI
+    });
+    const markerColor = strokeColor || '#333';
+
+    // Right angle marker
+    if (showRightAngle) {
+      board.create('angle', [points[1], points[0], points[2]], {
+        radius: 0.5,
+        orthotype: 'square',
+        fillColor: 'transparent',
+        strokeColor: style.strokeColor || 'indigo', // Explicitly use the style's stroke color
+        fillOpacity: 0,
+        strokeWidth: 1.5,
+        fixed: true,
+        withLabel: false // Explicitly disable label
+      });
+    }
+
+    // Vertex labels
+    if (labels.vertices) {
+      points.forEach((point, index) => {
+        board.create('text', [point.X(), point.Y(), labels.vertices[index]], {
+          color: '#333',
+          fontSize: 10,
+          anchorX: index === 0 ? 'right' : (index === 1 ? 'left' : 'right'),
+          anchorY: index === 0 ? 'bottom' : (index === 1 ? 'bottom' : 'top')
+        });
+      });
+    }
+
+    board.unsuspendUpdate();
   };
 
-  // Custom styles for Mafs component with background fixes
-  const mafsStyles = {
-    '--mafs-bg': 'transparent',
-    '--mafs-fg': '#333',
-    background: 'transparent'
-  };
+  // Calculate view box dimensions with padding
+  const boundingBox = [
+    -boardConfig.padding, 
+    Math.max(base, height) + boardConfig.padding, 
+    Math.max(base, height) + boardConfig.padding, 
+    -boardConfig.padding
+  ];
 
   return (
     <div className="w-full h-full" style={{ background: 'transparent' }}>
-      <MafsLib.Mafs 
-        className="mafs-transparent"
-        viewBox={viewBox}
-        preserveAspectRatio="xMidYMid meet"
-        height={mafsHeight} // Use explicit height from props
-        width={mafsHeight}  // Make width equal to height for consistent aspect ratio
-        style={mafsStyles}
-      >
-        {/* Optional grid with faint axes */}
-        {showGrid && <MafsLib.Coordinates.Cartesian 
-          xAxis={{ variant: 'secondary' }}
-          yAxis={{ variant: 'secondary' }}
-        />}
-        
-        {/* Triangle polygon */}
-        <MafsLib.Polygon
-          points={[
-            [0, 0],
-            [base, 0],
-            [0, height]
-          ]}
-          color={fillColor}
-          fillOpacity={fillOpacity}
-          strokeOpacity={1}
-          strokeWidth={strokeWidth}
-        />
-
-        {/* Right angle marker */}
-        {showRightAngle && (
-          <MafsLib.Polygon
-            points={[
-              [0.5, 0],
-              [0.5, 0.5],
-              [0, 0.5]
-            ]}
-            color={MafsLib.Theme.black}
-            strokeOpacity={1}
-            fillOpacity={0}
-            strokeWidth={1}
-          />
-        )}
-
-        {/* Side labels */}
-        {/* Base label */}
-        <MafsLib.Text
-          x={base / 2 - 0.5}
-          y={-1.2}
-          attach="center"
-          color={MafsLib.Theme.black}
-        >
-          {sideLabels[0]}
-        </MafsLib.Text>
-        
-        {/* Height label */}
-        <MafsLib.Text
-          x={-1.6}
-          y={height / 2}
-          attach="center"
-          color={MafsLib.Theme.black}
-        >
-          {sideLabels[1]}
-        </MafsLib.Text>
-        
-        {/* Hypotenuse label */}
-        <MafsLib.Text
-          x={base / 2 - -0.1}
-          y={height / 2 - -0.1}
-          attach="center"
-          color={MafsLib.Theme.black}
-        >
-          {sideLabels[2]}
-        </MafsLib.Text>
-        
-        {/* Vertex labels (only if specifically requested) */}
-        {labels.vertices && (
-          <>
-            <MafsLib.Text x={0} y={0} attach="southwest" color={MafsLib.Theme.black}>
-              {labels.vertices[0]}
-            </MafsLib.Text>
-            <MafsLib.Text x={base} y={0} attach="southeast" color={MafsLib.Theme.black}>
-              {labels.vertices[1]}
-            </MafsLib.Text>
-            <MafsLib.Text x={0} y={height} attach="northwest" color={MafsLib.Theme.black}>
-              {labels.vertices[2]}
-            </MafsLib.Text>
-          </>
-        )}
-      </MafsLib.Mafs>
+      <JSXGraphBoard
+        id={`right-triangle-${base}-${height}`}
+        boundingBox={boundingBox}
+        height={`${finalHeight}px`}
+        onUpdate={updateBoard}
+        backgroundColor="transparent"
+        dependencies={[
+          base, 
+          height, 
+          showRightAngle, 
+          labelStyle, 
+          JSON.stringify(labels), 
+          units, 
+          size
+        ]}
+      />
     </div>
   );
 };
