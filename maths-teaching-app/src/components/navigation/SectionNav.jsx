@@ -40,7 +40,7 @@ export const SectionNav = ({ activeSection, onSectionChange }) => {
     ];
 
     return (
-        <nav className="flex justify-center space-x-4 mb-6">
+        <nav className="flex justify-center space-x-4 mb-6 pt-2">
             {sections.map(({ name, icon: Icon }) => (
                 <button
                     key={name}
