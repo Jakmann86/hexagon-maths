@@ -15,7 +15,7 @@ const generatePythagorasQuestions = ({ units = 'cm' } = {}) => [
         const hypotenuse = Math.sqrt(base*base + height*height).toFixed(2);
         
         return {
-            question: `Using Pythagoras' theorem, find the length of the hypotenuse in a right-angled triangle with base ${base}${units} and height ${height}${units}.`,
+            question: `Using Pythagoras' theorem, find the length of the hypotenuse.`,
             answer: `\\sqrt{${base}^2 + ${height}^2} = ${hypotenuse}${units}`,
             difficulty: 'medium',
             visualization: (
@@ -37,7 +37,7 @@ const generatePythagorasQuestions = ({ units = 'cm' } = {}) => [
         const b = Math.sqrt(c*c - a*a).toFixed(2);
         
         return {
-            question: `The hypotenuse of a right-angled triangle is ${c}${units}, and one side is ${a}${units}. Calculate the length of the other side.`,
+            question: `Calculate the side length.`,
             answer: `\\sqrt{${c}^2 - ${a}^2} = ${b}${units}`,
             difficulty: 'hard',
             visualization: (
