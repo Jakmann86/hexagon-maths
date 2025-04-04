@@ -30,13 +30,17 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
   switch (type) {
     case 'visualization':
       return (
-        <div className="flex justify-center items-center w-full max-h-48 mx-auto">
+        <div className="flex justify-center items-center w-full">
           {content}
         </div>
       );
     case 'math':
-      return <MathDisplay math={processText(content)} />;
+      return <MathDisplay math={processText(content)} displayMode={true} />;
     default:
+      // Check if content has LaTeX markers and use MathDisplay if it does
+      if (typeof content === 'string' && (content.includes('\\') || content.includes('$'))) {
+        return <MathDisplay math={processText(content)} />;
+      }
       return <div className="text-gray-800">{processText(content)}</div>;
   }
 };
@@ -50,20 +54,14 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
     section4: 'bg-orange-100 hover:bg-orange-200'
   };
 
-  // Dynamic aspect ratio based on content
-  const aspectRatioClass = useMemo(() => {
-    const hasVisualization = data?.visualization || data?.shape;
-    return hasVisualization ? 'aspect-[1.5/1]' : 'aspect-[2/1]';
-  }, [data]);
-
   return (
     <div 
       className={`
         ${typeStyles[type]} 
         p-4 rounded-lg shadow-md
-        ${aspectRatioClass}
+        ${showAnswers ? '' : 'aspect-[2/1]'}
         flex flex-col
-        transform transition-all duration-200
+        transform transition-all duration-300
         hover:shadow-lg hover:translate-y-[-2px]
         overflow-hidden
       `}
@@ -90,11 +88,29 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
         {showAnswers && data?.answer && (
           <div className="mt-3 pt-3 border-t border-gray-300 space-y-2">
             <h4 className="text-sm font-medium text-gray-600">Answer:</h4>
-            <ContentRenderer 
-              content={data.answer} 
-              type="math" 
-              isMath={true} 
-            />
+            <div className="math-answer">
+              {typeof data.answer === 'string' && data.answer.includes('\\') ? (
+                <MathDisplay math={data.answer} displayMode={true} />
+              ) : (
+                <ContentRenderer 
+                  content={data.answer} 
+                  type="math" 
+                  isMath={true} 
+                />
+              )}
+            </div>
+            
+            {/* Show explanation if available */}
+            {data.explanation && (
+              <div className="mt-2 text-sm text-gray-700">
+                <p className="font-medium">Explanation:</p>
+                {typeof data.explanation === 'string' && data.explanation.includes('\\') ? (
+                  <MathDisplay math={data.explanation} />
+                ) : (
+                  <ContentRenderer content={data.explanation} />
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

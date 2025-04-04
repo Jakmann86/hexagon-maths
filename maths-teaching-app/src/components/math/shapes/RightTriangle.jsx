@@ -1,151 +1,154 @@
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import JSXGraphBoard from '../JSXGraphBoard';
 import { getBoardConfig } from '../../../config/boardSizes';
 
+/**
+ * RightTriangle - Pure visualization component for rendering right-angled triangles
+ * 
+ * @param {number} base - Length of base 
+ * @param {number} height - Height
+ * @param {boolean} showRightAngle - Whether to show the right angle marker
+ * @param {Array} labels - Labels for sides: [base, height, hypotenuse]
+ * @param {string} units - Units for measurements
+ * @param {Object} style - Styling options
+ * @param {string} size - Size preset from boardSizes
+ * @param {number} containerHeight - Optional override height
+ * @param {boolean} smallDisplay - Whether this is for smaller displays
+ * @param {string} position - Position adjustment: 'default', 'higher', 'middle', 'lower'
+ */
 const RightTriangle = ({
   base = 3,
   height = 4,
   showRightAngle = true,
-  labelStyle = 'standard',
-  labels = {},
+  labels = [],
   units = 'cm',
   style = {},
   size = 'starter',
-  containerHeight // Optional override
+  containerHeight,
+  smallDisplay = false,
+  position = 'default'
 }) => {
-  // Memoized calculations to prevent unnecessary re-renders
-  const triangleDetails = useMemo(() => {
-    const hypotenuse = Math.sqrt(base * base + height * height);
-    
-    // Consistent label generation
-    const defaultSideLabels = 
-      labelStyle === 'algebraic' 
-        ? ['a', 'b', 'c'] 
-        : [`${base} ${units}`, `${height} ${units}`, `${hypotenuse.toFixed(2)} ${units}`];
-    
-    return {
-      hypotenuse,
-      defaultSideLabels
-    };
-  }, [base, height, labelStyle, units]);
-
+  // Calculate hypotenuse (only used if needed for default labels)
+  const hypotenuse = Math.sqrt(base * base + height * height);
+  
   // Get board configuration
-  const boardConfig = useMemo(() => getBoardConfig(size), [size]);
+  const boardConfig = getBoardConfig(smallDisplay ? 'small' : size);
+  
+  // Final height calculation
   const finalHeight = containerHeight || boardConfig.height;
 
-  // Memoized board rendering function
-  const updateBoard = useCallback((board) => {
-    board.suspendUpdate();
+  // Create a stable ID for the JSXGraph board
+  const boardId = `right-triangle-${base}-${height}-${smallDisplay ? 'small' : 'std'}`;
 
-    // Consistent style defaults
+  // Board rendering function
+  const updateBoard = (board) => {
+    // Clear any existing elements
+    board.objects = {};
+    board.suspendUpdate();
+    
+    // Position offset based on position prop
+    let yOffset = 0;
+    if (position === 'higher') {
+      yOffset = 1;
+    } else if (position === 'middle') {
+      yOffset = 0.5;
+    } else if (position === 'lower') {
+      yOffset = -1;
+    }
+    
+    // Style defaults
     const {
       fillColor = 'indigo',
       fillOpacity = 0.2,
       strokeColor = 'indigo',
       strokeWidth = 2
     } = style;
-
-    // Create points for the triangle
-    const points = [
-      board.create('point', [0, 0], { visible: false, withLabel: false }),
-      board.create('point', [base, 0], { visible: false, withLabel: false }),
-      board.create('point', [0, height], { visible: false, withLabel: false })
+    
+    // Scale up for small display
+    const scaleFactor = smallDisplay ? 1.2 : 1;
+    const scaledBase = base * scaleFactor;
+    const scaledHeight = height * scaleFactor;
+    
+    // Create the triangle points
+    const p1 = board.create('point', [0, yOffset], { visible: false, fixed: true, name: 'A' });
+    const p2 = board.create('point', [scaledBase, yOffset], { visible: false, fixed: true, name: 'B' });
+    const p3 = board.create('point', [0, scaledHeight + yOffset], { visible: false, fixed: true, name: 'C' });
+    
+    // Create the triangle
+    const poly = board.create('polygon', [p1, p2, p3], {
+      fillColor: fillColor,
+      fillOpacity: fillOpacity,
+      strokeColor: strokeColor,
+      strokeWidth: strokeWidth,
+      vertices: { visible: false }
+    });
+    
+    // Default labels if none provided
+    const sideLabels = labels.length === 3 ? labels : [
+      `${base} ${units}`, 
+      `${height} ${units}`, 
+      `${hypotenuse.toFixed(2)} ${units}`
     ];
-
-    // Triangle polygon
-    board.create('polygon', points, {
-      fillColor,
-      fillOpacity,
-      strokeColor,
-      strokeWidth
-    });
-
-    // Intelligent side label positioning
-    const sideLabels = labels.sides || triangleDetails.defaultSideLabels;
-    const labelConfig = {
-      color: '#333',
-      fontSize: 14
-    };
-
-    board.create('text', [base/2 - 0.7, -0.6, sideLabels[0]], {
-      ...labelConfig
+    
+    // Add side labels with improved positioning
+    board.create('text', [scaledBase/2, yOffset - 0.5, sideLabels[0]], {
+      fontSize: 14,
+      fixed: true
     });
     
-    board.create('text', [-0.6, height/2 - 0.75, sideLabels[1]], {
-      ...labelConfig,
-      rotate: 90
+    board.create('text', [-0.5, yOffset + scaledHeight/2, sideLabels[1]], {
+      fontSize: 14,
+      fixed: true
     });
     
-    board.create('text', [base/2 + 0.2, height/2 + 0.2, sideLabels[2]], {
-      ...labelConfig,
-      rotate: Math.atan2(height, base) * 180 / Math.PI
+    // Move hypotenuse label to the right (60% along hypotenuse)
+    const hypotenuseX = scaledBase * 0.6;
+    const hypotenuseY = yOffset + scaledHeight * 0.6;
+    
+    board.create('text', [hypotenuseX, hypotenuseY, sideLabels[2]], {
+      fontSize: 14,
+      fixed: true
     });
-
-    // Right angle marker with consistent styling
+    
+    // Right angle marker
     if (showRightAngle) {
-      board.create('angle', [points[1], points[0], points[2]], {
+      board.create('angle', [p2, p1, p3], {
         radius: 0.5,
         orthotype: 'square',
-        fillColor: 'transparent',
-        strokeColor: strokeColor,
-        fillOpacity: 0,
-        strokeWidth: 1.5,
-        fixed: true,
-        withLabel: false
+        fillColor: 'none',
+        strokeWidth: 1,
+        fixed: true
       });
     }
-
-    // Optional vertex labels
-    if (labels.vertices) {
-      points.forEach((point, index) => {
-        board.create('text', [point.X(), point.Y(), labels.vertices[index]], {
-          color: '#333',
-          fontSize: 10,
-          anchorX: index === 0 ? 'right' : (index === 1 ? 'left' : 'right'),
-          anchorY: index === 0 ? 'bottom' : (index === 1 ? 'bottom' : 'top')
-        });
-      });
-    }
-
+    
     board.unsuspendUpdate();
-  }, [base, height, triangleDetails, labels, showRightAngle, style]);
+  };
 
-  // Consistent bounding box calculation
-  const boundingBox = useMemo(() => [
-    -boardConfig.padding, 
-    Math.max(base, height) + boardConfig.padding, 
-    Math.max(base, height) + boardConfig.padding, 
-    -boardConfig.padding
-  ], [base, height, boardConfig]);
+  // Adjust boundingBox based on position
+  let boundingBox = [...boardConfig.boundingBox];
+  if (position === 'higher') {
+    boundingBox[1] += 1;
+    boundingBox[3] += 1;
+  } else if (position === 'middle') {
+    boundingBox[1] += 0.5;
+    boundingBox[3] += 0.5;
+  } else if (position === 'lower') {
+    boundingBox[1] -= 1;
+    boundingBox[3] -= 1;
+  }
 
   return (
-    <div 
-      className="w-full h-full relative" 
-      style={{ 
-        background: 'transparent',
-        aspectRatio: '1 / 1',
-        maxWidth: `${finalHeight}px`,
-        margin: '0 auto'
-      }}
-    >
+    <div className="w-full h-full">
       <JSXGraphBoard
-        id={`right-triangle-${base}-${height}`}
+        id={boardId}
         boundingBox={boundingBox}
-        height={`${finalHeight}px`}
-        onUpdate={updateBoard}
+        height={finalHeight}
         backgroundColor="transparent"
-        dependencies={[
-          base, 
-          height, 
-          showRightAngle, 
-          labelStyle, 
-          JSON.stringify(labels), 
-          units, 
-          size
-        ]}
+        axis={false}
+        onUpdate={updateBoard}
       />
     </div>
   );
 };
 
-export default React.memo(RightTriangle);
+export default RightTriangle;
