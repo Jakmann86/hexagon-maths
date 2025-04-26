@@ -1,169 +1,73 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Menu, Timer, Eye, EyeOff, Maximize2, Play, Pause, RotateCcw
-} from 'lucide-react';
-import { DateDisplay } from '../common/DateDisplay';
+// Header.jsx with neutral styling
+import React from 'react';
+import { Menu, Maximize2 } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 
 export const Header = ({ title, lesson }) => {
-    const {
-        setIsSidebarOpen,
-        showAnswers,
-        toggleAnswers,
-        currentSection,
-        isTimerActive,
-        formatTime,
-        startTimer,
-        pauseTimer,
-        resetTimer,
-        adjustTimer
-    } = useUI();
+    const { setIsSidebarOpen } = useUI();
 
-    const [showTimerSettings, setShowTimerSettings] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-
-    const timerOptions = [1, 2, 3, 5, 10, 15, 20, 25, 30, 50, 60];
-
-    useEffect(() => {
-        const handleFullscreenChange = () => {
-            setIsFullscreen(document.fullscreenElement !== null);
-            // Ensure background color persists in fullscreen
-            if (document.fullscreenElement) {
-                document.fullscreenElement.style.backgroundColor = 'white';
-            }
-        };
-
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, []);
-
-    const toggleFullscreen = async () => {
-        try {
-            if (!document.fullscreenElement) {
-                const elem = document.documentElement;
-                await elem.requestFullscreen();
-                elem.style.backgroundColor = 'white'; // Set background color when entering fullscreen
-            } else {
-                await document.exitFullscreen();
-            }
-        } catch (error) {
-            console.error('Error toggling fullscreen:', error);
+    // Format date as "25th April 2025" but smaller
+    const getFormattedDate = () => {
+        const date = new Date();
+        
+        // Add ordinal suffix to day
+        const day = date.getDate();
+        const suffix = getDaySuffix(day);
+        
+        // Get month and year
+        const month = date.toLocaleString('default', { month: 'long' });
+        const year = date.getFullYear();
+        
+        return `${day}${suffix} ${month} ${year}`;
+    };
+    
+    // Helper function to get day suffix (st, nd, rd, th)
+    const getDaySuffix = (day) => {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
         }
     };
 
-    // Handle timer action without side effects
-    const handleTimerAction = (action, value) => {
-        // Close timer settings menu after any action
-        setShowTimerSettings(false);
-        
-        // Perform the requested timer action
-        if (action === 'start') {
-            startTimer();
-        } else if (action === 'pause') {
-            pauseTimer();
-        } else if (action === 'reset') {
-            resetTimer();
-        } else if (action === 'adjust' && value) {
-            adjustTimer(value);
+    // Toggle fullscreen function
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen();
         }
     };
 
     return (
-        <header className="bg-white shadow-sm">
-            <div className="container mx-auto">
-                <div className="flex justify-end px-4 py-1 border-b border-gray-100">
-                    <DateDisplay />
-                </div>
-
-                <div className="grid grid-cols-3 items-center px-4 py-3">
-                    <div className="flex items-center">
+        <header>
+            {/* Neutral header with subtle styling */}
+            <div className="bg-white text-gray-800 py-3 px-4 border-b border-gray-200 shadow-sm">
+                <div className="max-w-6xl mx-auto">
+                    <div className="flex items-center justify-between">
+                        {/* Menu button with darker color for contrast */}
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="text-gray-600 hover:text-gray-900"
+                            className="text-gray-600 hover:text-gray-800 p-2"
                         >
                             <Menu size={24} />
                         </button>
-                    </div>
-
-                    <div className="flex flex-col items-center">
-                        <h1 className="text-xl font-semibold text-slate-800 tracking-wide whitespace-nowrap">
-                            {title}
-                        </h1>
-                        <h2 className="text-sm text-gray-600 mt-1">
-                            {lesson}
-                        </h2>
-                    </div>
-
-                    <div className="flex items-center justify-end space-x-4">
-                        {/* Timer Controls */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowTimerSettings(!showTimerSettings)}
-                                className="flex items-center px-3 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600"
-                            >
-                                <Timer size={18} className="mr-2" />
-                                {formatTime()}
-                            </button>
-
-                            {showTimerSettings && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
-                                    <div className="p-2">
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {timerOptions.map((minutes) => (
-                                                <button
-                                                    key={minutes}
-                                                    onClick={() => handleTimerAction('adjust', minutes)}
-                                                    className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                                                >
-                                                    {minutes} min
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <div className="flex justify-center mt-2 pt-2 border-t border-gray-200">
-                                            {!isTimerActive ? (
-                                                <button
-                                                    onClick={() => handleTimerAction('start')}
-                                                    className="flex items-center px-3 py-1 text-sm text-green-600 hover:bg-green-50 rounded-md"
-                                                >
-                                                    <Play size={16} className="mr-1" />
-                                                    Start
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleTimerAction('pause')}
-                                                    className="flex items-center px-3 py-1 text-sm text-orange-600 hover:bg-orange-50 rounded-md"
-                                                >
-                                                    <Pause size={16} className="mr-1" />
-                                                    Pause
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => handleTimerAction('reset')}
-                                                className="flex items-center px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded-md ml-2"
-                                            >
-                                                <RotateCcw size={16} className="mr-1" />
-                                                Reset
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                        
+                        {/* Center content focused on lesson objective */}
+                        <div className="text-center flex-grow">
+                            <h1 className="text-xl font-bold text-gray-800">{lesson}</h1>
+                            <p className="text-sm text-gray-500 mt-1">
+                                {getFormattedDate()}
+                            </p>
                         </div>
-
-                        {/* Show/Hide Answers Button - Always visible */}
-                        <button
-                            onClick={toggleAnswers}
-                            className={`text-indigo-500 hover:text-indigo-600 ${showAnswers ? 'bg-indigo-50' : ''}`}
-                            title={showAnswers ? "Hide Answers" : "Show Answers"}
-                        >
-                            {showAnswers ? <EyeOff size={24} /> : <Eye size={24} />}
-                        </button>
-
-                        {/* Fullscreen Button */}
+                        
+                        {/* Fullscreen button */}
                         <button
                             onClick={toggleFullscreen}
-                            className="text-orange-500 hover:text-orange-600"
-                            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                            className="text-gray-600 hover:text-gray-800 p-2"
+                            title="Toggle Fullscreen"
                         >
                             <Maximize2 size={24} />
                         </button>

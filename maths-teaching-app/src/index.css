@@ -176,3 +176,214 @@ text.JXGtext {
   fill-opacity: 1 !important;
   stroke: none !important;
 }
+
+/* Better typography */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Enhanced card styling */
+.card, .bg-white {
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Improve math display */
+.math-display {
+  font-family: 'KaTeX_Main', serif;
+  margin: 0.5rem 0;
+}
+
+.math-display .katex {
+  font-size: 1.2em;
+}
+
+.math-display.math-large .katex {
+  font-size: 1.4em;
+}
+
+/* Improved button styling */
+button {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Section styling matching MathStarters */
+.section-starter { @apply border-blue-500; }
+.section-diagnostic { @apply border-purple-500; }
+.section-learn { @apply border-green-500; }
+.section-examples { @apply border-orange-500; }
+.section-challenge { @apply border-red-500; }
+
+/* Enhanced blue header */
+.bg-gray-800 {
+  background-color: #1e40af; /* A stronger blue that matches MathStarters */
+}
+
+/* Improved typography for header elements */
+header h1 {
+  letter-spacing: 0.01em;
+}
+
+header h2 {
+  font-weight: 500;
+}
+
+/* Better spacing in combined navigation bar */
+.section-nav-combined {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .section-nav-combined {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .section-nav-combined > div {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Improve button hover states */
+button {
+  transition: all 0.15s ease-in-out;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Intermediate blue shade for header */
+.bg-blue-700 {
+  background-color: #16317a; /* Adjusted to be between the two shades */
+}
+
+/* Improved section button spacing */
+.space-x-6 > * {
+  margin-left: 1.5rem;
+  margin-right: 1.5rem;
+}
+
+/* Enhanced button transitions */
+button {
+  transition: all 0.2s ease;
+}
+
+/* Prevent button shifts */
+button:focus {
+  outline: none;
+}
+
+/* Timer dropdown styling */
+.timer-dropdown {
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .section-nav-layout {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  
+  .space-x-6 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .space-x-6 > * {
+    margin: 0;
+  }
+}
+
+/* Better timer dropdown animation */
+.timer-dropdown-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.timer-dropdown-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.timer-dropdown-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timer-dropdown-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 200ms, transform 200ms;
+}
+
+/* Add to index.css or your styles file */
+
+/* Grid layout for perfect spacing */
+.grid-cols-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
+  max-width: 700px; /* Adjust based on your layout needs */
+}
+
+/* Control consistent button sizes */
+.grid-cols-5 button {
+  width: 100%;
+  height: 38px; /* Fixed height for consistency */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fix icon + text spacing */
+.grid-cols-5 button span {
+  margin-left: 0.35rem;
+}
+
+/* Timer dropdown styling */
+.timer-dropdown {
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 0.375rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .grid-cols-5 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .grid-cols-5 button {
+    padding: 0.5rem;
+  }
+  
+  .grid-cols-5 button span {
+    display: none; /* Hide text on smaller screens */
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .grid-cols-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+

@@ -1,15 +1,14 @@
-// src/components/layout/MainLayout.jsx
+// Updated MainLayout.jsx to connect components
 import React, { useState, useEffect } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { SectionNav } from '../navigation/SectionNav';
 import { useUI } from '../../context/UIContext';
 import { curriculum } from '../../data/curriculum';
-import { getWeekFromTopic } from '../../data/topicMapping';   
 import LessonContentProvider from '../../content/LessonContentProvider';
 
 const MainLayout = () => {
-    // Track current topic and lesson
+    // State management
     const [currentTopic, setCurrentTopic] = useState('Trigonometry I');
     const [currentLessonId, setCurrentLessonId] = useState(1);
     const { currentSection, setCurrentSection, isSidebarOpen } = useUI();
@@ -27,11 +26,13 @@ const MainLayout = () => {
 
     return (
         <div className="min-h-screen bg-slate-50">
+            {/* Updated Header with fullscreen button on right */}
             <Header
                 title={currentTopicData?.title || ''}
                 lesson={currentLesson?.title || ''}
             />
 
+            {/* Sidebar with topic navigation */}
             <Sidebar
                 onTopicSelect={setCurrentTopic}
                 onLessonSelect={setCurrentLessonId}
@@ -39,15 +40,15 @@ const MainLayout = () => {
                 currentLessonId={currentLessonId}
             />
 
-            <main className="max-w-6xl mx-auto mt-10 px-4">
-                <div className="sticky top-0 bg-slate-50 z-10 pb-4">
-                    <SectionNav
-                        activeSection={currentSection}
-                        onSectionChange={setCurrentSection}
-                    />
-                </div>
+            {/* Section Navigation with timer, centered buttons, and answers toggle */}
+            <SectionNav
+                activeSection={currentSection}
+                onSectionChange={setCurrentSection}
+            />
 
-                <div className="mt-4">
+            <main className="max-w-6xl mx-auto">
+                {/* Content area with padding for better spacing */}
+                <div className="px-4 py-6">
                     <LessonContentProvider
                         currentTopic={currentTopic}
                         currentLessonId={currentLessonId}

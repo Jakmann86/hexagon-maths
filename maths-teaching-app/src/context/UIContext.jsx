@@ -68,6 +68,8 @@ export const UIProvider = ({ children }) => {
         pauseTimer();
         setTimerSeconds(minutes * 60);
     }, [pauseTimer]);
+
+    
     
     // Pythagoras visualization specific states
     const [showBaseSquare, setShowBaseSquare] = useState(true);
