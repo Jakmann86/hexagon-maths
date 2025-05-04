@@ -27,11 +27,25 @@ export const curriculum = {
             },
             {
                 id: 3,
-                title: "Find Missing Angles Using Trigonometry"
+                title: "Find Missing Angles Using Trigonometry",
+                sections: {
+                    starter: 'sohcahtoa2/StarterSection',
+                    diagnostic: 'sohcahtoa2/DiagnosticSection',
+                    learn: 'sohcahtoa2/LearnSection',
+                    examples: 'sohcahtoa2/ExamplesSection',
+                    challenge: 'sohcahtoa2/ChallengeSection'
+                }
             },
             {
                 id: 4,
-                title: "Applications & Problem Solving"
+                title: "3D Pythagoras & Applications",
+                sections: {
+                    starter: 'inverse/StarterSection',
+                    diagnostic: 'inverse/DiagnosticSection',
+                    learn: 'inverse/LearnSection',
+                    examples: 'inverse/ExamplesSection',
+                    challenge: 'inverse/ChallengeSection'
+                }
             }
         ]
     }
