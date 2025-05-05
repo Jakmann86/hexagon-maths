@@ -1,4 +1,4 @@
-// src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
+// maths-teaching-app/src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
 import React, { useState, useEffect } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
 import MathDisplay from '../../../../components/common/MathDisplay';
@@ -52,6 +52,8 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   const generateHypotenuseExample = () => {
     // Include some examples with decimal answers
     const example = _.sample(PYTHAGOREAN_EXAMPLES);
+    // Generate a random orientation for each question
+    const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
 
     // Format calculator input
     const calculatorInput = `\\sqrt{${example.a}^2 + ${example.b}^2}`;
@@ -61,6 +63,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       question: `Find the length of the hypotenuse. The other sides are ${example.a} cm and ${example.b} cm.`,
       triple: example,
       missingValue: 'c',
+      orientation: orientation, // Add orientation to the example object
       steps: [
         {
           explanation: "Use Pythagoras' theorem: a² + b² = c²",
@@ -102,6 +105,8 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     // Randomly decide whether to find side a or b
     const findSide = _.sample(['a', 'b']);
     const knownSide = findSide === 'a' ? 'b' : 'a';
+    // Generate a random orientation for each question
+    const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
 
     // Format calculator input
     const calculatorInput = `\\sqrt{${example.c}^2 - ${example[knownSide]}^2}`;
@@ -112,6 +117,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       triple: example,
       missingValue: findSide,
       knownSide: knownSide,
+      orientation: orientation, // Add orientation to the example object
       steps: [
         {
           explanation: "Use Pythagoras' theorem: a² + b² = c²",
@@ -258,7 +264,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     );
   };
 
-  // Render an isosceles triangle
+  // Render an isosceles triangle using JSXGraph
   const renderIsoscelesTriangle = (example) => {
     return (
       <div style={{ height: "350px", width: "100%" }}>
@@ -285,7 +291,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     );
   };
 
-  // Render a right triangle
+  // Render a right triangle with random orientation - PASS THE ORIENTATION HERE
   const renderRightTriangle = (example) => {
     const triple = example.triple;
     const missingValue = example.missingValue;
@@ -303,7 +309,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
           base={triple.a}
           height={triple.b}
           showRightAngle={true}
-          labelStyle="custom"
+          orientation={example.orientation} // Use the orientation from the example object
           labels={labels}
           units="cm"
           style={{

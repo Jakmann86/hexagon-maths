@@ -4,7 +4,6 @@ import { RefreshCw } from 'lucide-react';
 import MathDisplay from '../common/MathDisplay';
 import { useUI } from '../../context/UIContext';
 
-// Content renderer with improved answer display
 const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
     if (!content) return null;
     
@@ -33,7 +32,7 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
             );
         case 'math':
             return <MathDisplay math={processText(content)} displayMode={true} size="large" />;
-        case 'puzzle-answer':  // Special case for puzzle answers
+        case 'puzzle-answer':
             return (
                 <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
                     {processText(content)}
@@ -47,7 +46,6 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
     }
 };
 
-// Improved QuestionDisplay with taller boxes and better answer rendering
 const QuestionDisplay = ({ type, title, data, showAnswers }) => {
     const typeStyles = {
         section1: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
@@ -56,7 +54,6 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
         section4: 'bg-orange-100 hover:bg-orange-200 border-orange-300'
     };
 
-    // Determine if this is a puzzle question
     const isPuzzle = data?.difficulty === 'puzzle' || type === 'section4';
 
     return (
@@ -64,20 +61,19 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
             className={`
                 ${typeStyles[type]} 
                 p-4 rounded-lg shadow-md
-                h-72  
+                min-h-72  
                 flex flex-col
                 transform transition-all duration-300
                 hover:shadow-lg hover:translate-y-[-2px]
                 border-2
-                overflow-hidden
             `}
         >
             <h3 className="font-bold mb-2 text-lg text-gray-700 line-clamp-1">
                 {title}
             </h3>
 
-            <div className="flex-grow flex flex-col overflow-hidden">
-                <div className="text-base flex-grow min-h-0 overflow-hidden">
+            <div className="flex-grow flex flex-col">
+                <div className="text-base flex-grow">
                     <ContentRenderer content={data?.question} />
                 </div>
 
@@ -91,9 +87,9 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
                 )}
 
                 {showAnswers && data?.answer && (
-                    <div className="mt-2 pt-2 border-t-2 border-gray-300 overflow-auto">
+                    <div className="mt-2 pt-2 border-t-2 border-gray-300">
                         <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
-                        <div className="math-answer overflow-auto max-h-24">
+                        <div className="math-answer">
                             {typeof data.answer === 'string' && data.answer.includes('\\') && !isPuzzle ? (
                                 <MathDisplay math={data.answer} displayMode={false} size="normal" />
                             ) : (
@@ -110,7 +106,6 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
     );
 };
 
-// Main component with MathStarters layout
 const StarterSectionBase = ({
     questionGenerators = [],
     currentTopic,
@@ -118,7 +113,6 @@ const StarterSectionBase = ({
 }) => {
     const { showAnswers } = useUI();
 
-    // Section titles in MathStarters style
     const sectionTitles = {
         section1: 'Last Lesson',
         section2: 'Last Week',
@@ -126,7 +120,6 @@ const StarterSectionBase = ({
         section4: 'Last Year'
     };
 
-    // Ensure exactly 4 generators with fallback
     const normalizedGenerators = useMemo(() => {
         const generators = [...questionGenerators];
         while (generators.length < 4) {
@@ -138,7 +131,6 @@ const StarterSectionBase = ({
         return generators;
     }, [questionGenerators]);
 
-    // Questions state
     const [questions, setQuestions] = useState(() => ({
         section1: normalizedGenerators[0](),
         section2: normalizedGenerators[1](),
@@ -146,7 +138,6 @@ const StarterSectionBase = ({
         section4: normalizedGenerators[3]()
     }));
 
-    // Regenerate questions
     const regenerateAllQuestions = () => {
         setQuestions({
             section1: normalizedGenerators[0](),
@@ -158,7 +149,6 @@ const StarterSectionBase = ({
 
     return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden py-4 px-6">
-            {/* 2x2 grid like MathStarters */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {Object.entries(questions).map(([sectionKey, questionData]) => (
                     <QuestionDisplay
@@ -171,7 +161,6 @@ const StarterSectionBase = ({
                 ))}
             </div>
             
-            {/* Regenerate button in MathStarters style */}
             <div className="flex justify-center mt-4">
                 <button
                     onClick={regenerateAllQuestions}

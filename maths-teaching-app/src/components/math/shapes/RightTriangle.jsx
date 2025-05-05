@@ -13,8 +13,9 @@ const RightTriangle = ({
   containerHeight = 250,
   orientation = 'default',
   scale = 1,
-  markAngle = null
+  labelOffset = 0.8 // Customizable label offset distance
 }) => {
+  // Handle random orientation
   const actualOrientation = orientation === 'random' 
     ? ['default', 'rotate90', 'rotate180', 'rotate270'][Math.floor(Math.random() * 4)]
     : orientation;
@@ -28,6 +29,118 @@ const RightTriangle = ({
   const hypotenuse = Math.sqrt(base * base + height * height);
   // Add unique identifier to prevent board conflicts
   const boardId = `right-triangle-standard-${actualOrientation}-${scale}-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Get orientation-specific label configurations
+  const getLabelConfig = () => {
+    const configs = {
+      default: {
+        // Standard orientation - hyp and left label need to move left
+        points: [
+          [0, 4],      // top-left
+          [4, 4],      // top-right  
+          [0, 0]       // bottom-left (right angle)
+        ],
+        labels: [
+          {
+            position: [2, 4.25],  // base (top)
+            rotation: 0,
+            anchor: { x: 'middle', y: 'bottom' }
+          },
+          {
+            position: [-0.5, 2],  // height (left) - moved left
+            rotation: 0,
+            anchor: { x: 'right', y: 'middle' }
+          },
+          {
+            position: [1.5, 1.2],  // hypotenuse - moved left
+            rotation: 0,
+            anchor: { x: 'center', y: 'center' }
+          }
+        ],
+        rightAnglePoints: [1, 2, 0]
+      },
+      rotate90: {
+        // Rotated 90° - labels are perfect, keep them
+        points: [
+          [0, 0],      // bottom-left
+          [0, 4],      // top-left
+          [4, 0]       // bottom-right (right angle)
+        ],
+        labels: [
+          {
+            position: [4.25, 2],   // base (right)
+            rotation: 0,
+            anchor: { x: 'left', y: 'middle' }
+          },
+          {
+            position: [2, -0.25],  // height (bottom)
+            rotation: 0,
+            anchor: { x: 'middle', y: 'top' }
+          },
+          {
+            position: [1.2, 2.3],  // hypotenuse
+            rotation: 0,
+            anchor: { x: 'center', y: 'center' }
+          }
+        ],
+        rightAnglePoints: [1, 2, 0]
+      },
+      rotate180: {
+        // Rotated 180° - right label and hyp too far up
+        points: [
+          [4, 0],      // bottom-right (right angle)
+          [0, 0],      // bottom-left
+          [4, 4]       // top-right
+        ],
+        labels: [
+          {
+            position: [2, -0.25],  // base (bottom)
+            rotation: 0,
+            anchor: { x: 'middle', y: 'top' }
+          },
+          {
+            position: [4.5, 2],   // height (right) - moved right to fix
+            rotation: 0,
+            anchor: { x: 'left', y: 'middle' }
+          },
+          {
+            position: [1.3, 2],  // hypotenuse - moved down
+            rotation: 0,
+            anchor: { x: 'center', y: 'center' }
+          }
+        ],
+        rightAnglePoints: [1, 0, 2]
+      },
+      rotate270: {
+        // Rotated 270° - hyp label needs to come up
+        points: [
+          [4, 4],      // top-right
+          [4, 0],      // bottom-right
+          [0, 4]       // top-left (right angle)
+        ],
+        labels: [
+          {
+            position: [-0.25, 2],  // base (left)
+            rotation: 0,
+            anchor: { x: 'right', y: 'middle' }
+          },
+          {
+            position: [2, 4.25],   // height (top)
+            rotation: 0,
+            anchor: { x: 'middle', y: 'bottom' }
+          },
+          {
+            position: [2.8, 2.5],  // hypotenuse - moved up
+            rotation: 0,
+            anchor: { x: 'center', y: 'center' }
+          }
+        ],
+        rightAnglePoints: [1, 2, 0]
+      }
+    };
+
+    return configs[actualOrientation] || configs.default;
+  };
 
   const updateBoard = (board) => {
     // Clear existing objects more safely
@@ -50,41 +163,14 @@ const RightTriangle = ({
         strokeWidth = 2
       } = style;
       
-      let points;
-      switch (actualOrientation) {
-        case 'rotate90':
-          points = [
-            [STANDARD.height, 0],
-            [STANDARD.height, STANDARD.base],
-            [0, 0]
-          ];
-          break;
-        case 'rotate180':
-          points = [
-            [STANDARD.base, STANDARD.height],
-            [0, STANDARD.height],
-            [STANDARD.base, 0]
-          ];
-          break;
-        case 'rotate270':
-          points = [
-            [0, STANDARD.base],
-            [0, 0],
-            [STANDARD.height, STANDARD.base]
-          ];
-          break;
-        default:
-          points = [
-            [0, 0],
-            [STANDARD.base, 0],
-            [0, STANDARD.height]
-          ];
-      }
+      const config = getLabelConfig();
       
-      const p1 = board.create('point', points[0], { visible: false, fixed: true });
-      const p2 = board.create('point', points[1], { visible: false, fixed: true });
-      const p3 = board.create('point', points[2], { visible: false, fixed: true });
+      // Create points
+      const [p1, p2, p3] = config.points.map(point => 
+        board.create('point', point, { visible: false, fixed: true })
+      );
       
+      // Create triangle
       board.create('polygon', [p1, p2, p3], {
         fillColor: fillColor,
         fillOpacity: fillOpacity,
@@ -93,64 +179,46 @@ const RightTriangle = ({
         vertices: { visible: false }
       });
       
+      // Create labels
       const sideLabels = labels.length === 3 ? labels : [
         `${base} ${units}`,
         `${height} ${units}`,
         `${hypotenuse.toFixed(2)} ${units}`
       ];
       
-      // Improved label positions with better offsets
-      let labelPositions;
-      const labelOffset = 0.8 * scale;
-      const diagonalOffset = 1.2 * scale;
-      
-      switch (actualOrientation) {
-        case 'rotate90':
-          labelPositions = [
-            [STANDARD.height + labelOffset, STANDARD.base/2, sideLabels[0]],
-            [STANDARD.height/2, -labelOffset, sideLabels[1]],
-            [STANDARD.height/2 + diagonalOffset, STANDARD.base/2 + labelOffset, sideLabels[2]]
-          ];
-          break;
-        case 'rotate180':
-          labelPositions = [
-            [STANDARD.base/2, STANDARD.height + labelOffset, sideLabels[0]],
-            [STANDARD.base + labelOffset, STANDARD.height/2, sideLabels[1]],
-            [STANDARD.base/2 - diagonalOffset, STANDARD.height/2 + labelOffset, sideLabels[2]]
-          ];
-          break;
-        case 'rotate270':
-          labelPositions = [
-            [-labelOffset, STANDARD.base/2, sideLabels[0]],
-            [STANDARD.height/2, STANDARD.base + labelOffset, sideLabels[1]],
-            [STANDARD.height/2 - diagonalOffset, STANDARD.base/2 + labelOffset, sideLabels[2]]
-          ];
-          break;
-        default:
-          labelPositions = [
-            [STANDARD.base/2, -labelOffset, sideLabels[0]],
-            [-labelOffset, STANDARD.height/2, sideLabels[1]],
-            [STANDARD.base/2 + diagonalOffset, STANDARD.height/2 + labelOffset, sideLabels[2]]
-          ];
-      }
-      
-      labelPositions.forEach(([x, y, text]) => {
-        board.create('text', [x, y, text], {
-          fontSize: 14 * scale,
-          fixed: true,
-          anchorX: 'middle',
-          anchorY: 'middle',
-          color: '#000000' // Ensure black text for visibility
-        });
+      config.labels.forEach((labelConfig, index) => {
+        const text = board.create('text', 
+          [labelConfig.position[0], labelConfig.position[1], sideLabels[index]], 
+          {
+            fontSize: 14 * scale,
+            fixed: true,
+            anchorX: labelConfig.anchor.x,
+            anchorY: labelConfig.anchor.y,
+            rotate: labelConfig.rotation,
+            color: '#000000'
+          }
+        );
       });
       
+      // Create right angle marker using JSXGraph's built-in right angle feature
       if (showRightAngle) {
-        board.create('angle', [p2, p1, p3], {
-          radius: 0.5 * scale,
-          orthotype: 'square',
-          fillColor: 'none',
-          strokeWidth: 1,
-          fixed: true
+        const [idx1, idx2, idx3] = config.rightAnglePoints;
+        const anglePoints = [p1, p2, p3];
+        
+        // Create right angle marker using JSXGraph's built-in feature
+        board.create('angle', [
+          anglePoints[idx1], 
+          anglePoints[idx2], 
+          anglePoints[idx3]
+        ], {
+          radius: 0.5,
+          type: 'square', // Makes it a right angle square marker
+          fillColor: 'transparent',
+          fillOpacity: 0,
+          strokeColor: '#000',
+          strokeWidth: 2,
+          fixed: true,
+          visible: true
         });
       }
     } catch (error) {
@@ -160,23 +228,15 @@ const RightTriangle = ({
     board.unsuspendUpdate();
   };
 
-  // Improved bounding box to ensure triangle is fully visible
+  // Fixed bounding box - use the same proportions as the demo
   const getBoundingBox = () => {
-    let bb;
-    switch (actualOrientation) {
-      case 'rotate90':
-        bb = [-1, 8, 7, -1];
-        break;
-      case 'rotate180':
-        bb = [-1, 5, 7, -1];
-        break;
-      case 'rotate270':
-        bb = [-1, 5, 7, -1];
-        break;
-      default:
-        bb = [-1, 7, 5, -1];
-    }
-    return bb.map(v => v * scale);
+    const padding = 0.5; // Minimal padding, just like the demo
+    return [
+      -0.5 - padding,
+      4.5 + padding,
+      4.5 + padding,
+      -0.5 - padding
+    ];
   };
 
   return (
@@ -188,7 +248,7 @@ const RightTriangle = ({
         backgroundColor="transparent"
         axis={false}
         onUpdate={updateBoard}
-        dependencies={[base, height, labels, actualOrientation, scale]}
+        dependencies={[base, height, labels, actualOrientation, scale, labelOffset]}
       />
     </div>
   );

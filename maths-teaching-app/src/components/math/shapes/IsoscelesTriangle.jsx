@@ -1,25 +1,8 @@
-// src/components/math/shapes/IsoscelesTriangle.jsx
+// maths-teaching-app/src/components/math/shapes/IsoscelesTriangle.jsx
 import React from 'react';
-import * as MafsLib from 'mafs';
-import 'mafs/core.css';
-import 'mafs/font.css';
+import JSXGraphBoard from '../JSXGraphBoard';
+import { STANDARD_SHAPES } from '../../../config/standardShapes';
 
-/**
- * IsoscelesTriangle - A component for rendering an isosceles triangle with height toggle
- * Sized to match the RightTriangle component
- * 
- * @param {Object} props
- * @param {number} props.base - Length of the base (default: 6)
- * @param {number} props.height - Height of the triangle (default: 4)
- * @param {boolean} props.showHeight - Whether to show the height line
- * @param {string} props.labelStyle - Style of labels ('standard', 'numeric', or 'custom')
- * @param {Object} props.labels - Custom labels for different parts of the triangle
- * @param {Array} props.labels.sides - Labels for sides [base, left side, right side]
- * @param {Array} props.labels.vertices - Labels for vertices [bottom-left, bottom-right, top]
- * @param {string} props.units - Units for measurements (e.g. "cm", "m")
- * @param {Object} props.style - Additional styling options
- * @param {number} props.mafsHeight - Direct height for the Mafs component
- */
 const IsoscelesTriangle = ({
   base = 6,
   height = 4,
@@ -33,7 +16,7 @@ const IsoscelesTriangle = ({
   // Calculate equal sides length using Pythagoras' theorem
   const halfBase = base / 2;
   const equalSide = Math.sqrt(halfBase * halfBase + height * height);
-  const roundedEqualSide = Math.round(equalSide * 100) / 100; // Round to 2 decimal places
+  const roundedEqualSide = Math.round(equalSide * 100) / 100;
   
   // Default labels based on labelStyle
   let defaultSideLabels = [];
@@ -56,144 +39,152 @@ const IsoscelesTriangle = ({
   
   // Default style options
   const {
-    fillColor = MafsLib.Theme.green,
+    fillColor = '#4CAF50',
     fillOpacity = 0.2,
-    strokeColor = MafsLib.Theme.green,
+    strokeColor = '#4CAF50',
     strokeWidth = 2,
     showGrid = false,
-    heightColor = MafsLib.Theme.blue,
+    heightColor = '#2196F3',
     backgroundTransparent = true,
   } = style;
-  
-  // Calculate viewBox with better padding exactly like RightTriangle
-  const maxDim = Math.max(base, height);
-  const padding = Math.max(1, maxDim * 0.15); // Dynamic padding based on size
-  
-  const viewBox = {
-    x: [-padding, base + padding],
-    y: [-padding, height + padding]
+
+  // Create unique board ID
+  const boardId = `isosceles-triangle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Update function for JSXGraph board
+  const updateBoard = (board) => {
+    // Clear any existing objects
+    Object.keys(board.objects).forEach(id => {
+      board.removeObject(id);
+    });
+    
+    board.suspendUpdate();
+
+    try {
+      // Create the triangle vertices
+      const leftVertex = board.create('point', [0, 0], { visible: false, fixed: true });
+      const rightVertex = board.create('point', [base, 0], { visible: false, fixed: true });
+      const topVertex = board.create('point', [base/2, height], { visible: false, fixed: true });
+      
+      // Create the triangle
+      const triangle = board.create('polygon', [leftVertex, rightVertex, topVertex], {
+        fillColor: fillColor,
+        fillOpacity: fillOpacity,
+        strokeColor: strokeColor,
+        strokeWidth: strokeWidth,
+        vertices: { visible: false }
+      });
+      
+      // Height line and right angle marker
+      if (showHeight) {
+        // Height midpoint
+        const heightPoint = board.create('point', [base/2, 0], { visible: false, fixed: true });
+        
+        // Height line
+        const heightLine = board.create('segment', [topVertex, heightPoint], {
+          strokeColor: heightColor,
+          strokeWidth: 1.5,
+          dash: 2
+        });
+        
+        // Right angle marker
+        const rightAngle = board.create('angle', [leftVertex, heightPoint, topVertex], {
+          radius: 0.5,
+          orthotype: 'square',
+          fillColor: heightColor,
+          fillOpacity: 0.3,
+          strokeWidth: 1
+        });
+        
+        // Height label
+        board.create('text', [base/2 + 0.8, height/2, `h = ${height} ${units}`], {
+          fontSize: 14,
+          fixed: true,
+          color: heightColor
+        });
+      }
+      
+      // Side labels
+      // Base label
+      board.create('text', [base/2, -0.8, sideLabels[0]], {
+        fontSize: 14,
+        fixed: true,
+        anchorX: 'middle',
+        color: '#000000'
+      });
+      
+      // Left side label
+      board.create('text', [base/4 - 0.5, height/2 - 0.5, sideLabels[1]], {
+        fontSize: 14,
+        fixed: true,
+        anchorX: 'middle',
+        color: '#000000',
+        rotate: Math.atan2(height, -base/2) * 180 / Math.PI
+      });
+      
+      // Right side label
+      board.create('text', [3*base/4 + 0.5, height/2 - 0.5, sideLabels[2]], {
+        fontSize: 14,
+        fixed: true,
+        anchorX: 'middle',
+        color: '#000000',
+        rotate: Math.atan2(height, base/2) * 180 / Math.PI
+      });
+      
+      // Vertex labels (only if specifically requested)
+      if (labels.vertices) {
+        board.create('text', [0, 0, vertexLabels[0]], {
+          fontSize: 14,
+          fixed: true,
+          anchorX: 'right',
+          anchorY: 'top',
+          offset: [-10, -10],
+          color: '#000000'
+        });
+        
+        board.create('text', [base, 0, vertexLabels[1]], {
+          fontSize: 14,
+          fixed: true,
+          anchorX: 'left',
+          anchorY: 'top',
+          offset: [10, -10],
+          color: '#000000'
+        });
+        
+        board.create('text', [base/2, height, vertexLabels[2]], {
+          fontSize: 14,
+          fixed: true,
+          anchorX: 'middle',
+          anchorY: 'bottom',
+          offset: [0, -10],
+          color: '#000000'
+        });
+      }
+    } catch (error) {
+      console.error("Error creating isosceles triangle:", error);
+    }
+    
+    board.unsuspendUpdate();
   };
 
-  // Custom styles for Mafs component with background fixes
-  const mafsStyles = {
-    '--mafs-bg': 'transparent',
-    '--mafs-fg': '#333',
-    background: 'transparent'
+  // Calculate appropriate bounding box
+  const getBoundingBox = () => {
+    const padding = 2;
+    return [-padding, height + padding, base + padding, -padding];
   };
 
   return (
-    <div className="w-full h-full" style={{ background: 'transparent' }}>
-      <MafsLib.Mafs 
-        className="mafs-transparent"
-        viewBox={viewBox}
-        preserveAspectRatio="xMidYMid meet"
-        height={mafsHeight} // Use explicit height from props
-        width={mafsHeight}  // Make width equal to height for consistent aspect ratio
-        style={mafsStyles}
-      >
-        {/* Optional grid with faint axes */}
-        {showGrid && <MafsLib.Coordinates.Cartesian 
-          xAxis={{ variant: 'secondary' }}
-          yAxis={{ variant: 'secondary' }}
-        />}
-        
-        {/* Triangle polygon */}
-        <MafsLib.Polygon
-          points={[
-            [0, 0],
-            [base, 0],
-            [base/2, height]
-          ]}
-          color={fillColor}
-          fillOpacity={fillOpacity}
-          strokeOpacity={1}
-          strokeWidth={strokeWidth}
-        />
-
-        {/* Height line (optional) */}
-        {showHeight && (
-          <>
-            <MafsLib.Line.Segment
-              point1={[base/2, height]}
-              point2={[base/2, 0]}
-              color={heightColor}
-              strokeWidth={1}
-              strokeDasharray={4}
-            />
-            
-            {/* Right angle marker at base of height */}
-            <MafsLib.Polygon
-              points={[
-                [base/2 - 0.3, 0],
-                [base/2 - 0.3, 0.3],
-                [base/2, 0.3]
-              ]}
-              color={MafsLib.Theme.black}
-              strokeOpacity={1}
-              fillOpacity={0}
-              strokeWidth={1}
-            />
-            
-            {/* Height label */}
-            <MafsLib.Text
-              x={base/2 + 0.6}
-              y={height/2}
-              attach="center"
-              color={heightColor}
-            >
-              {`h = ${height} ${units}`}
-            </MafsLib.Text>
-          </>
-        )}
-
-        {/* Side labels - matching RightTriangle positioning pattern */}
-        {/* Base label */}
-        <MafsLib.Text
-          x={base/2 - 0.75}
-          y={-1}
-          attach="center"
-          color={MafsLib.Theme.black}
-        >
-          {sideLabels[0]}
-        </MafsLib.Text>
-        
-        {/* Left equal side label */}
-        <MafsLib.Text
-          x={base/4 - 2}
-          y={height/2}
-          attach="center"
-          color={MafsLib.Theme.black}
-        >
-          {sideLabels[1]}
-        </MafsLib.Text>
-        
-        {/* Right equal side label */}
-        <MafsLib.Text
-          x={3*base/4 + 0.5}
-          y={height/2}
-          attach="center"
-          color={MafsLib.Theme.black}
-        >
-          {sideLabels[2]}
-        </MafsLib.Text>
-        
-        {/* Vertex labels (only if specifically requested) */}
-        {labels.vertices && (
-          <>
-            <MafsLib.Text x={0} y={0} attach="southwest" color={MafsLib.Theme.black}>
-              {vertexLabels[0]}
-            </MafsLib.Text>
-            
-            <MafsLib.Text x={base} y={0} attach="southeast" color={MafsLib.Theme.black}>
-              {vertexLabels[1]}
-            </MafsLib.Text>
-            
-            <MafsLib.Text x={base/2} y={height} attach="north" color={MafsLib.Theme.black}>
-              {vertexLabels[2]}
-            </MafsLib.Text>
-          </>
-        )}
-      </MafsLib.Mafs>
+    <div className="w-full h-full" style={{ maxHeight: `${mafsHeight}px` }}>
+      <JSXGraphBoard
+        id={boardId}
+        boundingBox={getBoundingBox()}
+        height={mafsHeight}
+        backgroundColor="transparent"
+        axis={false}
+        grid={false}
+        onUpdate={updateBoard}
+        dependencies={[base, height, showHeight, labels, mafsHeight]}
+      />
     </div>
   );
 };
