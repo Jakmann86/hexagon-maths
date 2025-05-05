@@ -1,33 +1,29 @@
-// Enhanced StarterSectionBase.jsx with MathStarters styling
+// maths-teaching-app/src/components/sections/StarterSectionBase.jsx
 import React, { useState, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import MathDisplay from '../common/MathDisplay';
 import { useUI } from '../../context/UIContext';
 
-// Improve content renderer to match MathStarters styling
+// Content renderer with improved answer display
 const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
     if (!content) return null;
     
-    // Direct React element rendering
     if (React.isValidElement(content)) {
-        // Clone element and add props for triangles in starter section
         if (content.type?.name === 'RightTriangle') {
             return React.cloneElement(content, {
                 scale: 0.6,
                 containerHeight: 110,
-                orientation: 'random'
+                orientation: content.props.orientation || 'random'
             });
         }
         return content;
     }
 
-    // Process text with MathStarters styling
     const processText = (text) => {
         if (typeof text !== 'string') return text;
         return text.trim();
     };
 
-    // Enhanced rendering based on content type
     switch (type) {
         case 'visualization':
             return (
@@ -37,15 +33,21 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
             );
         case 'math':
             return <MathDisplay math={processText(content)} displayMode={true} size="large" />;
+        case 'puzzle-answer':  // Special case for puzzle answers
+            return (
+                <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
+                    {processText(content)}
+                </div>
+            );
         default:
             if (typeof content === 'string' && (content.includes('\\') || content.includes('$'))) {
-                return <MathDisplay math={processText(content)} size="large" />;
+                return <MathDisplay math={processText(content)} size="normal" />;
             }
             return <div className="text-gray-800 text-lg">{processText(content)}</div>;
     }
 };
 
-// Enhanced QuestionDisplay with MathStarters styling and consistent size
+// Improved QuestionDisplay with taller boxes and better answer rendering
 const QuestionDisplay = ({ type, title, data, showAnswers }) => {
     const typeStyles = {
         section1: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
@@ -54,12 +56,15 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
         section4: 'bg-orange-100 hover:bg-orange-200 border-orange-300'
     };
 
+    // Determine if this is a puzzle question
+    const isPuzzle = data?.difficulty === 'puzzle' || type === 'section4';
+
     return (
         <div 
             className={`
                 ${typeStyles[type]} 
                 p-4 rounded-lg shadow-md
-                h-60
+                h-72  
                 flex flex-col
                 transform transition-all duration-300
                 hover:shadow-lg hover:translate-y-[-2px]
@@ -86,16 +91,15 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
                 )}
 
                 {showAnswers && data?.answer && (
-                    <div className="mt-2 pt-2 border-t-2 border-gray-300 overflow-hidden">
+                    <div className="mt-2 pt-2 border-t-2 border-gray-300 overflow-auto">
                         <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
-                        <div className="math-answer overflow-hidden">
-                            {typeof data.answer === 'string' && data.answer.includes('\\') ? (
+                        <div className="math-answer overflow-auto max-h-24">
+                            {typeof data.answer === 'string' && data.answer.includes('\\') && !isPuzzle ? (
                                 <MathDisplay math={data.answer} displayMode={false} size="normal" />
                             ) : (
                                 <ContentRenderer 
                                     content={data.answer} 
-                                    type="math" 
-                                    isMath={true} 
+                                    type={isPuzzle ? 'puzzle-answer' : 'text'} 
                                 />
                             )}
                         </div>

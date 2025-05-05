@@ -1,3 +1,4 @@
+// maths-teaching-app/src/content/topics/trigonometry-i/sohcahtoa1/StarterSection.jsx
 import React from 'react';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
 import RightTriangle from '../../../../components/math/shapes/RightTriangle';
@@ -166,7 +167,8 @@ const generateCountdownGame = () => {
     return {
         question: `Numbers Challenge: Use the numbers ${shuffledNumbers.join(', ')} to make ${target}.
 You can use +, −, ×, ÷ and each number at most once.`,
-        answer: `Example solution:\n${solutionSteps.join('\n')}`,
+        answer: `Example solution:
+${solutionSteps.join('\n')}`,
         difficulty: 'puzzle'
     };
 };
