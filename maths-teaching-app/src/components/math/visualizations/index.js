@@ -1,4 +1,4 @@
-// src/components/math/visualizations/index.js
+// maths-teaching-app/src/components/math/visualizations/index.js
 import PythagorasVisualization from './PythagorasVisualization';
 import CoordinateVisualization from './CoordinateVisualization';
 import NavigationVisualization from './NavigationVisualization';

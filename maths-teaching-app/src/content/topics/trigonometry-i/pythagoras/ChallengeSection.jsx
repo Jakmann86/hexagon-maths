@@ -1,11 +1,11 @@
-// src/content/topics/trigonometry-i/pythagoras/ChallengeSection.jsx
+// maths-teaching-app/src/content/topics/trigonometry-i/pythagoras/ChallengeSection.jsx
 import React, { useState, useEffect } from 'react';
-import ChallengeSectionBase from '../../../../components/sections/ChallengeSectionBase';
 import JSXGraphBoard from '../../../../components/math/JSXGraphBoard';
 import { Card, CardContent } from '../../../../components/common/Card';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import { useUI } from '../../../../context/UIContext';
 import _ from 'lodash';
+import katex from 'katex';
 
 const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   // Get theme colors for challenge section
@@ -26,116 +26,216 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
     generateChallenge();
   }, []);
 
-  // JSXGraph board update function
-  const updateBoard = (board) => {
-    if (!challenge) return;
-    
-    // Clear any existing elements
-    board.suspendUpdate();
-    board.objects = {};
-    
-    const { point1, point2 } = challenge;
-    
-    // Create points
-    const p1 = board.create('point', point1, {
-      name: 'A',
-      fixed: true,
-      color: '#e74c3c', // Red
-      size: 4,
-      label: { offset: [10, 10] }
-    });
-    
-    const p2 = board.create('point', point2, {
-      name: 'B',
-      fixed: true,
-      color: '#3498db', // Blue
-      size: 4,
-      label: { offset: [10, 10] }
-    });
-    
-    // Create line between points
-    const line = board.create('line', [p1, p2], {
-      straightFirst: false,
-      straightLast: false,
-      strokeColor: '#9b59b6', // Purple
-      strokeWidth: 2
-    });
-    
-    // If showing answers, add the right triangle construction
-    if (showAnswers) {
-      // Create right angle point
-      const rightAnglePoint = board.create('point', [point2[0], point1[1]], {
-        name: 'C',
+  // JSXGraph board mount function to create grid
+  const onMountBoard = (board) => {
+    // Create custom grid explicitly
+    for (let x = -6; x <= 6; x++) {
+      board.create('line', [[x, -6], [x, 6]], {
+        strokeColor: '#dddddd',
+        strokeWidth: 1,
         fixed: true,
-        color: '#2ecc71', // Green
-        size: 4,
-        label: { offset: [10, -10] }
+        highlight: false,
+        hasGrid: true  // Mark as grid for identification
       });
-      
-      // Create triangle sides
-      const horizontalLine = board.create('line', [p1, rightAnglePoint], {
-        straightFirst: false,
-        straightLast: false,
-        strokeColor: '#2ecc71', // Green
-        strokeWidth: 2,
-        dash: 2
+    }
+    
+    for (let y = -6; y <= 6; y++) {
+      board.create('line', [[-6, y], [6, y]], {
+        strokeColor: '#dddddd',
+        strokeWidth: 1,
+        fixed: true,
+        highlight: false,
+        hasGrid: true  // Mark as grid for identification
       });
-      
-      const verticalLine = board.create('line', [rightAnglePoint, p2], {
-        straightFirst: false,
-        straightLast: false,
-        strokeColor: '#2ecc71', // Green
-        strokeWidth: 2,
-        dash: 2
-      });
-      
-      // Add right angle marker
-      board.create('angle', [p2, rightAnglePoint, p1], {
-        radius: 0.25,
-        name: '90°',
-        type: 'square',
-        fill: '#2ecc71',
-        fillOpacity: 0.4,
-        label: { offset: [0, 0] }
-      });
-      
-      // Add dimension labels
-      const dx = Math.abs(point2[0] - point1[0]);
-      const dy = Math.abs(point2[1] - point1[1]);
-      
-      board.create('text', [
-        (point1[0] + point2[0]) / 2,
-        point1[1] - 0.5,
-        `a = ${dx.toFixed(1)} units`
-      ], { 
-        fontSize: 14,
-        fixed: true
-      });
-      
-      board.create('text', [
-        point2[0] + 0.3,
-        (point1[1] + point2[1]) / 2,
-        `b = ${dy.toFixed(1)} units`
-      ], { 
-        fontSize: 14,
-        fixed: true
-      });
-      
-      if (challenge.distance) {
-        board.create('text', [
-          (point1[0] + point2[0]) / 2 - 0.5,
-          (point1[1] + point2[1]) / 2 - 0.5,
-          `d = ${challenge.distance} units`
-        ], { 
-          fontSize: 16,
+    }
+    
+    // Create axes with thicker lines
+    const xAxis = board.create('line', [[-6, 0], [6, 0]], {
+      strokeColor: '#666666',
+      strokeWidth: 2,
+      fixed: true,
+      highlight: false,
+      name: 'xAxis'
+    });
+    
+    const yAxis = board.create('line', [[0, -6], [0, 6]], {
+      strokeColor: '#666666',
+      strokeWidth: 2,
+      fixed: true,
+      highlight: false,
+      name: 'yAxis'
+    });
+    
+    // Add axis labels
+    for (let x = -6; x <= 6; x++) {
+      if (x !== 0) {
+        board.create('text', [x, -0.3, x.toString()], {
           fixed: true,
-          color: '#9b59b6' // Purple
+          anchorX: 'middle',
+          anchorY: 'top',
+          fontSize: 14
         });
       }
     }
     
+    for (let y = -6; y <= 6; y++) {
+      if (y !== 0) {
+        board.create('text', [-0.3, y, y.toString()], {
+          fixed: true,
+          anchorX: 'right',
+          anchorY: 'middle',
+          fontSize: 14
+        });
+      }
+    }
+    
+    // Add origin label
+    board.create('text', [-0.3, -0.3, '0'], {
+      fixed: true,
+      anchorX: 'right',
+      anchorY: 'top',
+      fontSize: 14
+    });
+  };
+
+  // JSXGraph board update function
+  const updateBoard = (board) => {
+    if (!challenge) return;
+    
+    board.suspendUpdate();
+    
+    try {
+      // Remove all existing elements except grid, axes, and labels
+      const elements = Object.values(board.objects);
+      elements.forEach(el => {
+        // Keep grid lines, axes, and labels  
+        if (el && el.remove && 
+            !el.hasGrid && 
+            !(el.name?.includes('Axis')) && 
+            el.elType !== 'text' &&
+            !el.hasLabel) {
+          el.remove();
+        }
+      });
+      
+      const { point1, point2 } = challenge;
+      
+      // Create points
+      const p1 = board.create('point', point1, {
+        name: 'A',
+        fixed: true,
+        color: '#e74c3c', // Red
+        size: 4,
+        label: { 
+          offset: [10, 10],
+          strokeColor: '#e74c3c'
+        }
+      });
+      
+      const p2 = board.create('point', point2, {
+        name: 'B',
+        fixed: true,
+        color: '#3498db', // Blue
+        size: 4,
+        label: { 
+          offset: [10, 10],
+          strokeColor: '#3498db'
+        }
+      });
+      
+      // Create line between points
+      const line = board.create('line', [p1, p2], {
+        straightFirst: false,
+        straightLast: false,
+        strokeColor: '#9b59b6', // Purple
+        strokeWidth: 2
+      });
+      
+      // If showing answers, add the right triangle construction
+      if (showAnswers) {
+        // Create right angle point
+        const rightAnglePoint = board.create('point', [point2[0], point1[1]], {
+          name: 'C',
+          fixed: true,
+          color: '#2ecc71', // Green
+          size: 4,
+          label: { 
+            offset: [10, -10],
+            strokeColor: '#2ecc71'
+          }
+        });
+        
+        // Create triangle sides
+        const horizontalLine = board.create('line', [p1, rightAnglePoint], {
+          straightFirst: false,
+          straightLast: false,
+          strokeColor: '#2ecc71', // Green
+          strokeWidth: 2,
+          dash: 2
+        });
+        
+        const verticalLine = board.create('line', [rightAnglePoint, p2], {
+          straightFirst: false,
+          straightLast: false,
+          strokeColor: '#2ecc71', // Green
+          strokeWidth: 2,
+          dash: 2
+        });
+        
+        // Add right angle marker
+        board.create('angle', [p2, rightAnglePoint, p1], {
+          radius: 0.25,
+          name: '90°',
+          type: 'square',
+          fillColor: '#2ecc71',
+          fillOpacity: 0.4,
+          label: { offset: [0, 0] }
+        });
+        
+        // Add dimension labels
+        const dx = Math.abs(point2[0] - point1[0]);
+        const dy = Math.abs(point2[1] - point1[1]);
+        
+        board.create('text', [
+          (point1[0] + point2[0]) / 2,
+          point1[1] - 0.5,
+          `a = ${dx.toFixed(1)} units`
+        ], { 
+          fontSize: 14,
+          fixed: true
+        });
+        
+        board.create('text', [
+          point2[0] + 0.3,
+          (point1[1] + point2[1]) / 2,
+          `b = ${dy.toFixed(1)} units`
+        ], { 
+          fontSize: 14,
+          fixed: true
+        });
+        
+        if (challenge.distance) {
+          board.create('text', [
+            (point1[0] + point2[0]) / 2 - 0.5,
+            (point1[1] + point2[1]) / 2 - 0.5,
+            `d = ${challenge.distance}`
+          ], { 
+            fontSize: 16,
+            fixed: true,
+            color: '#9b59b6', // Purple
+            strokeColor: '#9b59b6'
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error updating JSXGraph board:", error);
+    }
+    
     board.unsuspendUpdate();
   };
+
+  // Ensure board has unique ID for this lesson
+  const boardId = `coordinate-challenge-board-${currentTopic}-${currentLessonId}`;
 
   return (
     <div className="space-y-6 mb-8">
@@ -170,14 +270,16 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                   </div>
                 </div>
 
-                {/* Visualization */}
+                {/* Visualization with fixed grid */}
                 <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '350px' }}>
                   <JSXGraphBoard
-                    id="coordinate-challenge-board"
-                    boundingBox={challenge.boundingBox}
-                    axis={true}
-                    grid={true}
+                    id={boardId}
+                    boundingBox={[-6, 6, 6, -6]}  // Fixed grid -6 to 6
+                    axis={false}  // Disable default axes
+                    grid={false}  // Disable default grid
                     height="300px"
+                    backgroundColor="#f9f9f9"  // Light gray background
+                    onMount={onMountBoard}
                     onUpdate={updateBoard}
                     dependencies={[challenge, showAnswers]}
                   />
@@ -212,25 +314,26 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
 
 // Function to generate a coordinate distance challenge
 const generateCoordinateDistanceChallenge = () => {
-  // Function to generate varied points
-  const generateVariedPoints = () => {
-    // Generate points with a good spread
-    const x1 = _.random(-5, 5);
-    const y1 = _.random(-5, 5);
+  // Generate points within fixed -6 to 6 range
+  const generatePointsOnGrid = () => {
+    const min = -5;  // Leaving 1 unit buffer from edge
+    const max = 5;
     
-    // Generate offsets for second point
-    const xOffset = _.random(2, 6) * (Math.random() < 0.5 ? 1 : -1);
-    const yOffset = _.random(2, 6) * (Math.random() < 0.5 ? 1 : -1);
+    const x1 = Math.floor(Math.random() * (max - min + 1)) + min;
+    const y1 = Math.floor(Math.random() * (max - min + 1)) + min;
     
-    // Calculate second point coordinates
-    const x2 = x1 + xOffset;
-    const y2 = y1 + yOffset;
+    // Ensure second point is sufficiently separated but still on grid
+    let x2, y2;
+    do {
+      x2 = Math.floor(Math.random() * (max - min + 1)) + min;
+      y2 = Math.floor(Math.random() * (max - min + 1)) + min;
+    } while (Math.abs(x2 - x1) < 2 || Math.abs(y2 - y1) < 2);
     
     return [[x1, y1], [x2, y2]];
   };
   
   // Generate points
-  const [point1, point2] = generateVariedPoints();
+  const [point1, point2] = generatePointsOnGrid();
   
   // Calculate horizontal and vertical differences
   const dx = point2[0] - point1[0];
@@ -240,13 +343,6 @@ const generateCoordinateDistanceChallenge = () => {
   const exactDistance = Math.sqrt(dx * dx + dy * dy);
   const distance = Math.round(exactDistance * 100) / 100; // Round to 2 decimal places
   
-  // Calculate bounding box with padding
-  const padding = 2;
-  const xMin = Math.min(point1[0], point2[0]) - padding;
-  const xMax = Math.max(point1[0], point2[0]) + padding;
-  const yMin = Math.min(point1[1], point2[1]) - padding;
-  const yMax = Math.max(point1[1], point2[1]) + padding;
-  
   // Generate problem
   return {
     point1,
@@ -255,7 +351,6 @@ const generateCoordinateDistanceChallenge = () => {
     dy,
     distance,
     exactDistance,
-    boundingBox: [xMin, yMax, xMax, yMin], // JSXGraph format: [xmin, ymax, xmax, ymin]
     problemText: `Find the distance between the points A(${point1[0]}, ${point1[1]}) and B(${point2[0]}, ${point2[1]}) on the coordinate plane.`,
     solution: [
       {

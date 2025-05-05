@@ -1,21 +1,7 @@
 import React from 'react';
 import JSXGraphBoard from '../JSXGraphBoard';
-import { getBoardConfig } from '../../../config/boardSizes';
+import { STANDARD_SHAPES } from '../../../config/standardShapes';
 
-/**
- * RightTriangle - Pure visualization component for rendering right-angled triangles
- * 
- * @param {number} base - Length of base 
- * @param {number} height - Height
- * @param {boolean} showRightAngle - Whether to show the right angle marker
- * @param {Array} labels - Labels for sides: [base, height, hypotenuse]
- * @param {string} units - Units for measurements
- * @param {Object} style - Styling options
- * @param {string} size - Size preset from boardSizes
- * @param {number} containerHeight - Optional override height
- * @param {boolean} smallDisplay - Whether this is for smaller displays
- * @param {string} position - Position adjustment: 'default', 'higher', 'middle', 'lower'
- */
 const RightTriangle = ({
   base = 3,
   height = 4,
@@ -23,40 +9,32 @@ const RightTriangle = ({
   labels = [],
   units = 'cm',
   style = {},
-  size = 'starter',
-  containerHeight,
-  smallDisplay = false,
-  position = 'default'
+  containerHeight = 250,
+  orientation = 'default',
+  scale = 1,
+  markAngle = null
 }) => {
-  // Calculate hypotenuse (only used if needed for default labels)
+  const actualOrientation = orientation === 'random' 
+    ? ['default', 'rotate90', 'rotate180', 'rotate270'][Math.floor(Math.random() * 4)]
+    : orientation;
+  
+  const STANDARD = {
+    base: STANDARD_SHAPES.rightTriangle.base * scale,
+    height: STANDARD_SHAPES.rightTriangle.height * scale,
+    boundingBox: STANDARD_SHAPES.rightTriangle.boundingBox.map(v => v * scale)
+  };
+  
   const hypotenuse = Math.sqrt(base * base + height * height);
-  
-  // Get board configuration
-  const boardConfig = getBoardConfig(smallDisplay ? 'small' : size);
-  
-  // Final height calculation
-  const finalHeight = containerHeight || boardConfig.height;
+  const boardId = `right-triangle-standard-${actualOrientation}-${scale}`;
 
-  // Create a stable ID for the JSXGraph board
-  const boardId = `right-triangle-${base}-${height}-${smallDisplay ? 'small' : 'std'}`;
-
-  // Board rendering function
   const updateBoard = (board) => {
-    // Clear any existing elements
-    board.objects = {};
-    board.suspendUpdate();
-    
-    // Position offset based on position prop
-    let yOffset = 0;
-    if (position === 'higher') {
-      yOffset = 1;
-    } else if (position === 'middle') {
-      yOffset = 0.5;
-    } else if (position === 'lower') {
-      yOffset = -1;
+    const objectIds = Object.keys(board.objects);
+    for (let i = objectIds.length - 1; i >= 0; i--) {
+      board.removeObject(board.objects[objectIds[i]]);
     }
     
-    // Style defaults
+    board.suspendUpdate();
+    
     const {
       fillColor = 'indigo',
       fillOpacity = 0.2,
@@ -64,18 +42,42 @@ const RightTriangle = ({
       strokeWidth = 2
     } = style;
     
-    // Scale up for small display
-    const scaleFactor = smallDisplay ? 1.2 : 1;
-    const scaledBase = base * scaleFactor;
-    const scaledHeight = height * scaleFactor;
+    let points;
+    switch (actualOrientation) {
+      case 'rotate90':
+        points = [
+          [STANDARD.height, 0],
+          [STANDARD.height, STANDARD.base],
+          [0, 0]
+        ];
+        break;
+      case 'rotate180':
+        points = [
+          [STANDARD.base, STANDARD.height],
+          [0, STANDARD.height],
+          [STANDARD.base, 0]
+        ];
+        break;
+      case 'rotate270':
+        points = [
+          [0, STANDARD.base],
+          [0, 0],
+          [STANDARD.height, STANDARD.base]
+        ];
+        break;
+      default:
+        points = [
+          [0, 0],
+          [STANDARD.base, 0],
+          [0, STANDARD.height]
+        ];
+    }
     
-    // Create the triangle points
-    const p1 = board.create('point', [0, yOffset], { visible: false, fixed: true, name: 'A' });
-    const p2 = board.create('point', [scaledBase, yOffset], { visible: false, fixed: true, name: 'B' });
-    const p3 = board.create('point', [0, scaledHeight + yOffset], { visible: false, fixed: true, name: 'C' });
+    const p1 = board.create('point', points[0], { visible: false, fixed: true });
+    const p2 = board.create('point', points[1], { visible: false, fixed: true });
+    const p3 = board.create('point', points[2], { visible: false, fixed: true });
     
-    // Create the triangle
-    const poly = board.create('polygon', [p1, p2, p3], {
+    board.create('polygon', [p1, p2, p3], {
       fillColor: fillColor,
       fillOpacity: fillOpacity,
       strokeColor: strokeColor,
@@ -83,37 +85,56 @@ const RightTriangle = ({
       vertices: { visible: false }
     });
     
-    // Default labels if none provided
     const sideLabels = labels.length === 3 ? labels : [
-      `${base} ${units}`, 
-      `${height} ${units}`, 
+      `${base} ${units}`,
+      `${height} ${units}`,
       `${hypotenuse.toFixed(2)} ${units}`
     ];
     
-    // Add side labels with improved positioning
-    board.create('text', [scaledBase/2, yOffset - 0.5, sideLabels[0]], {
-      fontSize: 14,
-      fixed: true
+    // Fixed label positions for all orientations
+    let labelPositions;
+    switch (actualOrientation) {
+      case 'rotate90':
+        labelPositions = [
+          [STANDARD.height + 0.8, STANDARD.base/2, sideLabels[0]], // base label
+          [STANDARD.height/2, -0.5, sideLabels[1]], // height label (right side)
+          [STANDARD.height/2 + 1.5, STANDARD.base/2 + 1, sideLabels[2]] // hypotenuse (right and up)
+        ];
+        break;
+      case 'rotate180':
+        labelPositions = [
+          [STANDARD.base/2, STANDARD.height + 0.5, sideLabels[0]], // base label (top)
+          [STANDARD.base + 0.8, STANDARD.height/2, sideLabels[1]], // height label (right)
+          [STANDARD.base/2 - 1.5, STANDARD.height/2 + 1, sideLabels[2]] // hypotenuse (left and up)
+        ];
+        break;
+      case 'rotate270':
+        labelPositions = [
+          [-0.8, STANDARD.base/2, sideLabels[0]], // base label (left)
+          [STANDARD.height/2, STANDARD.base + 0.5, sideLabels[1]], // height label (bottom)
+          [STANDARD.height/2 - 1.5, STANDARD.base/2 + 1, sideLabels[2]] // hypotenuse (left and up)
+        ];
+        break;
+      default:
+        labelPositions = [
+          [STANDARD.base/2, -0.5, sideLabels[0]], // base label (bottom)
+          [-0.8, STANDARD.height/2, sideLabels[1]], // height label (left)
+          [STANDARD.base/2 + 1.5, STANDARD.height/2 + 1, sideLabels[2]] // hypotenuse (right and up)
+        ];
+    }
+    
+    labelPositions.forEach(([x, y, text]) => {
+      board.create('text', [x, y, text], {
+        fontSize: 14 * scale,
+        fixed: true,
+        anchorX: 'middle',
+        anchorY: 'middle'
+      });
     });
     
-    board.create('text', [-0.5, yOffset + scaledHeight/2, sideLabels[1]], {
-      fontSize: 14,
-      fixed: true
-    });
-    
-    // Move hypotenuse label to the right (60% along hypotenuse)
-    const hypotenuseX = scaledBase * 0.6;
-    const hypotenuseY = yOffset + scaledHeight * 0.6;
-    
-    board.create('text', [hypotenuseX, hypotenuseY, sideLabels[2]], {
-      fontSize: 14,
-      fixed: true
-    });
-    
-    // Right angle marker
     if (showRightAngle) {
       board.create('angle', [p2, p1, p3], {
-        radius: 0.5,
+        radius: 0.5 * scale,
         orthotype: 'square',
         fillColor: 'none',
         strokeWidth: 1,
@@ -124,28 +145,16 @@ const RightTriangle = ({
     board.unsuspendUpdate();
   };
 
-  // Adjust boundingBox based on position
-  let boundingBox = [...boardConfig.boundingBox];
-  if (position === 'higher') {
-    boundingBox[1] += 1;
-    boundingBox[3] += 1;
-  } else if (position === 'middle') {
-    boundingBox[1] += 0.5;
-    boundingBox[3] += 0.5;
-  } else if (position === 'lower') {
-    boundingBox[1] -= 1;
-    boundingBox[3] -= 1;
-  }
-
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" style={{ maxHeight: `${containerHeight}px` }}>
       <JSXGraphBoard
         id={boardId}
-        boundingBox={boundingBox}
-        height={finalHeight}
+        boundingBox={STANDARD.boundingBox}
+        height={containerHeight}
         backgroundColor="transparent"
         axis={false}
         onUpdate={updateBoard}
+        dependencies={[base, height, labels, actualOrientation, scale]}
       />
     </div>
   );

@@ -27,16 +27,16 @@ const PYTHAGOREAN_EXAMPLES = [
 const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   // Get theme colors for examples section
   const theme = useSectionTheme('examples');
-  
+
   const [examples, setExamples] = useState([]);
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [showHeight, setShowHeight] = useState(false);
-  
+
   // Generate all examples when the component mounts
   useEffect(() => {
     generateExamples();
   }, []);
-  
+
   // Regenerate all examples
   const generateExamples = () => {
     setExamples([
@@ -47,15 +47,15 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     // Reset height toggle when generating new examples
     setShowHeight(false);
   };
-  
+
   // Generate an example for finding the hypotenuse
   const generateHypotenuseExample = () => {
     // Include some examples with decimal answers
     const example = _.sample(PYTHAGOREAN_EXAMPLES);
-    
+
     // Format calculator input
     const calculatorInput = `\\sqrt{${example.a}^2 + ${example.b}^2}`;
-    
+
     return {
       title: "Find the Hypotenuse",
       question: `Find the length of the hypotenuse. The other sides are ${example.a} cm and ${example.b} cm.`,
@@ -93,19 +93,19 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       ]
     };
   };
-  
+
   // Generate an example for finding a leg (non-hypotenuse side)
   const generateLegExample = () => {
     // Include some examples with decimal answers
     const example = _.sample(PYTHAGOREAN_EXAMPLES);
-    
+
     // Randomly decide whether to find side a or b
     const findSide = _.sample(['a', 'b']);
     const knownSide = findSide === 'a' ? 'b' : 'a';
-    
+
     // Format calculator input
     const calculatorInput = `\\sqrt{${example.c}^2 - ${example[knownSide]}^2}`;
-    
+
     return {
       title: "Find the Missing Side",
       question: `Find the missing side. The hypotenuse is ${example.c} cm and the other side is ${example[knownSide]} cm.`,
@@ -148,23 +148,23 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       ]
     };
   };
-  
+
   // Generate an isosceles triangle example for finding area
   const generateIsoscelesExample = () => {
     // Create an isosceles triangle with a height that forms a right angle
     const base = _.random(6, 12, false); // Even number for easier splitting
     const height = _.random(4, 10);
     const halfBase = base / 2;
-    
+
     // Calculate the equal sides using Pythagoras' theorem
     const equalSide = Math.sqrt(halfBase * halfBase + height * height);
     // Keep 2 decimal places for non-integer results
     const roundedEqualSide = Math.round(equalSide * 100) / 100;
-    
+
     // Calculate area
     const area = (base * height) / 2;
     const roundedArea = Math.round(area * 100) / 100;
-    
+
     return {
       title: "Find the Area",
       question: `Find the area of this isosceles triangle. The base is ${base} cm and the equal sides are ${roundedEqualSide} cm each.`,
@@ -215,41 +215,40 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       ]
     };
   };
-  
+
   // Handle toggling the height for isosceles triangle
   const handleStepAction = (step) => {
     if (step && step.toggleHeight) {
       setShowHeight(true);
     }
-    
+
     // Reset functionality 
     if (step && step.reset) {
       setShowHeight(false);
     }
   };
-  
+
   // Render function for example content
   const renderExampleContent = (example) => {
     if (!example) return null;
-    
-    // Render the appropriate triangle based on example type
-    const triangleVisualization = example.type === 'isosceles' 
+
+    const triangleVisualization = example.type === 'isosceles'
       ? renderIsoscelesTriangle(example)
       : renderRightTriangle(example);
-    
+
     return (
-      <div className="flex flex-col-reverse md:flex-row gap-6 items-start pt-2">
-        {/* Triangle visualization on the left */}
-        <div className="md:w-2/5 flex justify-center mb-6 md:mb-0">
+      <div className="flex flex-col-reverse md:flex-row gap-6 items-center pt-4">
+        {/* Triangle visualization on the left - moved down and left */}
+        <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0">
           {triangleVisualization}
         </div>
-        
+
         {/* Question with plenty of space for the teacher to write */}
         <div className="md:w-3/5">
           <div className={`p-5 bg-${theme.pastelBg} rounded-lg mb-6`}>
             <p className="text-gray-700 font-medium">{example.question}</p>
           </div>
-          
+
           {/* Spacer div for teacher's working area - no text */}
           <div className="bg-gray-50 p-6 rounded-lg min-h-40 h-48 border border-dashed border-gray-300">
             {/* Empty space for teacher's working */}
@@ -258,20 +257,20 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       </div>
     );
   };
-  
+
   // Render an isosceles triangle
   const renderIsoscelesTriangle = (example) => {
     return (
-      <div style={{ height: "280px", width: "100%" }}>
-        <IsoscelesTriangle 
+      <div style={{ height: "350px", width: "100%" }}>
+        <IsoscelesTriangle
           base={example.base}
           height={example.height}
           showHeight={showHeight}
           labelStyle="numeric"
           labels={{
             sides: [
-              `${example.base} cm`, 
-              `${example.equalSide} cm`, 
+              `${example.base} cm`,
+              `${example.equalSide} cm`,
               `${example.equalSide} cm`
             ]
           }}
@@ -285,27 +284,27 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       </div>
     );
   };
-  
+
   // Render a right triangle
   const renderRightTriangle = (example) => {
     const triple = example.triple;
     const missingValue = example.missingValue;
-    
-    // Determine what to show as labels
-    const aLabel = missingValue === 'a' ? '?' : `${triple.a} cm`;
-    const bLabel = missingValue === 'b' ? '?' : `${triple.b} cm`;
-    const cLabel = missingValue === 'c' ? '?' : `${triple.c} cm`;
-    
+
+    // The labels array should be [base, height, hypotenuse]
+    const labels = [
+      missingValue === 'a' ? '?' : `${triple.a} cm`,  // base label
+      missingValue === 'b' ? '?' : `${triple.b} cm`,  // height label
+      missingValue === 'c' ? '?' : `${triple.c} cm`   // hypotenuse label
+    ];
+
     return (
-      <div style={{ height: "280px", width: "100%" }}>
-        <RightTriangle 
+      <div style={{ height: "350px", width: "100%" }}>
+        <RightTriangle
           base={triple.a}
           height={triple.b}
           showRightAngle={true}
           labelStyle="custom"
-          labels={{
-            sides: [aLabel, bLabel, cLabel]
-          }}
+          labels={labels}
           units="cm"
           style={{
             fillColor: "#3F51B5", // Indigo

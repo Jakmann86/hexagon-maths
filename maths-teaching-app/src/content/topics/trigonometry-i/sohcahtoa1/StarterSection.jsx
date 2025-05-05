@@ -20,10 +20,12 @@ const generatePythagorasHypotenuseQuestion = () => {
             <RightTriangle 
                 base={base} 
                 height={height}
-                smallDisplay={true}
-                position="higher"
                 labels={[`${base} cm`, `${height} cm`, `?`]}
                 showRightAngle={true}
+                style={{
+                    fillColor: "#2196F3", // Blue
+                    fillOpacity: 0.2
+                }}
             />
         )
     };
@@ -43,47 +45,37 @@ const generatePythagorasMissingSideQuestion = () => {
             <RightTriangle 
                 base={a} 
                 height={Number(b)}
-                smallDisplay={true}
-                position="lower"
                 labels={[`${a} cm`, `?`, `${c} cm`]}
                 showRightAngle={true}
+                style={{
+                    fillColor: "#4CAF50", // Green
+                    fillOpacity: 0.2
+                }}
             />
         )
     };
 };
 
-// Generate a trigonometry question (preview of upcoming lesson)
-const generateTrigQuestionPreview = () => {
-    // Use common angles with nice values
-    const angles = [30, 45, 60];
-    const angle = angles[randomInt(0, 2)];
-    const hypotenuse = randomInt(5, 9);
-    
-    // Calculate the opposite side using sine
-    let opposite;
-    if (angle === 30) opposite = hypotenuse * 0.5;
-    else if (angle === 45) opposite = hypotenuse * 0.7071;
-    else opposite = hypotenuse * 0.866;
-    
-    opposite = Math.round(opposite * 10) / 10;
-    
-    // Calculate the base for the right triangle
-    const base = angle === 45 ? opposite : 
-                (angle === 30 ? Math.sqrt(hypotenuse*hypotenuse - opposite*opposite) : 
-                opposite/Math.sqrt(3));
+// Generate a triangle area question
+const generateTriangleAreaQuestion = () => {
+    const area = randomInt(12, 50); // Random area
+    const height = randomInt(3, 8);  // Random height
+    const base = Math.round((area * 2) / height * 10) / 10; // Calculate base
     
     return {
-        question: `In a right-angled triangle, the hypotenuse is ${hypotenuse} cm and one angle is ${angle}°. What is the length of the side opposite to this angle?`,
-        answer: `${hypotenuse} \\times \\sin(${angle}°) = ${opposite}\\text{ cm}`,
-        difficulty: 'preview',
+        question: `A triangle has an area of ${area} cm² and a height of ${height} cm. What is its base?`,
+        answer: `\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}\\n${area} = \\frac{1}{2} \\times \\text{base} \\times ${height}\\n\\text{base} = \\frac{2 \\times ${area}}{${height}} = ${base} \\text{ cm}`,
+        difficulty: 'medium',
         visualization: (
             <RightTriangle 
                 base={base}
-                height={opposite}
-                smallDisplay={true}
-                position="middle"
-                labels={[`b`, `a = ?`, `c = ${hypotenuse}`]}
+                height={height}
                 showRightAngle={true}
+                labels={[`? cm`, `${height} cm`, 'h']}
+                style={{
+                    fillColor: "#9C27B0", // Purple
+                    fillOpacity: 0.2
+                }}
             />
         )
     };
@@ -185,8 +177,8 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
         // Pythagoras questions with visual representations
         generatePythagorasHypotenuseQuestion,
         generatePythagorasMissingSideQuestion,
-        // Preview of upcoming trigonometry content
-        generateTrigQuestionPreview,
+        // Triangle area question
+        generateTriangleAreaQuestion,
         // Countdown-style numbers game
         generateCountdownGame
     ];

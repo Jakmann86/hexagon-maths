@@ -1,125 +1,153 @@
-// src/components/math/visualizations/CoordinateVisualization.jsx
+// maths-teaching-app/src/components/math/visualizations/CoordinateVisualization.jsx
 import React from 'react';
 import * as MafsLib from 'mafs';
 import 'mafs/core.css';
 import 'mafs/font.css';
-import { useUI } from '../../../context/UIContext';
 
-/**
- * A visualization showing two points and the line between them.
- * Shows the Pythagorean triangle when answers are toggled on.
- * Works for all point arrangements and correctly forms right angles.
- */
-const CoordinateVisualization = ({ 
-  point1 = [1, 1], 
-  point2 = [4, 5],
-  label1 = 'A',
-  label2 = 'B',
-  lineColor = MafsLib.Theme.indigo
-}) => {
-  // Get showAnswers state from UI context
-  const { showAnswers } = useUI();
-  
-  // Calculate view box with padding
-  const padding = 2;
-  const xMin = Math.min(point1[0], point2[0]) - padding;
-  const xMax = Math.max(point1[0], point2[0]) + padding;
-  const yMin = Math.min(point1[1], point2[1]) - padding;
-  const yMax = Math.max(point1[1], point2[1]) + padding;
-  
-  // Create viewBox
-  const viewBox = {
-    x: [xMin, xMax],
-    y: [yMin, yMax]
+const CoordinateVisualization = ({ point1, point2, showSolution = false }) => {
+  // Calculate auto-scaling for consistent grid view
+  const calculateViewBox = (p1, p2) => {
+    const buffer = 2; // Consistent buffer around points
+    
+    const minX = Math.min(p1[0], p2[0]) - buffer;
+    const maxX = Math.max(p1[0], p2[0]) + buffer;
+    const minY = Math.min(p1[1], p2[1]) - buffer;
+    const maxY = Math.max(p1[1], p2[1]) + buffer;
+    
+    // Ensure minimum grid size
+    const width = Math.max(maxX - minX, 8);
+    const height = Math.max(maxY - minY, 8);
+    
+    return {
+      x: [minX, minX + width],
+      y: [minY, minY + height]
+    };
   };
+
+  const viewBox = calculateViewBox(point1, point2);
   
-  // Calculate the differences for Pythagoras
-  const dx = Math.abs(point2[0] - point1[0]);
-  const dy = Math.abs(point2[1] - point1[1]);
+  // Calculate triangle sides for Pythagoras
+  const dx = point2[0] - point1[0];
+  const dy = point2[1] - point1[1];
+  const distance = Math.sqrt(dx * dx + dy * dy);
   
-  // Calculate the right angle point - this is the key for correct visualization
-  // The right angle is always at the point [point2.x, point1.y]
-  const rightAnglePoint = [point2[0], point1[1]];
+  // Format distance to handle decimals properly  
+  const formattedDistance = Number.isInteger(distance) 
+    ? distance.toString()
+    : distance.toFixed(2);
   
   return (
-    <div className="w-full h-full">
+    <div style={{ width: '100%', height: '100%' }}>
       <MafsLib.Mafs
         viewBox={viewBox}
         preserveAspectRatio="contain"
-        height={400}
+        height={380}
       >
-        <MafsLib.Coordinates.Cartesian />
+        {/* Grid with consistent styling */}
+        <MafsLib.Coordinates.Cartesian 
+          xAxis={{
+            variant: 'default',
+            label: 'x',
+            ticks: true,
+            ticksVisible: 'minor'
+          }}
+          yAxis={{
+            variant: 'default',
+            label: 'y',
+            ticks: true,
+            ticksVisible: 'minor'
+          }}
+          grid
+        />
         
         {/* Points */}
         <MafsLib.Point x={point1[0]} y={point1[1]} color={MafsLib.Theme.red} />
-        <MafsLib.Text x={point1[0] + 0.3} y={point1[1] + 0.3} attach="center" color={MafsLib.Theme.red}>
-          {label1}({point1[0]}, {point1[1]})
+        <MafsLib.Text 
+          x={point1[0] + 0.3} 
+          y={point1[1] + 0.3} 
+          attach="center" 
+          color={MafsLib.Theme.red}
+        >
+          A({point1[0]}, {point1[1]})
         </MafsLib.Text>
         
-        <MafsLib.Point x={point2[0]} y={point2[1]} color={MafsLib.Theme.blue} />
-        <MafsLib.Text x={point2[0] + 0.3} y={point2[1] + 0.3} attach="center" color={MafsLib.Theme.blue}>
-          {label2}({point2[0]}, {point2[1]})
+        <MafsLib.Point x={point2[0]} y={point2[1]} color={MafsLib.Theme.red} />
+        <MafsLib.Text 
+          x={point2[0] + 0.3} 
+          y={point2[1] + 0.3} 
+          attach="center" 
+          color={MafsLib.Theme.red}
+        >
+          B({point2[0]}, {point2[1]})
         </MafsLib.Text>
         
-        {/* Line between points */}
+        {/* Direct line from A to B */}
         <MafsLib.Line.Segment
           point1={point1}
           point2={point2}
-          color={lineColor}
+          color={MafsLib.Theme.indigo}
           strokeWidth={2}
         />
+        <MafsLib.Text
+          x={(point1[0] + point2[0]) / 2 + 0.3}
+          y={(point1[1] + point2[1]) / 2 + 0.3}
+          attach="center"
+          color={MafsLib.Theme.indigo}
+        >
+          {formattedDistance}
+        </MafsLib.Text>
         
-        {/* Only show Pythagorean triangle when answers are toggled on */}
-        {showAnswers && (
+        {/* Show Pythagoras triangle when answer is visible */}
+        {showSolution && (
           <>
-            {/* Horizontal line from point1 to right angle point */}
+            {/* Horizontal line */}
             <MafsLib.Line.Segment
               point1={point1}
-              point2={rightAnglePoint}
+              point2={[point2[0], point1[1]]}
               color={MafsLib.Theme.green}
               strokeWidth={1.5}
               strokeDasharray="5,5"
             />
             
-            {/* Vertical line from right angle point to point2 */}
+            {/* Vertical line */}
             <MafsLib.Line.Segment
-              point1={rightAnglePoint}
+              point1={[point2[0], point1[1]]}
               point2={point2}
               color={MafsLib.Theme.green}
               strokeWidth={1.5}
               strokeDasharray="5,5"
             />
             
-            {/* Right angle marker - adjust direction based on relative positions */}
+            {/* Right angle marker - conditional direction */}
             <MafsLib.Polygon
               points={[
-                rightAnglePoint,
-                [rightAnglePoint[0] - (point2[0] > point1[0] ? 0.3 : -0.3), rightAnglePoint[1]],
-                [rightAnglePoint[0] - (point2[0] > point1[0] ? 0.3 : -0.3), 
-                 rightAnglePoint[1] + (point2[1] > point1[1] ? 0.3 : -0.3)]
+                [point2[0], point1[1]],
+                [point2[0] - (point2[0] > point1[0] ? 0.3 : -0.3), point1[1]],
+                [point2[0] - (point2[0] > point1[0] ? 0.3 : -0.3), 
+                 point1[1] + (point2[1] > point1[1] ? 0.3 : -0.3)]
               ]}
               color={MafsLib.Theme.green}
               fillOpacity={0}
               strokeWidth={1.5}
             />
             
-            {/* Simple side labels - calculate positions carefully */}
+            {/* Side labels */}
             <MafsLib.Text 
-              x={(point1[0] + rightAnglePoint[0]) / 2} 
+              x={(point1[0] + point2[0]) / 2} 
               y={point1[1] - 0.3} 
               attach="center" 
               color={MafsLib.Theme.green}
             >
-              a = {dx.toFixed(1)}
+              {Math.abs(dx).toFixed(1)}
             </MafsLib.Text>
             
             <MafsLib.Text 
-              x={point2[0] + (point2[0] > point1[0] ? 0.4 : -0.4)} 
-              y={(rightAnglePoint[1] + point2[1]) / 2} 
+              x={point2[0] + 0.4} 
+              y={(point1[1] + point2[1]) / 2} 
               attach="center" 
               color={MafsLib.Theme.green}
             >
-              b = {dy.toFixed(1)}
+              {Math.abs(dy).toFixed(1)}
             </MafsLib.Text>
           </>
         )}

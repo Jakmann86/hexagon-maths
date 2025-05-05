@@ -10,6 +10,14 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
     
     // Direct React element rendering
     if (React.isValidElement(content)) {
+        // Clone element and add props for triangles in starter section
+        if (content.type?.name === 'RightTriangle') {
+            return React.cloneElement(content, {
+                scale: 0.6,
+                containerHeight: 110,
+                orientation: 'random'
+            });
+        }
         return content;
     }
 
@@ -23,7 +31,7 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
     switch (type) {
         case 'visualization':
             return (
-                <div className="flex justify-center items-center p-2">
+                <div className="flex justify-center items-center p-1 h-full">
                     {content}
                 </div>
             );
@@ -37,9 +45,8 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
     }
 };
 
-// Enhanced QuestionDisplay with MathStarters styling
+// Enhanced QuestionDisplay with MathStarters styling and consistent size
 const QuestionDisplay = ({ type, title, data, showAnswers }) => {
-    // Use MathStarters color scheme
     const typeStyles = {
         section1: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
         section2: 'bg-blue-100 hover:bg-blue-200 border-blue-300',
@@ -51,39 +58,39 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
         <div 
             className={`
                 ${typeStyles[type]} 
-                p-5 rounded-lg shadow-md
-                ${showAnswers ? 'aspect-auto' : 'aspect-[2/1]'}
+                p-4 rounded-lg shadow-md
+                h-60
                 flex flex-col
                 transform transition-all duration-300
                 hover:shadow-lg hover:translate-y-[-2px]
                 border-2
+                overflow-hidden
             `}
         >
-            <h3 className="font-bold mb-3 text-xl text-gray-700">
+            <h3 className="font-bold mb-2 text-lg text-gray-700 line-clamp-1">
                 {title}
             </h3>
 
-            <div className="flex-grow flex flex-col space-y-4 overflow-hidden">
-                {/* Main question with larger font */}
-                <div className="text-lg flex-grow">
+            <div className="flex-grow flex flex-col overflow-hidden">
+                <div className="text-base flex-grow min-h-0 overflow-hidden">
                     <ContentRenderer content={data?.question} />
                 </div>
 
-                {/* Visualization */}
                 {(data?.visualization || data?.shape) && (
-                    <ContentRenderer 
-                        content={data.visualization || data.shape} 
-                        type="visualization" 
-                    />
+                    <div className="mt-2 h-28 flex-shrink-0">
+                        <ContentRenderer 
+                            content={data.visualization || data.shape} 
+                            type="visualization" 
+                        />
+                    </div>
                 )}
 
-                {/* Answer section with enhanced styling */}
                 {showAnswers && data?.answer && (
-                    <div className="mt-4 pt-4 border-t-2 border-gray-300 space-y-3">
-                        <h4 className="text-lg font-semibold text-gray-700">Answer:</h4>
-                        <div className="math-answer">
+                    <div className="mt-2 pt-2 border-t-2 border-gray-300 overflow-hidden">
+                        <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
+                        <div className="math-answer overflow-hidden">
                             {typeof data.answer === 'string' && data.answer.includes('\\') ? (
-                                <MathDisplay math={data.answer} displayMode={true} size="large" />
+                                <MathDisplay math={data.answer} displayMode={false} size="normal" />
                             ) : (
                                 <ContentRenderer 
                                     content={data.answer} 
@@ -92,14 +99,6 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
                                 />
                             )}
                         </div>
-                        
-                        {/* Explanation with clearer styling */}
-                        {data.explanation && (
-                            <div className="mt-3 text-base text-gray-700 bg-gray-50 p-3 rounded-md">
-                                <p className="font-medium mb-1">Explanation:</p>
-                                <ContentRenderer content={data.explanation} />
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
@@ -154,7 +153,7 @@ const StarterSectionBase = ({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden py-5 px-6">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden py-4 px-6">
             {/* 2x2 grid like MathStarters */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {Object.entries(questions).map(([sectionKey, questionData]) => (
@@ -169,7 +168,7 @@ const StarterSectionBase = ({
             </div>
             
             {/* Regenerate button in MathStarters style */}
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mt-4">
                 <button
                     onClick={regenerateAllQuestions}
                     className="px-4 py-2 text-white bg-blue-500 hover:bg-blue-600
