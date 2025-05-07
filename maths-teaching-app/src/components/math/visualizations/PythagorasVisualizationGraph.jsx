@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import JSXGraphBoard from '../JSXGraphBoard';
 import { Slider } from '../../common/Slider';
-import { Type, Ruler } from 'lucide-react';
+import { Type, Ruler, Info, HelpCircle } from 'lucide-react';
 import { useSectionTheme } from '../../../hooks/useSectionTheme';
 
 const PythagorasVisualizationGraph = () => {
@@ -15,6 +15,7 @@ const PythagorasVisualizationGraph = () => {
   // State for labels toggle
   const [showLabels, setShowLabels] = useState(true);
   const [showSideLengths, setShowSideLengths] = useState(true);
+  const [showHint, setShowHint] = useState(false);
   
   // Calculate hypotenuse using Pythagoras' theorem
   const hypotenuse = Math.sqrt(base * base + height * height);
@@ -38,10 +39,15 @@ const PythagorasVisualizationGraph = () => {
 
   // Create/update the visualization using JSXGraph
   const updateBoard = (board) => {
-    board.suspendUpdate();
+    // *** FIX FOR GHOST EFFECT: Clear all existing objects first ***
+    // This ensures no objects remain from previous renders
+    Object.keys(board.objects).forEach(id => {
+      if (board.objects[id] && board.objects[id].elementType !== 'axis') {
+        board.removeObject(id, false); // false means don't update until later
+      }
+    });
     
-    // Store references to objects we'll create
-    const objects = [];
+    board.suspendUpdate();
     
     // Common styling options - increased opacity for better visibility
     const commonOptions = {
@@ -77,7 +83,7 @@ const PythagorasVisualizationGraph = () => {
     });
     
     // Create the right triangle
-    const triangle = board.create('polygon', [origin, basePoint, heightPoint], {
+    board.create('polygon', [origin, basePoint, heightPoint], {
       ...commonOptions,
       fillColor: '#9c59b6', // Purple for the triangle
       fillOpacity: 0.7, // More opaque
@@ -87,10 +93,9 @@ const PythagorasVisualizationGraph = () => {
         fixed: true
       }
     });
-    objects.push(triangle);
     
     // Create the right angle marker
-    const rightAngle = board.create('angle', [basePoint, origin, heightPoint], {
+    board.create('angle', [basePoint, origin, heightPoint], {
       radius: 0.5,
       orthotype: 'square',
       fillColor: 'black',
@@ -98,10 +103,9 @@ const PythagorasVisualizationGraph = () => {
       strokeWidth: 1.5,
       fixed: true
     });
-    objects.push(rightAngle);
     
     // Base square (red)
-    const baseSquare = board.create('polygon', [
+    board.create('polygon', [
       origin,
       basePoint,
       [base, -base],
@@ -116,10 +120,9 @@ const PythagorasVisualizationGraph = () => {
         fixed: true
       }
     });
-    objects.push(baseSquare);
     
     // Height square (blue)
-    const heightSquare = board.create('polygon', [
+    board.create('polygon', [
       origin,
       heightPoint,
       [-height, height],
@@ -134,13 +137,12 @@ const PythagorasVisualizationGraph = () => {
         fixed: true
       }
     });
-    objects.push(heightSquare);
     
     // Calculate points for the hypotenuse square using the improved function
     const hypSquarePoints = calculateHypotenuseSquareDirect(base, height);
     
     // Hypotenuse square (green)
-    const hypSquare = board.create('polygon', hypSquarePoints, {
+    board.create('polygon', hypSquarePoints, {
       ...commonOptions,
       fillColor: '#2ecc71', // Green
       fillOpacity: 0.4,
@@ -150,12 +152,15 @@ const PythagorasVisualizationGraph = () => {
         fixed: true
       }
     });
-    objects.push(hypSquare);
     
-    // Add labels if enabled - with improved styling
+    // Add labels if enabled - with improved styling and more stable positioning
     if (showLabels) {
-      // Area labels with better contrast
-      const baseLabel = board.create('text', [base/2, -base/2, baseSquareArea + " cm²"], {
+      // Base square area label (bottom) - more stable positioning
+      // Position the label at a proportional distance from center of the square
+      const baseLabelX = base/2;
+      const baseLabelY = -base/2;
+      
+      board.create('text', [baseLabelX, baseLabelY, baseSquareArea + " cm²"], {
         fontSize: 16,
         color: '#c0392b',
         anchorX: 'middle',
@@ -164,9 +169,15 @@ const PythagorasVisualizationGraph = () => {
         fixed: true,
         highlight: false
       });
-      objects.push(baseLabel);
       
-      const heightLabel = board.create('text', [-height/2, height/2, heightSquareArea + " cm²"], {
+      // Height square area label (left side) - more stable positioning
+      // Fixed distance from the square based on the height, positioned at the center
+      // When height=8, this puts the label at a good distance
+      const heightLabelOffset = Math.max(1, height * 0.15);
+      const heightLabelX = -height/2 - heightLabelOffset;
+      const heightLabelY = height/2;
+      
+      board.create('text', [heightLabelX, heightLabelY, heightSquareArea + " cm²"], {
         fontSize: 16,
         color: '#2980b9',
         anchorX: 'middle',
@@ -175,13 +186,12 @@ const PythagorasVisualizationGraph = () => {
         fixed: true,
         highlight: false
       });
-      objects.push(heightLabel);
       
-      // Calculate center of hypotenuse square
+      // Hypotenuse square area label - centered in the square
       const hx = (hypSquarePoints[0][0] + hypSquarePoints[2][0]) / 2;
       const hy = (hypSquarePoints[0][1] + hypSquarePoints[2][1]) / 2;
       
-      const hypLabel = board.create('text', [hx, hy, hypotenuseSquareArea + " cm²"], {
+      board.create('text', [hx, hy, hypotenuseSquareArea + " cm²"], {
         fontSize: 16,
         color: '#27ae60',
         anchorX: 'middle',
@@ -190,40 +200,101 @@ const PythagorasVisualizationGraph = () => {
         fixed: true,
         highlight: false
       });
-      objects.push(hypLabel);
     }
     
-    // Add side length labels if enabled - with improved contrast
+    // Add side length labels if enabled - with improved positioning for consistent display
     if (showSideLengths) {
-      const baseLength = board.create('text', [base/2, -0.3, base + " cm"], {
+      // Base (bottom) side label - keep centered and slightly below
+      board.create('text', [base/2, -0.4, base + " cm"], {
         fontSize: 14,
         color: '#333',
         anchorX: 'middle',
-        cssClass: 'jxgraph-length',
-        fixed: true,
-        highlight: false
-      });
-      objects.push(baseLength);
-      
-      const heightLength = board.create('text', [-0.5, height/2, height + " cm"], {
-        fontSize: 14,
-        color: '#333',
         anchorY: 'middle',
         cssClass: 'jxgraph-length',
         fixed: true,
         highlight: false
       });
-      objects.push(heightLength);
       
-      const hypLength = board.create('text', [base/2 - 0.3, height/2 - 0.3, hypotenuse.toFixed(1) + " cm"], {
+      // Height (left) side label - positioned with proportional offset
+      // Scale the offset based on height to keep it consistently outside the square
+      const heightLabelOffset = Math.max(1, height * 0.15);
+      board.create('text', [-heightLabelOffset, height/2, height + " cm"], {
         fontSize: 14,
         color: '#333',
-        rotate: Math.atan2(-height, base) * (180/Math.PI),
+        anchorX: 'middle',
+        anchorY: 'middle',
         cssClass: 'jxgraph-length',
         fixed: true,
         highlight: false
       });
-      objects.push(hypLength);
+      
+      // Hypotenuse side label - positioned along the hypotenuse
+      // Calculate position to ensure it's centered and oriented along the hypotenuse
+      const hypAngle = Math.atan2(-height, base) * (180/Math.PI);
+      const hypLabelX = base/2 - 0.3;
+      const hypLabelY = height/2 - 0.3;
+      
+      board.create('text', [hypLabelX, hypLabelY, hypotenuse.toFixed(1) + " cm"], {
+        fontSize: 14,
+        color: '#333',
+        rotate: hypAngle,
+        cssClass: 'jxgraph-length',
+        fixed: true,
+        highlight: false
+      });
+    }
+    
+    // Add equation display to connect visual with formula
+    if (showHint) {
+      // Add Pythagoras' theorem formula with actual values
+      const formulaText = `a² + b² = c²`;
+      const calculationText = `${base}² + ${height}² = ${hypotenuse.toFixed(1)}²`;
+      const resultText = `${baseSquareArea} + ${heightSquareArea} = ${hypotenuseSquareArea}`;
+      
+      // Position formulas more consistently 
+      // Create a box in the top left that will contain the formulas
+      // This provides a more consistent placement regardless of triangle dimensions
+      const boxX = -height * 0.5;  // Position box to the left
+      const boxY = height + 1;     // Position box above the triangle
+      
+      // Create a semi-transparent background rectangle for better readability
+      board.create('polygon', [
+        [boxX - 3, boxY - 0.5],
+        [boxX + 6, boxY - 0.5],
+        [boxX + 6, boxY + 2.5],
+        [boxX - 3, boxY + 2.5]
+      ], {
+        fillColor: 'white',
+        fillOpacity: 0.7,
+        hasInnerPoints: false,
+        vertices: { visible: false },
+        borders: { visible: false }
+      });
+      
+      // Add each line of the equation with fixed vertical spacing
+      board.create('text', [boxX, boxY + 1.5, formulaText], {
+        fontSize: 18,
+        cssClass: 'jxgraph-formula',
+        anchorX: 'left',
+        fixed: true,
+        highlight: false
+      });
+      
+      board.create('text', [boxX, boxY + 0.75, calculationText], {
+        fontSize: 16,
+        cssClass: 'jxgraph-formula',
+        anchorX: 'left',
+        fixed: true,
+        highlight: false
+      });
+      
+      board.create('text', [boxX, boxY, resultText], {
+        fontSize: 16,
+        cssClass: 'jxgraph-formula',
+        anchorX: 'left',
+        fixed: true,
+        highlight: false
+      });
     }
     
     board.unsuspendUpdate();
@@ -292,8 +363,10 @@ const PythagorasVisualizationGraph = () => {
         </div>
       </div>
       
-      {/* Display toggles */}
-      <div className="flex justify-center p-4 bg-gray-50 rounded-lg gap-4">
+
+      
+      {/* Display toggles - Improved with additional hint toggle */}
+      <div className="flex flex-wrap justify-center p-4 bg-gray-50 rounded-lg gap-4">
         <button
           onClick={() => setShowLabels(!showLabels)}
           className={`px-3 py-2 rounded-md flex items-center ${
@@ -315,6 +388,17 @@ const PythagorasVisualizationGraph = () => {
           <Ruler size={18} className="mr-2" />
           <span className="text-sm">Side Lengths</span>
         </button>
+        
+        <button
+          onClick={() => setShowHint(!showHint)}
+          className={`px-3 py-2 rounded-md flex items-center ${
+            showHint ? `bg-${theme.secondary} text-${theme.secondaryText}` : 'bg-gray-100 text-gray-500'
+          } hover:opacity-80 transition-colors`}
+          title="Show formula relationship"
+        >
+          <HelpCircle size={18} className="mr-2" />
+          <span className="text-sm">Show Formula</span>
+        </button>
       </div>
       
       {/* JSXGraph Visualization */}
@@ -326,9 +410,11 @@ const PythagorasVisualizationGraph = () => {
           backgroundColor="#f9f7f2"
           axis={false}
           onUpdate={updateBoard}
-          dependencies={[base, height, showLabels, showSideLengths]}
+          dependencies={[base, height, showLabels, showSideLengths, showHint]}
         />
       </div>
+      
+
     </div>
   );
 };
