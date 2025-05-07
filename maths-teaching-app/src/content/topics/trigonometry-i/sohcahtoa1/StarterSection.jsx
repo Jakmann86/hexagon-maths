@@ -21,6 +21,7 @@ const generatePythagorasHypotenuseQuestion = () => {
             <RightTriangle 
                 base={base} 
                 height={height}
+                labelStyle="custom"
                 labels={[`${base} cm`, `${height} cm`, `?`]}
                 showRightAngle={true}
                 style={{
@@ -46,6 +47,7 @@ const generatePythagorasMissingSideQuestion = () => {
             <RightTriangle 
                 base={a} 
                 height={Number(b)}
+                labelStyle="custom"
                 labels={[`${a} cm`, `?`, `${c} cm`]}
                 showRightAngle={true}
                 style={{
@@ -72,7 +74,8 @@ const generateTriangleAreaQuestion = () => {
                 base={base}
                 height={height}
                 showRightAngle={true}
-                labels={[`? cm`, `${height} cm`, 'h']}
+                labelStyle="custom"
+                labels={[`? cm`, `${height} cm`, "h"]}
                 style={{
                     fillColor: "#9C27B0", // Purple
                     fillOpacity: 0.2
@@ -114,61 +117,11 @@ const generateCountdownGame = () => {
     // Shuffle the numbers
     const shuffledNumbers = numbers.sort(() => Math.random() - 0.5);
     
-    // Create an example solution (using simpler combinations for teaching purposes)
-    // For demonstration, we'll create a path to reach the target
-    const exampleNumbers = [...shuffledNumbers]; // Copy the numbers
-    let solutionSteps = [];
-    let currentValue = 0;
-    let remainingTarget = target;
-    
-    // Try to construct a reasonable solution path
-    // This is a simplified approach to guarantee we can show a valid solution
-    if (target % 2 === 0 && shuffledNumbers.includes(2)) {
-        // For even targets, we might use division by 2
-        currentValue = target * 2;
-        solutionSteps.push(`${currentValue} ÷ 2 = ${target}`);
-        remainingTarget = currentValue;
-        exampleNumbers.splice(exampleNumbers.indexOf(2), 1);
-    } else if (shuffledNumbers.includes(25) && target % 25 === 0) {
-        // For targets divisible by 25
-        currentValue = target / 25;
-        solutionSteps.push(`25 × ${currentValue} = ${target}`);
-        remainingTarget = currentValue;
-        exampleNumbers.splice(exampleNumbers.indexOf(25), 1);
-    } else {
-        // Start with multiplication of two numbers
-        const num1 = exampleNumbers[0];
-        const num2 = exampleNumbers[1];
-        currentValue = num1 * num2;
-        solutionSteps.push(`${num1} × ${num2} = ${currentValue}`);
-        remainingTarget = target - currentValue;
-        exampleNumbers.splice(0, 2);
-        
-        // If we need to add or subtract to reach target
-        if (remainingTarget !== 0) {
-            const num3 = exampleNumbers[0];
-            if (remainingTarget > 0) {
-                solutionSteps.push(`${currentValue} + ${num3} = ${currentValue + num3}`);
-                currentValue += num3;
-                remainingTarget -= num3;
-            } else {
-                solutionSteps.push(`${currentValue} - ${num3} = ${currentValue - num3}`);
-                currentValue -= num3;
-                remainingTarget += num3;
-            }
-        }
-    }
-    
-    // If we couldn't get to the target exactly, acknowledge this
-    if (currentValue !== target) {
-        solutionSteps.push(`(Note: This is one approach. You would need additional steps to reach ${target} exactly.)`);
-    }
-    
     return {
         question: `Numbers Challenge: Use the numbers ${shuffledNumbers.join(', ')} to make ${target}.
 You can use +, −, ×, ÷ and each number at most once.`,
         answer: `Example solution:
-${solutionSteps.join('\n')}`,
+${target} can be made using ${shuffledNumbers.slice(0, 3).join(', ')}`,
         difficulty: 'puzzle'
     };
 };

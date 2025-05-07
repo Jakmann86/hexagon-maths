@@ -1,7 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+// maths-teaching-app/src/components/math/JSXGraphBoard.jsx
+import React, { useRef, useEffect, memo } from 'react';
 import JXG from 'jsxgraph';
 
-const JSXGraphBoard = ({ 
+// Use memo to prevent unnecessary re-renders
+const JSXGraphBoard = memo(({ 
   id, 
   boundingBox = [-5, 5, 5, -5], 
   axis = true, 
@@ -16,80 +18,133 @@ const JSXGraphBoard = ({
 }) => {
   const containerRef = useRef(null);
   const boardRef = useRef(null);
+  const lastDependenciesRef = useRef(dependencies);
+  const initializedRef = useRef(false);
 
-  // Initialize the board on mount
+  // Create the board only once on mount
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || initializedRef.current) return;
     
-    // Create the board
-    const board = JXG.JSXGraph.initBoard(id, {
-      boundingbox: boundingBox,
-      axis: axis,
-      grid: grid,
-      showCopyright: false,
-      showNavigation: false,
-      keepAspectRatio: true,
-      pan: {
-        enabled: false,
-        needShift: false
-      },
-      zoom: {
-        enabled: false
-      },
-      defaultAxes: {
-        x: { 
-          strokeColor: axisCss.strokeColor,
-          ticks: { visible: false }
+    try {
+      // Create the board
+      const board = JXG.JSXGraph.initBoard(id, {
+        boundingbox: boundingBox,
+        axis: axis,
+        grid: grid,
+        showCopyright: false,
+        showNavigation: false,
+        keepAspectRatio: true,
+        pan: {
+          enabled: false,
+          needShift: false
         },
-        y: { 
-          strokeColor: axisCss.strokeColor,
-          ticks: { visible: false }
+        zoom: {
+          enabled: false
+        },
+        defaultAxes: {
+          x: { 
+            strokeColor: axisCss.strokeColor,
+            ticks: { visible: false }
+          },
+          y: { 
+            strokeColor: axisCss.strokeColor,
+            ticks: { visible: false }
+          }
+        },
+        renderer: 'svg',
+        background: { color: backgroundColor }
+      });
+      
+      boardRef.current = board;
+      initializedRef.current = true;
+      
+      // Call the onMount callback with the board instance
+      onMount(board);
+      
+      // Initial update if provided
+      if (onUpdate) {
+        board.suspendUpdate();
+        try {
+          onUpdate(board);
+        } catch (error) {
+          console.error("Error in initial board update:", error);
         }
-      },
-      renderer: 'svg',
-      background: { color: backgroundColor }
-    });
+        board.unsuspendUpdate();
+      }
+    } catch (error) {
+      console.error("Error initializing JSXGraph board:", error);
+    }
     
-    boardRef.current = board;
-    
-    // Call the onMount callback with the board instance
-    onMount(board);
-    
-    // Clean up
+    // Cleanup function
     return () => {
-      JXG.JSXGraph.freeBoard(board);
+      try {
+        if (boardRef.current) {
+          JXG.JSXGraph.freeBoard(boardRef.current);
+          boardRef.current = null;
+          initializedRef.current = false;
+        }
+      } catch (error) {
+        console.error("Error cleaning up JSXGraph board:", error);
+      }
     };
-  }, [id]); // Only recreate board if ID changes
+  }, [id]); // Only depend on id to ensure it's created once
 
-  // Handle updates to the board
+  // Handle updates to the board based on dependencies
   useEffect(() => {
-    if (boardRef.current && onUpdate) {
+    if (!boardRef.current || !onUpdate || !initializedRef.current) return;
+    
+    // Skip update if dependencies haven't actually changed
+    // This is a very important optimization
+    if (depsEqual(dependencies, lastDependenciesRef.current)) {
+      return;
+    }
+    
+    // Remember current dependencies
+    lastDependenciesRef.current = [...dependencies];
+    
+    // Update the board
+    try {
       // Suspend updates to improve performance
       boardRef.current.suspendUpdate();
       
-      try {
-        // Manually remove all elements
-        const board = boardRef.current;
-        const elements = Object.values(board.objects);
-        
-        elements.forEach(el => {
-          if (el && el.remove) {
-            el.remove();
-          }
-        });
-        
-        // Run the update function
-        onUpdate(board);
-      } catch (error) {
-        console.error("Error in board update:", error);
-      }
+      // Call update function
+      onUpdate(boardRef.current);
       
       // Resume updates
       boardRef.current.unsuspendUpdate();
+    } catch (error) {
+      console.error("Error updating JSXGraph board:", error);
+      // Try to recover
+      try {
+        boardRef.current.unsuspendUpdate();
+      } catch (e) {}
     }
-  }, [...dependencies]);
+  }, [onUpdate, ...dependencies]);
+
+  // Update boundingBox if it changes
+  useEffect(() => {
+    if (boardRef.current && initializedRef.current) {
+      try {
+        boardRef.current.setBoundingBox(boundingBox, true);
+      } catch (error) {
+        console.error("Error updating boundingBox:", error);
+      }
+    }
+  }, [boundingBox]);
 
   return <div id={id} className="jxgbox" ref={containerRef} style={{ width, height }} />;
-};
+});
+
+// Helper to compare dependencies
+function depsEqual(a, b) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+// Set display name for development
+JSXGraphBoard.displayName = 'JSXGraphBoard';
 
 export default JSXGraphBoard;

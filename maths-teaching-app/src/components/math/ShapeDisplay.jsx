@@ -1,5 +1,5 @@
-// src/components/math/ShapeDisplay.jsx
-import React from 'react';
+// maths-teaching-app/src/components/math/ShapeDisplay.jsx
+import React, { memo, useMemo } from 'react';
 import Square from './shapes/Square';
 import RightTriangle from './shapes/RightTriangle';
 import Triangle from './shapes/Triangle';
@@ -16,14 +16,14 @@ import Rectangle from './shapes/Rectangle';
  * @param {number} props.height - Height of the shape display container (default: 300)
  * @param {string} props.className - Additional CSS classes to apply
  */
-const ShapeDisplay = ({ shape, height = 300, className = '' }) => {
+const ShapeDisplay = memo(({ shape, height = 300, className = '' }) => {
   if (!shape || !shape.type) {
     console.warn('ShapeDisplay: Missing shape configuration or type');
     return null;
   }
 
-  // Get proper shape component based on type
-  const getShapeComponent = () => {
+  // Memoize the shape component to prevent unnecessary recreation
+  const ShapeComponent = useMemo(() => {
     const { type, style = {}, ...otherProps } = shape;
     
     // Enhanced style with transparent background
@@ -33,30 +33,33 @@ const ShapeDisplay = ({ shape, height = 300, className = '' }) => {
       showGrid: style.showGrid || false,
     };
 
-    // Props with height directly passed to Mafs component
+    // Props with height directly passed to component
     const enhancedProps = {
       ...otherProps,
       style: enhancedStyle,
       // Pass explicit height to each shape component
-      mafsHeight: height
+      containerHeight: height,
+      // Add key for stability
+      key: `shape-${type}-${JSON.stringify(otherProps).slice(0, 20)}`
     };
     
     // Select and return appropriate shape component
     switch (type) {
       case 'square':
-        return <WrappedShape Component={Square} {...enhancedProps} />;
+        return <Square {...enhancedProps} />;
       case 'rightTriangle':
-        return <WrappedShape Component={RightTriangle} {...enhancedProps} />;
+        return <RightTriangle {...enhancedProps} />;
       case 'triangle':
-        return <WrappedShape Component={Triangle} {...enhancedProps} />;
+        return <Triangle {...enhancedProps} />;
       case 'rectangle':
-        return <WrappedShape Component={Rectangle} {...enhancedProps} />;
+        return <Rectangle {...enhancedProps} />;
       default:
         console.warn(`ShapeDisplay: Unknown shape type "${type}"`);
         return null;
     }
-  };
+  }, [shape, height]);
 
+  // Simple wrapper div with stable class name
   return (
     <div 
       className={`math-shape-display ${className}`} 
@@ -70,24 +73,11 @@ const ShapeDisplay = ({ shape, height = 300, className = '' }) => {
         background: 'transparent' // Ensure the container background is transparent
       }}
     >
-      {getShapeComponent()}
+      {ShapeComponent}
     </div>
   );
-};
+});
 
-/**
- * WrappedShape - Helper component to ensure consistent rendering across shapes
- * This ensures the height prop is properly passed to the Mafs component
- */
-const WrappedShape = ({ Component, mafsHeight, ...props }) => {
-  return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <Component 
-        {...props} 
-        mafsHeight={mafsHeight} // This will be used inside shape components
-      />
-    </div>
-  );
-};
+ShapeDisplay.displayName = 'ShapeDisplay';
 
 export default ShapeDisplay;

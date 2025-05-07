@@ -1,257 +1,265 @@
 // maths-teaching-app/src/components/math/shapes/RightTriangle.jsx
-import React from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 import JSXGraphBoard from '../JSXGraphBoard';
 import { STANDARD_SHAPES } from '../../../config/standardShapes';
 
-const RightTriangle = ({
+// Memoize the entire component to prevent unnecessary re-renders
+const RightTriangle = memo(({
   base = 3,
   height = 4,
   showRightAngle = true,
+  labelStyle = 'numeric', // 'numeric', 'algebraic', or 'custom'
   labels = [],
   units = 'cm',
   style = {},
-  containerHeight = 250,
   orientation = 'default',
-  scale = 1,
-  labelOffset = 0.8 // Customizable label offset distance
+  containerHeight = 250,
+  labelPositions = null,
 }) => {
-  // Handle random orientation
-  const actualOrientation = orientation === 'random' 
-    ? ['default', 'rotate90', 'rotate180', 'rotate270'][Math.floor(Math.random() * 4)]
-    : orientation;
+  // Create stable board ID using a ref that doesn't change between renders
+  const boardIdRef = useRef(`right-triangle-${Math.random().toString(36).substr(2, 9)}`);
   
-  const STANDARD = {
-    base: STANDARD_SHAPES.rightTriangle.base * scale,
-    height: STANDARD_SHAPES.rightTriangle.height * scale,
-    boundingBox: STANDARD_SHAPES.rightTriangle.boundingBox.map(v => v * scale)
-  };
-  
+  // Calculate hypotenuse
   const hypotenuse = Math.sqrt(base * base + height * height);
-  // Add unique identifier to prevent board conflicts
-  const boardId = `right-triangle-standard-${actualOrientation}-${scale}-${Math.random().toString(36).substr(2, 9)}`;
+  const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
 
-  // Get orientation-specific label configurations
-  const getLabelConfig = () => {
-    const configs = {
-      default: {
-        // Standard orientation - hyp and left label need to move left
-        points: [
-          [0, 4],      // top-left
-          [4, 4],      // top-right  
-          [0, 0]       // bottom-left (right angle)
-        ],
-        labels: [
-          {
-            position: [2, 4.25],  // base (top)
-            rotation: 0,
-            anchor: { x: 'middle', y: 'bottom' }
-          },
-          {
-            position: [-0.5, 2],  // height (left) - moved left
-            rotation: 0,
-            anchor: { x: 'right', y: 'middle' }
-          },
-          {
-            position: [1.5, 1.2],  // hypotenuse - moved left
-            rotation: 0,
-            anchor: { x: 'center', y: 'center' }
-          }
-        ],
-        rightAnglePoints: [1, 2, 0]
-      },
-      rotate90: {
-        // Rotated 90° - labels are perfect, keep them
-        points: [
-          [0, 0],      // bottom-left
-          [0, 4],      // top-left
-          [4, 0]       // bottom-right (right angle)
-        ],
-        labels: [
-          {
-            position: [4.25, 2],   // base (right)
-            rotation: 0,
-            anchor: { x: 'left', y: 'middle' }
-          },
-          {
-            position: [2, -0.25],  // height (bottom)
-            rotation: 0,
-            anchor: { x: 'middle', y: 'top' }
-          },
-          {
-            position: [1.2, 2.3],  // hypotenuse
-            rotation: 0,
-            anchor: { x: 'center', y: 'center' }
-          }
-        ],
-        rightAnglePoints: [1, 2, 0]
-      },
-      rotate180: {
-        // Rotated 180° - right label and hyp too far up
-        points: [
-          [4, 0],      // bottom-right (right angle)
-          [0, 0],      // bottom-left
-          [4, 4]       // top-right
-        ],
-        labels: [
-          {
-            position: [2, -0.25],  // base (bottom)
-            rotation: 0,
-            anchor: { x: 'middle', y: 'top' }
-          },
-          {
-            position: [4.5, 2],   // height (right) - moved right to fix
-            rotation: 0,
-            anchor: { x: 'left', y: 'middle' }
-          },
-          {
-            position: [1.3, 2],  // hypotenuse - moved down
-            rotation: 0,
-            anchor: { x: 'center', y: 'center' }
-          }
-        ],
-        rightAnglePoints: [1, 0, 2]
-      },
-      rotate270: {
-        // Rotated 270° - hyp label needs to come up
-        points: [
-          [4, 4],      // top-right
-          [4, 0],      // bottom-right
-          [0, 4]       // top-left (right angle)
-        ],
-        labels: [
-          {
-            position: [-0.25, 2],  // base (left)
-            rotation: 0,
-            anchor: { x: 'right', y: 'middle' }
-          },
-          {
-            position: [2, 4.25],   // height (top)
-            rotation: 0,
-            anchor: { x: 'middle', y: 'bottom' }
-          },
-          {
-            position: [2.8, 2.5],  // hypotenuse - moved up
-            rotation: 0,
-            anchor: { x: 'center', y: 'center' }
-          }
-        ],
-        rightAnglePoints: [1, 2, 0]
-      }
-    };
+  // Handle random orientation only once on mount
+  const orientationRef = useRef(
+    orientation === 'random' 
+      ? ['default', 'rotate90', 'rotate180', 'rotate270'][Math.floor(Math.random() * 4)]
+      : orientation
+  );
 
-    return configs[actualOrientation] || configs.default;
-  };
+  // Store the JSXGraph board reference
+  const boardRef = useRef(null);
 
+  // Update function that gets called by JSXGraphBoard
   const updateBoard = (board) => {
-    // Clear existing objects more safely
-    const objectIds = Object.keys(board.objects);
-    for (let i = objectIds.length - 1; i >= 0; i--) {
-      try {
-        board.removeObject(board.objects[objectIds[i]]);
-      } catch (e) {
-        // Ignore errors during object removal
-      }
+    // Store the board reference
+    boardRef.current = board;
+    
+    // Clear existing objects - more safely using suspendUpdate
+    board.suspendUpdate();
+    try {
+      Object.keys(board.objects).forEach(id => {
+        try {
+          board.removeObject(board.objects[id]);
+        } catch (e) {}
+      });
+    } catch (error) {
+      console.error("Error clearing board:", error);
     }
     
-    board.suspendUpdate();
-    
     try {
+      // Extract styling options with defaults
       const {
-        fillColor = 'indigo',
+        fillColor = '#3F51B5',
         fillOpacity = 0.2,
-        strokeColor = 'indigo',
+        strokeColor = '#3F51B5',
         strokeWidth = 2
       } = style;
       
-      const config = getLabelConfig();
+      // Define four standard orientations with points
+      // Right angle is always at the first point for consistent angle marking
+      const orientations = {
+        default: [
+          [0, 0],        // Right angle at origin
+          [base, 0],     // Horizontal leg
+          [0, height]    // Vertical leg
+        ],
+        rotate90: [
+          [0, 0],        // Right angle at origin
+          [0, base],     // Vertical leg (was horizontal)
+          [height, 0]    // Horizontal leg (was vertical)
+        ],
+        rotate180: [
+          [base, height], // Right angle at top-right
+          [0, height],    // Horizontal leg
+          [base, 0]       // Vertical leg
+        ],
+        rotate270: [
+          [height, base], // Right angle at bottom-right
+          [height, 0],    // Vertical leg
+          [0, base]       // Horizontal leg
+        ]
+      };
       
-      // Create points
-      const [p1, p2, p3] = config.points.map(point => 
-        board.create('point', point, { visible: false, fixed: true })
+      // Get points for selected orientation
+      const actualOrientation = orientationRef.current;
+      const points = orientations[actualOrientation] || orientations.default;
+      
+      // Create triangle points (fixed and invisible)
+      const trianglePoints = points.map(p => 
+        board.create('point', p, { visible: false, fixed: true })
       );
       
-      // Create triangle
-      board.create('polygon', [p1, p2, p3], {
-        fillColor: fillColor,
-        fillOpacity: fillOpacity,
-        strokeColor: strokeColor,
-        strokeWidth: strokeWidth,
+      // Create the triangle
+      board.create('polygon', trianglePoints, {
+        fillColor,
+        fillOpacity, 
+        strokeColor,
+        strokeWidth,
         vertices: { visible: false }
       });
       
-      // Create labels
-      const sideLabels = labels.length === 3 ? labels : [
-        `${base} ${units}`,
-        `${height} ${units}`,
-        `${hypotenuse.toFixed(2)} ${units}`
-      ];
+      // Determine side labels based on labelStyle
+      let sideLabels;
+      if (labelStyle === 'numeric') {
+        // Label order always matches sides: base, height, hypotenuse
+        sideLabels = [
+          `${base} ${units}`,
+          `${height} ${units}`,
+          `${roundedHypotenuse} ${units}`
+        ];
+      } else if (labelStyle === 'algebraic') {
+        sideLabels = ['a', 'b', 'c'];
+      } else if (labelStyle === 'custom' && Array.isArray(labels) && labels.length > 0) {
+        sideLabels = [...labels];
+        while (sideLabels.length < 3) sideLabels.push('');
+      } else {
+        sideLabels = ['', '', ''];
+      }
       
-      config.labels.forEach((labelConfig, index) => {
-        const text = board.create('text', 
-          [labelConfig.position[0], labelConfig.position[1], sideLabels[index]], 
-          {
-            fontSize: 14 * scale,
-            fixed: true,
-            anchorX: labelConfig.anchor.x,
-            anchorY: labelConfig.anchor.y,
-            rotate: labelConfig.rotation,
-            color: '#000000'
-          }
-        );
-      });
-      
-      // Create right angle marker using JSXGraph's built-in right angle feature
-      if (showRightAngle) {
-        const [idx1, idx2, idx3] = config.rightAnglePoints;
-        const anglePoints = [p1, p2, p3];
+      // Use custom label positions if provided, otherwise calculate automatically
+      if (labelPositions && labelPositions[actualOrientation]) {
+        // Use custom positions for this orientation
+        const customPositions = labelPositions[actualOrientation];
         
-        // Create right angle marker using JSXGraph's built-in feature
+        sideLabels.forEach((label, index) => {
+          if (!label || !customPositions[index]) return;
+          
+          const { x, y, anchorX = 'middle', anchorY = 'middle' } = customPositions[index];
+          
+          board.create('text', [x, y, label], {
+            fontSize: 14,
+            fixed: true,
+            anchorX,
+            anchorY,
+            color: '#000000'
+          });
+        });
+      } else {
+        // Use automatic label positioning
+        // Add labels to sides
+        for (let i = 0; i < 3; i++) {
+          if (!sideLabels[i]) continue;
+          
+          // Define points for this side
+          const p1 = trianglePoints[i];
+          const p2 = trianglePoints[(i + 1) % 3];
+          
+          // Find midpoint of side
+          const midX = (p1.X() + p2.X()) / 2;
+          const midY = (p1.Y() + p2.Y()) / 2;
+          
+          // Calculate perpendicular offset direction (normal vector)
+          const dx = p2.X() - p1.X();
+          const dy = p2.Y() - p1.Y();
+          const len = Math.sqrt(dx*dx + dy*dy);
+          
+          // Offset distance proportional to triangle size
+          const maxDim = Math.max(base, height);
+          const offsetDist = maxDim * 0.1;
+          
+          // Use perpendicular vector for offset
+          const nx = -dy / len * offsetDist;
+          const ny = dx / len * offsetDist;
+          
+          // Create the label text
+          board.create('text', [midX + nx, midY + ny, sideLabels[i]], {
+            fontSize: 14,
+            fixed: true,
+            anchorX: 'middle',
+            anchorY: 'middle',
+            color: '#000000'
+          });
+        }
+      }
+      
+      // Add right angle marker
+      if (showRightAngle) {
+        // Create right angle using JSXGraph's built-in angle object
+        // The right angle is always at point 0 and between points 1 and 2
         board.create('angle', [
-          anglePoints[idx1], 
-          anglePoints[idx2], 
-          anglePoints[idx3]
+          trianglePoints[2],  // Third point
+          trianglePoints[0],  // Right angle (first point)
+          trianglePoints[1]   // Second point
         ], {
-          radius: 0.5,
-          type: 'square', // Makes it a right angle square marker
-          fillColor: 'transparent',
-          fillOpacity: 0,
-          strokeColor: '#000',
-          strokeWidth: 2,
+          radius: Math.min(base, height) * 0.15, // Proportional size
+          type: 'square',
+          fillColor: 'none',
+          strokeWidth: 1.5,
           fixed: true,
-          visible: true
+          name: '' // No label
         });
       }
     } catch (error) {
-      console.error('Error creating triangle:', error);
+      console.error("Error creating triangle:", error);
     }
     
     board.unsuspendUpdate();
   };
-
-  // Fixed bounding box - use the same proportions as the demo
+  
+  // Calculate appropriate bounding box
   const getBoundingBox = () => {
-    const padding = 0.5; // Minimal padding, just like the demo
-    return [
-      -0.5 - padding,
-      4.5 + padding,
-      4.5 + padding,
-      -0.5 - padding
-    ];
+    const maxDim = Math.max(base, height);
+    const padding = maxDim * 0.2;
+    
+    // Create a bounding box with sufficient padding
+    return [-padding, maxDim + padding, maxDim + padding, -padding];
   };
 
+  // Clean up the board when component unmounts or boundingBox changes
+  useEffect(() => {
+    return () => {
+      if (boardRef.current) {
+        try {
+          // Attempts to clean up properly on unmount
+          JXG.JSXGraph.freeBoard(boardRef.current);
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+  }, []);
+
   return (
-    <div className="w-full h-full" style={{ maxHeight: `${containerHeight}px` }}>
+    <div className="w-full h-full flex items-center justify-center">
       <JSXGraphBoard
-        id={boardId}
+        id={boardIdRef.current}
         boundingBox={getBoundingBox()}
         height={containerHeight}
         backgroundColor="transparent"
         axis={false}
         onUpdate={updateBoard}
-        dependencies={[base, height, labels, actualOrientation, scale, labelOffset]}
+        // Stable JSON.stringify to avoid unnecessary updates
+        dependencies={[
+          base, 
+          height, 
+          labelStyle, 
+          showRightAngle,
+          // These are stable so no need to include in dependencies
+          // orientation, labelPositions, JSON.stringify(labels)
+        ]}
       />
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Deep comparison for complex objects to avoid unnecessary re-renders
+  // Only re-render if these specific props change
+  return (
+    prevProps.base === nextProps.base &&
+    prevProps.height === nextProps.height &&
+    prevProps.showRightAngle === nextProps.showRightAngle &&
+    prevProps.labelStyle === nextProps.labelStyle &&
+    prevProps.containerHeight === nextProps.containerHeight &&
+    // For complex objects, do a shallow string comparison
+    JSON.stringify(prevProps.style) === JSON.stringify(nextProps.style) &&
+    JSON.stringify(prevProps.labels) === JSON.stringify(nextProps.labels)
+  );
+});
+
+// Ensure displayName is set for dev tools
+RightTriangle.displayName = 'RightTriangle';
 
 export default RightTriangle;

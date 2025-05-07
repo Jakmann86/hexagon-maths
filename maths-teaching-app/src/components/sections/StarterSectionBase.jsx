@@ -1,20 +1,34 @@
 // maths-teaching-app/src/components/sections/StarterSectionBase.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import MathDisplay from '../common/MathDisplay';
 import { useUI } from '../../context/UIContext';
 
-const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
+// Memoized ContentRenderer component
+const ContentRenderer = memo(({ content, type = 'text', isMath = false }) => {
     if (!content) return null;
     
+    // Handle React elements (like RightTriangle)
     if (React.isValidElement(content)) {
-        if (content.type?.name === 'RightTriangle') {
+        // Special handling for RightTriangle - ensure stable key
+        if (content.type?.displayName === 'RightTriangle' || content.type?.name === 'RightTriangle') {
+            // Clone with stabilized properties - create a stable key from props
+            const stableKey = `triangle-${content.props.base}-${content.props.height}-${content.props.orientation || 'default'}`;
+            
             return React.cloneElement(content, {
-                scale: 0.6,
-                containerHeight: 110,
-                orientation: content.props.orientation || 'random'
+                key: stableKey,
+                scale: 0.9,
+                containerHeight: 140,
+                orientation: content.props.orientation || 'default'
             });
         }
+        
+        // Ensure other React elements have a stable key
+        const elementKey = content.key || `element-${content.type.displayName || content.type.name || 'unknown'}`;
+        if (!content.key) {
+            return React.cloneElement(content, { key: elementKey });
+        }
+        
         return content;
     }
 
@@ -26,7 +40,7 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
     switch (type) {
         case 'visualization':
             return (
-                <div className="flex justify-center items-center p-1 h-full">
+                <div className="flex justify-center items-center p-1 h-full mt-2">
                     {content}
                 </div>
             );
@@ -44,9 +58,13 @@ const ContentRenderer = ({ content, type = 'text', isMath = false }) => {
             }
             return <div className="text-gray-800 text-lg">{processText(content)}</div>;
     }
-};
+});
 
-const QuestionDisplay = ({ type, title, data, showAnswers }) => {
+// Set displayName for debugging
+ContentRenderer.displayName = 'ContentRenderer';
+
+// Memoized QuestionDisplay component
+const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
     const typeStyles = {
         section1: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
         section2: 'bg-blue-100 hover:bg-blue-200 border-blue-300',
@@ -55,6 +73,20 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
     };
 
     const isPuzzle = data?.difficulty === 'puzzle' || type === 'section4';
+    
+    // Use ref to store visualization content to prevent re-rendering issues
+    const visualizationRef = useRef(data?.visualization || data?.shape);
+
+    // Store question/answer refs to prevent recreation
+    const questionRef = useRef(data?.question);
+    const answerRef = useRef(data?.answer);
+
+    // Update refs when data changes (not on every render)
+    useEffect(() => {
+        visualizationRef.current = data?.visualization || data?.shape;
+        questionRef.current = data?.question;
+        answerRef.current = data?.answer;
+    }, [data?.visualization, data?.shape, data?.question, data?.answer]);
 
     return (
         <div 
@@ -68,33 +100,41 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
                 border-2
             `}
         >
-            <h3 className="font-bold mb-2 text-lg text-gray-700 line-clamp-1">
+            <h3 className="font-bold mb-1 text-lg text-gray-700 line-clamp-1">
                 {title}
             </h3>
 
             <div className="flex-grow flex flex-col">
-                <div className="text-base flex-grow">
-                    <ContentRenderer content={data?.question} />
+                <div className="text-base">
+                    <ContentRenderer content={questionRef.current} />
                 </div>
 
-                {(data?.visualization || data?.shape) && (
-                    <div className="mt-2 h-28 flex-shrink-0">
+                {/* Use the ref value to render visualization with a stable key */}
+                {visualizationRef.current && (
+                    <div className="mt-1 h-32 flex-shrink-0" key={`vis-container-${type}`}>
                         <ContentRenderer 
-                            content={data.visualization || data.shape} 
+                            content={visualizationRef.current} 
                             type="visualization" 
                         />
                     </div>
                 )}
 
-                {showAnswers && data?.answer && (
-                    <div className="mt-2 pt-2 border-t-2 border-gray-300">
+                {/* Answers section with stable keys */}
+                {showAnswers && answerRef.current && (
+                    <div className="mt-2 pt-2 border-t-2 border-gray-300" key={`answer-section-${type}`}>
                         <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
                         <div className="math-answer">
-                            {typeof data.answer === 'string' && data.answer.includes('\\') && !isPuzzle ? (
-                                <MathDisplay math={data.answer} displayMode={false} size="normal" />
+                            {typeof answerRef.current === 'string' && answerRef.current.includes('\\') && !isPuzzle ? (
+                                <MathDisplay 
+                                    key={`math-display-${type}`}
+                                    math={answerRef.current} 
+                                    displayMode={false} 
+                                    size="normal" 
+                                />
                             ) : (
                                 <ContentRenderer 
-                                    content={data.answer} 
+                                    key={`answer-content-${type}`}
+                                    content={answerRef.current} 
                                     type={isPuzzle ? 'puzzle-answer' : 'text'} 
                                 />
                             )}
@@ -104,7 +144,9 @@ const QuestionDisplay = ({ type, title, data, showAnswers }) => {
             </div>
         </div>
     );
-};
+});
+
+QuestionDisplay.displayName = 'QuestionDisplay';
 
 const StarterSectionBase = ({
     questionGenerators = [],
@@ -112,6 +154,7 @@ const StarterSectionBase = ({
     currentLessonId
 }) => {
     const { showAnswers } = useUI();
+    const initializedRef = useRef(false);
 
     const sectionTitles = {
         section1: 'Last Lesson',
@@ -120,6 +163,7 @@ const StarterSectionBase = ({
         section4: 'Last Year'
     };
 
+    // Memoize generators to prevent recreation
     const normalizedGenerators = useMemo(() => {
         const generators = [...questionGenerators];
         while (generators.length < 4) {
@@ -131,28 +175,44 @@ const StarterSectionBase = ({
         return generators;
     }, [questionGenerators]);
 
-    const [questions, setQuestions] = useState(() => ({
-        section1: normalizedGenerators[0](),
-        section2: normalizedGenerators[1](),
-        section3: normalizedGenerators[2](),
-        section4: normalizedGenerators[3]()
-    }));
+    // Use useRef to store a stable reference to the generators
+    const generatorsRef = useRef(normalizedGenerators);
+    
+    // Update the ref when generators change, but don't cause re-renders
+    useEffect(() => {
+        generatorsRef.current = normalizedGenerators;
+    }, [normalizedGenerators]);
 
-    const regenerateAllQuestions = () => {
-        setQuestions({
+    // Store generated questions in state, only update when explicitly regenerated
+    const [questions, setQuestions] = useState(() => {
+        initializedRef.current = true;
+        return {
             section1: normalizedGenerators[0](),
             section2: normalizedGenerators[1](),
             section3: normalizedGenerators[2](),
             section4: normalizedGenerators[3]()
+        };
+    });
+
+    // Ensure components don't rerender unnecessarily by memoizing questions
+    const memoizedQuestions = useMemo(() => questions, [questions]);
+
+    // Only regenerate questions when the button is clicked
+    const regenerateAllQuestions = () => {
+        setQuestions({
+            section1: generatorsRef.current[0](),
+            section2: generatorsRef.current[1](),
+            section3: generatorsRef.current[2](),
+            section4: generatorsRef.current[3]()
         });
     };
 
     return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden py-4 px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {Object.entries(questions).map(([sectionKey, questionData]) => (
+                {Object.entries(memoizedQuestions).map(([sectionKey, questionData]) => (
                     <QuestionDisplay
-                        key={sectionKey}
+                        key={`question-${sectionKey}`}
                         type={sectionKey}
                         title={sectionTitles[sectionKey]}
                         data={questionData}
