@@ -48,112 +48,120 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     setShowHeight(false);
   };
 
-  // Generate an example for finding the hypotenuse
-  const generateHypotenuseExample = () => {
-    // Include some examples with decimal answers
-    const example = _.sample(PYTHAGOREAN_EXAMPLES);
-    // Generate a random orientation for each question
-    const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
+ // Generate an example for finding the hypotenuse
+const generateHypotenuseExample = () => {
+  // Filter for examples with reasonably sized triangles (minimum dimension 3)
+  const suitableExamples = PYTHAGOREAN_EXAMPLES.filter(ex => ex.a >= 3 && ex.b >= 3);
+  
+  // Include some examples with decimal answers
+  const example = _.sample(suitableExamples);
+  
+  // Generate a random orientation for each question
+  const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
 
-    // Format calculator input
-    const calculatorInput = `\\sqrt{${example.a}^2 + ${example.b}^2}`;
+  // Format calculator input
+  const calculatorInput = `\\sqrt{${example.a}^2 + ${example.b}^2}`;
 
-    return {
-      title: "Find the Hypotenuse",
-      question: `Find the length of the hypotenuse. The other sides are ${example.a} cm and ${example.b} cm.`,
-      triple: example,
-      missingValue: 'c',
-      orientation: orientation, // Add orientation to the example object
-      steps: [
-        {
-          explanation: "Use Pythagoras' theorem: a² + b² = c²",
-          math: <MathDisplay math="a^2 + b^2 = c^2" />
-        },
-        {
-          explanation: "Substitute the known values",
-          math: <MathDisplay math={`${example.a}^2 + ${example.b}^2 = c^2`} />
-        },
-        {
-          explanation: "Calculate the squares",
-          math: <MathDisplay math={`${example.a * example.a} + ${example.b * example.b} = c^2`} />
-        },
-        {
-          explanation: "Add the values",
-          math: <MathDisplay math={`${example.a * example.a + example.b * example.b} = c^2`} />
-        },
-        {
-          explanation: "Take the square root of both sides",
-          math: <MathDisplay math={`c = \\sqrt{${example.a * example.a + example.b * example.b}} = ${example.c}`} />
-        },
-        {
-          explanation: "Calculator input:",
-          math: <MathDisplay math={calculatorInput} />
-        },
-        {
-          explanation: "The hypotenuse is",
-          math: <MathDisplay math={`c = ${example.c}\\text{ cm}`} />
-        }
-      ]
-    };
+  return {
+    title: "Find the Hypotenuse",
+    question: `Find the length of the hypotenuse. The other sides are ${example.a} cm and ${example.b} cm.`,
+    triple: example,
+    missingValue: 'c',
+    orientation: orientation, // Add orientation to the example object
+    steps: [
+      {
+        explanation: "Use Pythagoras' theorem: a² + b² = c²",
+        math: <MathDisplay math="a^2 + b^2 = c^2" />
+      },
+      {
+        explanation: "Substitute the known values",
+        math: <MathDisplay math={`${example.a}^2 + ${example.b}^2 = c^2`} />
+      },
+      {
+        explanation: "Calculate the squares",
+        math: <MathDisplay math={`${example.a * example.a} + ${example.b * example.b} = c^2`} />
+      },
+      {
+        explanation: "Add the values",
+        math: <MathDisplay math={`${example.a * example.a + example.b * example.b} = c^2`} />
+      },
+      {
+        explanation: "Take the square root of both sides",
+        math: <MathDisplay math={`c = \\sqrt{${example.a * example.a + example.b * example.b}} = ${example.c}`} />
+      },
+      {
+        explanation: "Calculator input:",
+        math: <MathDisplay math={calculatorInput} />
+      },
+      {
+        explanation: "The hypotenuse is",
+        math: <MathDisplay math={`c = ${example.c}\\text{ cm}`} />
+      }
+    ]
   };
+};
 
-  // Generate an example for finding a leg (non-hypotenuse side)
-  const generateLegExample = () => {
-    // Include some examples with decimal answers
-    const example = _.sample(PYTHAGOREAN_EXAMPLES);
+// Generate an example for finding a leg (non-hypotenuse side)
+const generateLegExample = () => {
+  // Filter for examples with reasonably sized triangles (minimum dimension 3)
+  const suitableExamples = PYTHAGOREAN_EXAMPLES.filter(ex => ex.a >= 3 && ex.b >= 3);
+  
+  // Include some examples with decimal answers
+  const example = _.sample(suitableExamples);
 
-    // Randomly decide whether to find side a or b
-    const findSide = _.sample(['a', 'b']);
-    const knownSide = findSide === 'a' ? 'b' : 'a';
-    // Generate a random orientation for each question
-    const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
+  // Randomly decide whether to find side a or b
+  const findSide = _.sample(['a', 'b']);
+  const knownSide = findSide === 'a' ? 'b' : 'a';
+  
+  // Generate a random orientation for each question (avoid very small triangles)
+  const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
 
-    // Format calculator input
-    const calculatorInput = `\\sqrt{${example.c}^2 - ${example[knownSide]}^2}`;
+  // Format calculator input
+  const calculatorInput = `\\sqrt{${example.c}^2 - ${example[knownSide]}^2}`;
 
-    return {
-      title: "Find the Missing Side",
-      question: `Find the missing side. The hypotenuse is ${example.c} cm and the other side is ${example[knownSide]} cm.`,
-      triple: example,
-      missingValue: findSide,
-      knownSide: knownSide,
-      orientation: orientation, // Add orientation to the example object
-      steps: [
-        {
-          explanation: "Use Pythagoras' theorem: a² + b² = c²",
-          math: <MathDisplay math="a^2 + b^2 = c^2" />
-        },
-        {
-          explanation: "Rearrange to find the missing side",
-          math: <MathDisplay math={`${findSide}^2 = c^2 - ${knownSide}^2`} />
-        },
-        {
-          explanation: "Substitute the known values",
-          math: <MathDisplay math={`${findSide}^2 = ${example.c}^2 - ${example[knownSide]}^2`} />
-        },
-        {
-          explanation: "Calculate the squares",
-          math: <MathDisplay math={`${findSide}^2 = ${example.c * example.c} - ${example[knownSide] * example[knownSide]}`} />
-        },
-        {
-          explanation: "Subtract the values",
-          math: <MathDisplay math={`${findSide}^2 = ${example.c * example.c - example[knownSide] * example[knownSide]}`} />
-        },
-        {
-          explanation: "Take the square root of both sides",
-          math: <MathDisplay math={`${findSide} = \\sqrt{${example.c * example.c - example[knownSide] * example[knownSide]}} = ${example[findSide]}`} />
-        },
-        {
-          explanation: "Calculator input:",
-          math: <MathDisplay math={calculatorInput} />
-        },
-        {
-          explanation: "The missing side is",
-          math: <MathDisplay math={`${findSide} = ${example[findSide]}\\text{ cm}`} />
-        }
-      ]
-    };
+  return {
+    title: "Find the Missing Side",
+    question: `Find the missing side. The hypotenuse is ${example.c} cm and the other side is ${example[knownSide]} cm.`,
+    triple: example,
+    missingValue: findSide,
+    knownSide: knownSide,
+    orientation: orientation, // Add orientation to the example object
+    steps: [
+      {
+        explanation: "Use Pythagoras' theorem: a² + b² = c²",
+        math: <MathDisplay math="a^2 + b^2 = c^2" />
+      },
+      {
+        explanation: "Rearrange to find the missing side",
+        math: <MathDisplay math={`${findSide}^2 = c^2 - ${knownSide}^2`} />
+      },
+      {
+        explanation: "Substitute the known values",
+        math: <MathDisplay math={`${findSide}^2 = ${example.c}^2 - ${example[knownSide]}^2`} />
+      },
+      {
+        explanation: "Calculate the squares",
+        math: <MathDisplay math={`${findSide}^2 = ${example.c * example.c} - ${example[knownSide] * example[knownSide]}`} />
+      },
+      {
+        explanation: "Subtract the values",
+        math: <MathDisplay math={`${findSide}^2 = ${example.c * example.c - example[knownSide] * example[knownSide]}`} />
+      },
+      {
+        explanation: "Take the square root of both sides",
+        math: <MathDisplay math={`${findSide} = \\sqrt{${example.c * example.c - example[knownSide] * example[knownSide]}} = ${example[findSide]}`} />
+      },
+      {
+        explanation: "Calculator input:",
+        math: <MathDisplay math={calculatorInput} />
+      },
+      {
+        explanation: "The missing side is",
+        math: <MathDisplay math={`${findSide} = ${example[findSide]}\\text{ cm}`} />
+      }
+    ]
   };
+};
 
   // Generate an isosceles triangle example for finding area
   const generateIsoscelesExample = () => {
@@ -291,35 +299,43 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     );
   };
 
-  // Render a right triangle with random orientation - PASS THE ORIENTATION HERE
-  const renderRightTriangle = (example) => {
-    const triple = example.triple;
-    const missingValue = example.missingValue;
+ // Fixed renderRightTriangle function for ExamplesSection
 
-    // The labels array should be [base, height, hypotenuse]
-    const labels = [
-      missingValue === 'a' ? '?' : `${triple.a} cm`,  // base label
-      missingValue === 'b' ? '?' : `${triple.b} cm`,  // height label
-      missingValue === 'c' ? '?' : `${triple.c} cm`   // hypotenuse label
-    ];
+// Render a right triangle with random orientation - PASS THE ORIENTATION HERE
+const renderRightTriangle = (example) => {
+  const triple = example.triple;
+  const missingValue = example.missingValue;
 
-    return (
-      <div style={{ height: "350px", width: "100%" }}>
-        <RightTriangle
-          base={triple.a}
-          height={triple.b}
-          showRightAngle={true}
-          orientation={example.orientation} // Use the orientation from the example object
-          labels={labels}
-          units="cm"
-          style={{
-            fillColor: "#3F51B5", // Indigo
-            fillOpacity: 0.2
-          }}
-        />
-      </div>
-    );
-  };
+  // The labels array should be [base, height, hypotenuse]
+  const labels = [
+    missingValue === 'a' ? '?' : `${triple.a} cm`,  // base label
+    missingValue === 'b' ? '?' : `${triple.b} cm`,  // height label
+    missingValue === 'c' ? '?' : `${triple.c} cm`   // hypotenuse label
+  ];
+
+  // Ensure minimum size for better label positioning
+  const minSize = 3;
+  const adjustedBase = Math.max(triple.a, minSize);
+  const adjustedHeight = Math.max(triple.b, minSize);
+
+  return (
+    <div style={{ height: "350px", width: "100%" }}>
+      <RightTriangle
+        base={adjustedBase}
+        height={adjustedHeight}
+        showRightAngle={true}
+        labelStyle="custom" // MUST explicitly set to 'custom' to use custom labels
+        orientation={example.orientation} // Use the orientation from the example object
+        labels={labels}
+        units="cm"
+        style={{
+          fillColor: "#3F51B5", // Indigo
+          fillOpacity: 0.2
+        }}
+      />
+    </div>
+  );
+};
 
   return (
     <div className="space-y-6 mb-8">

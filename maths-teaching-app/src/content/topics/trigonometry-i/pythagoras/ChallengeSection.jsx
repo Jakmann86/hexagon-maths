@@ -14,11 +14,15 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   
   // Challenge state
   const [challenge, setChallenge] = useState(null);
+  // Track board refresh ID to force complete rerender when needed
+  const [boardRefreshId, setBoardRefreshId] = useState(0);
 
   // Generate a new challenge
   const generateChallenge = () => {
     const newChallenge = generateCoordinateDistanceChallenge();
     setChallenge(newChallenge);
+    // Force complete board redraw by incrementing the refresh ID
+    setBoardRefreshId(prev => prev + 1);
   };
 
   // Generate challenge on initial render
@@ -35,7 +39,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
         strokeWidth: 1,
         fixed: true,
         highlight: false,
-        hasGrid: true  // Mark as grid for identification
+        hasGrid: true,  // Mark as grid for identification
+        id: `grid-x-${x}` // Unique ID for each grid line
       });
     }
     
@@ -45,7 +50,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
         strokeWidth: 1,
         fixed: true,
         highlight: false,
-        hasGrid: true  // Mark as grid for identification
+        hasGrid: true,  // Mark as grid for identification
+        id: `grid-y-${y}` // Unique ID for each grid line
       });
     }
     
@@ -55,7 +61,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
       strokeWidth: 2,
       fixed: true,
       highlight: false,
-      name: 'xAxis'
+      name: 'xAxis',
+      id: 'xAxis' // Unique ID for x-axis
     });
     
     const yAxis = board.create('line', [[0, -6], [0, 6]], {
@@ -63,7 +70,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
       strokeWidth: 2,
       fixed: true,
       highlight: false,
-      name: 'yAxis'
+      name: 'yAxis',
+      id: 'yAxis' // Unique ID for y-axis
     });
     
     // Add axis labels
@@ -73,7 +81,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
           fixed: true,
           anchorX: 'middle',
           anchorY: 'top',
-          fontSize: 14
+          fontSize: 14,
+          id: `label-x-${x}` // Unique ID for each x label
         });
       }
     }
@@ -84,7 +93,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
           fixed: true,
           anchorX: 'right',
           anchorY: 'middle',
-          fontSize: 14
+          fontSize: 14,
+          id: `label-y-${y}` // Unique ID for each y label
         });
       }
     }
@@ -94,33 +104,58 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
       fixed: true,
       anchorX: 'right',
       anchorY: 'top',
-      fontSize: 14
+      fontSize: 14,
+      id: 'label-origin' // Unique ID for origin label
     });
   };
 
-  // JSXGraph board update function
+  // JSXGraph board update function with improved element cleanup
   const updateBoard = (board) => {
     if (!challenge) return;
     
     board.suspendUpdate();
     
     try {
-      // Remove all existing elements except grid, axes, and labels
-      const elements = Object.values(board.objects);
-      elements.forEach(el => {
-        // Keep grid lines, axes, and labels  
-        if (el && el.remove && 
-            !el.hasGrid && 
-            !(el.name?.includes('Axis')) && 
-            el.elType !== 'text' &&
-            !el.hasLabel) {
-          el.remove();
+      // IMPROVED ELEMENT CLEANUP: Use a whitelist approach for what to keep
+      // First, identify elements that we want to keep (grid, axes, permanent labels)
+      const keepIds = new Set();
+      
+      // Add grid line IDs to keep
+      for (let x = -6; x <= 6; x++) {
+        keepIds.add(`grid-x-${x}`);
+      }
+      for (let y = -6; y <= 6; y++) {
+        keepIds.add(`grid-y-${y}`);
+      }
+      
+      // Add axis IDs to keep
+      keepIds.add('xAxis');
+      keepIds.add('yAxis');
+      
+      // Add axis label IDs to keep
+      for (let x = -6; x <= 6; x++) {
+        if (x !== 0) keepIds.add(`label-x-${x}`);
+      }
+      for (let y = -6; y <= 6; y++) {
+        if (y !== 0) keepIds.add(`label-y-${y}`);
+      }
+      keepIds.add('label-origin');
+      
+      // Remove all elements EXCEPT those in our keepIds set
+      Object.keys(board.objects).forEach(id => {
+        if (!keepIds.has(id)) {
+          try {
+            board.removeObject(id, false); // Don't update yet
+          } catch (e) {
+            // Silently catch errors during removal
+          }
         }
       });
       
+      // Now create new elements for the current challenge
       const { point1, point2 } = challenge;
       
-      // Create points
+      // Create points with unique IDs
       const p1 = board.create('point', point1, {
         name: 'A',
         fixed: true,
@@ -129,7 +164,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
         label: { 
           offset: [10, 10],
           strokeColor: '#e74c3c'
-        }
+        },
+        id: 'challenge-point-A' // Unique ID
       });
       
       const p2 = board.create('point', point2, {
@@ -140,20 +176,22 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
         label: { 
           offset: [10, 10],
           strokeColor: '#3498db'
-        }
+        },
+        id: 'challenge-point-B' // Unique ID
       });
       
-      // Create line between points
+      // Create line between points with unique ID
       const line = board.create('line', [p1, p2], {
         straightFirst: false,
         straightLast: false,
         strokeColor: '#9b59b6', // Purple
-        strokeWidth: 2
+        strokeWidth: 2,
+        id: 'challenge-line-AB' // Unique ID
       });
       
       // If showing answers, add the right triangle construction
       if (showAnswers) {
-        // Create right angle point
+        // Create right angle point with unique ID
         const rightAnglePoint = board.create('point', [point2[0], point1[1]], {
           name: 'C',
           fixed: true,
@@ -162,16 +200,18 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
           label: { 
             offset: [10, -10],
             strokeColor: '#2ecc71'
-          }
+          },
+          id: 'challenge-point-C' // Unique ID
         });
         
-        // Create triangle sides
+        // Create triangle sides with unique IDs
         const horizontalLine = board.create('line', [p1, rightAnglePoint], {
           straightFirst: false,
           straightLast: false,
           strokeColor: '#2ecc71', // Green
           strokeWidth: 2,
-          dash: 2
+          dash: 2,
+          id: 'challenge-line-AC' // Unique ID
         });
         
         const verticalLine = board.create('line', [rightAnglePoint, p2], {
@@ -179,20 +219,22 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
           straightLast: false,
           strokeColor: '#2ecc71', // Green
           strokeWidth: 2,
-          dash: 2
+          dash: 2,
+          id: 'challenge-line-CB' // Unique ID
         });
         
-        // Add right angle marker
+        // Add right angle marker with unique ID
         board.create('angle', [p2, rightAnglePoint, p1], {
           radius: 0.25,
           name: '90°',
           type: 'square',
           fillColor: '#2ecc71',
           fillOpacity: 0.4,
-          label: { offset: [0, 0] }
+          label: { offset: [0, 0] },
+          id: 'challenge-angle-BCA' // Unique ID
         });
         
-        // Add dimension labels
+        // Add dimension labels with unique IDs
         const dx = Math.abs(point2[0] - point1[0]);
         const dy = Math.abs(point2[1] - point1[1]);
         
@@ -202,7 +244,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
           `a = ${dx.toFixed(1)} units`
         ], { 
           fontSize: 14,
-          fixed: true
+          fixed: true,
+          id: 'challenge-label-a' // Unique ID
         });
         
         board.create('text', [
@@ -211,7 +254,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
           `b = ${dy.toFixed(1)} units`
         ], { 
           fontSize: 14,
-          fixed: true
+          fixed: true,
+          id: 'challenge-label-b' // Unique ID
         });
         
         if (challenge.distance) {
@@ -223,7 +267,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
             fontSize: 16,
             fixed: true,
             color: '#9b59b6', // Purple
-            strokeColor: '#9b59b6'
+            strokeColor: '#9b59b6',
+            id: 'challenge-label-d' // Unique ID
           });
         }
       }
@@ -234,8 +279,8 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
     board.unsuspendUpdate();
   };
 
-  // Ensure board has unique ID for this lesson
-  const boardId = `coordinate-challenge-board-${currentTopic}-${currentLessonId}`;
+  // Ensure board has unique ID for this lesson plus refresh ID to force full redraw
+  const boardId = `coordinate-challenge-board-${currentTopic}-${currentLessonId}-${boardRefreshId}`;
 
   return (
     <div className="space-y-6 mb-8">
@@ -281,7 +326,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                     backgroundColor="#f9f9f9"  // Light gray background
                     onMount={onMountBoard}
                     onUpdate={updateBoard}
-                    dependencies={[challenge, showAnswers]}
+                    dependencies={[challenge, showAnswers, boardRefreshId]} // Include boardRefreshId in dependencies
                   />
                 </div>
 

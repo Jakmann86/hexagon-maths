@@ -120,60 +120,102 @@ const RightTriangle = memo(({
         sideLabels = ['', '', ''];
       }
       
-      // Use custom label positions if provided, otherwise calculate automatically
-      if (labelPositions && labelPositions[actualOrientation]) {
-        // Use custom positions for this orientation
-        const customPositions = labelPositions[actualOrientation];
-        
-        sideLabels.forEach((label, index) => {
-          if (!label || !customPositions[index]) return;
-          
-          const { x, y, anchorX = 'middle', anchorY = 'middle' } = customPositions[index];
-          
-          board.create('text', [x, y, label], {
-            fontSize: 14,
-            fixed: true,
-            anchorX,
-            anchorY,
-            color: '#000000'
-          });
-        });
-      } else {
-        // Use automatic label positioning
-        // Add labels to sides
-        for (let i = 0; i < 3; i++) {
-          if (!sideLabels[i]) continue;
-          
-          // Define points for this side
-          const p1 = trianglePoints[i];
-          const p2 = trianglePoints[(i + 1) % 3];
-          
-          // Find midpoint of side
-          const midX = (p1.X() + p2.X()) / 2;
-          const midY = (p1.Y() + p2.Y()) / 2;
-          
-          // Calculate perpendicular offset direction (normal vector)
-          const dx = p2.X() - p1.X();
-          const dy = p2.Y() - p1.Y();
-          const len = Math.sqrt(dx*dx + dy*dy);
-          
-          // Offset distance proportional to triangle size
-          const maxDim = Math.max(base, height);
-          const offsetDist = maxDim * 0.1;
-          
-          // Use perpendicular vector for offset
-          const nx = -dy / len * offsetDist;
-          const ny = dx / len * offsetDist;
-          
-          // Create the label text
-          board.create('text', [midX + nx, midY + ny, sideLabels[i]], {
-            fontSize: 14,
-            fixed: true,
-            anchorX: 'middle',
-            anchorY: 'middle',
-            color: '#000000'
-          });
+      // IMPROVED LABEL POSITIONING: Define fixed positions for each orientation
+      // Scale offsets based on triangle size for better positioning
+      
+      // For better height label positioning - move it further out from the triangle
+      const heightOffset = Math.max(1.0, Math.min(base, height) * 0.25);
+      
+      // For better base label positioning
+      const baseOffset = Math.max(0.8, Math.min(base, height) * 0.2);
+      
+      // Hypotenuse label should be outside the triangle, not in the center
+      // Calculate the midpoint of the hypotenuse
+      const getMidpoint = (p1, p2) => [(p1[0] + p2[0])/2, (p1[1] + p2[1])/2];
+      
+      // Get vectors for positioning hypotenuse label
+      const hypLabelPositionByOrientation = {
+        default: () => {
+          // Find midpoint of hypotenuse
+          const midpoint = getMidpoint([0, height], [base, 0]);
+          // Calculate perpendicular offset in outward direction
+          return [midpoint[0] + 0.6, midpoint[1] + 0.6]; // Offset outward
+        },
+        rotate90: () => {
+          // Find midpoint of hypotenuse
+          const midpoint = getMidpoint([0, base], [height, 0]);
+          // Calculate perpendicular offset in outward direction
+          return [midpoint[0] + 0.6, midpoint[1] + 0.6]; // Offset outward
+        },
+        rotate180: () => {
+          // Find midpoint of hypotenuse
+          const midpoint = getMidpoint([base, height], [0, 0]);
+          // Calculate perpendicular offset in outward direction
+          return [midpoint[0] - 0.6, midpoint[1] - 0.6]; // Offset outward
+        },
+        rotate270: () => {
+          // Find midpoint of hypotenuse
+          const midpoint = getMidpoint([height, base], [0, 0]);
+          // Calculate perpendicular offset in outward direction
+          return [midpoint[0] - 0.6, midpoint[1] - 0.6]; // Offset outward
         }
+      };
+      
+      // Calculate hypotenuse label position
+      const getHypotenusePosition = () => {
+        if (hypLabelPositionByOrientation[actualOrientation]) {
+          return hypLabelPositionByOrientation[actualOrientation]();
+        }
+        return [base/2, height/2]; // Default fallback
+      };
+      
+      // New improved label positions by orientation
+      const labelPositionsByOrientation = {
+        default: [
+          { x: base/2, y: -baseOffset }, // Base (move down further)
+          { x: -heightOffset, y: height/2 }, // Height (move further left)
+          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+        ],
+        rotate90: [
+          { x: -baseOffset, y: base/2 }, // Base (now on left)
+          { x: height/2, y: -heightOffset }, // Height (move down further)
+          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+        ],
+        rotate180: [
+          { x: base/2, y: height + baseOffset }, // Base (top)
+          { x: base + heightOffset, y: height/2 }, // Height (move further right)
+          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+        ],
+        rotate270: [
+          { x: height + baseOffset, y: base/2 }, // Base (right)
+          { x: height/2, y: base + heightOffset }, // Height (move up further)
+          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+        ]
+      };
+      
+      // Use custom positions if provided, otherwise use the improved positioning
+      const positions = (labelPositions && labelPositions[actualOrientation]) || 
+                         labelPositionsByOrientation[actualOrientation] || 
+                         labelPositionsByOrientation.default;
+      
+      // Create side labels with fixed, optimized positions
+      for (let i = 0; i < 3; i++) {
+        if (!sideLabels[i]) continue;
+        
+        const position = positions[i];
+        if (!position) continue;
+        
+        // Special handling for hypotenuse position which uses 'pos' property
+        const x = position.pos ? position.pos[0] : position.x;
+        const y = position.pos ? position.pos[1] : position.y;
+        
+        board.create('text', [x, y, sideLabels[i]], {
+          fontSize: 14,
+          fixed: true,
+          anchorX: 'middle',
+          anchorY: 'middle',
+          color: '#000000'
+        });
       }
       
       // Add right angle marker
@@ -203,7 +245,7 @@ const RightTriangle = memo(({
   // Calculate appropriate bounding box
   const getBoundingBox = () => {
     const maxDim = Math.max(base, height);
-    const padding = maxDim * 0.2;
+    const padding = maxDim * 0.25; // Increased padding
     
     // Create a bounding box with sufficient padding
     return [-padding, maxDim + padding, maxDim + padding, -padding];
