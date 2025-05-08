@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { RefreshCw, Check, X } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
@@ -6,211 +6,307 @@ import MathDisplay from '../common/MathDisplay';
 import { useSectionTheme } from '../../hooks/useSectionTheme';
 
 /**
- * DiagnosticSectionBase provides a reusable template for diagnostic assessments
- * across different mathematical topics with theming support
+ * ContentRenderer - Renders different types of content in diagnostic questions
+ */
+const ContentRenderer = React.memo(({ content, type = 'text' }) => {
+  if (!content) return null;
+
+  // Handle React components directly
+  if (React.isValidElement(content)) {
+    return content;
+  }
+
+  switch (type) {
+    case 'math':
+      return <MathDisplay math={content} />;
+    case 'html':
+      return <div dangerouslySetInnerHTML={{ __html: content }} />;
+    default:
+      // Auto-detect math content
+      if (typeof content === 'string' && (content.includes('\\') || content.includes('$'))) {
+        return <MathDisplay math={content} />;
+      }
+      return <div className="text-gray-800">{content}</div>;
+  }
+});
+
+ContentRenderer.displayName = 'ContentRenderer';
+
+/**
+ * VisualizationRenderer - Generic renderer for visualization content
+ */
+const VisualizationRenderer = React.memo(({ visualization }) => {
+  if (!visualization) return null;
+
+  // Handle different visualization formats
+  if (React.isValidElement(visualization)) {
+    // Direct React element
+    return (
+      <div className="flex justify-center items-center w-full my-4">
+        {visualization}
+      </div>
+    );
+  } else if (visualization.component && typeof visualization.component === 'function') {
+    // Component with props pattern
+    const { component: Component, props = {} } = visualization;
+    return (
+      <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
+        <Component {...props} />
+      </div>
+    );
+  }
+
+  return null;
+});
+
+VisualizationRenderer.displayName = 'VisualizationRenderer';
+
+/**
+ * DiagnosticSectionBase - Reusable template for diagnostic assessments
+ * 
+ * @param {Object} props
+ * @param {Object} props.questionTypes - Question types with generators
+ * @param {string} props.currentTopic - Current topic ID
+ * @param {number} props.currentLessonId - Current lesson ID
+ * @param {Function} props.onQuestionComplete - Callback when question is answered
+ * @param {string} props.themeKey - Theme key for styling
+ * @param {React.ReactNode} props.loadingIndicator - Custom loading indicator
+ * @param {Function} props.renderVisualization - Custom visualization renderer
+ * @param {boolean} props.autoSelectNextType - Auto select next question type after answering
  */
 const DiagnosticSectionBase = ({
-    questionTypes = {},
-    currentTopic,
-    currentLessonId,
-    onQuestionComplete = () => { },
-    themeKey = 'diagnostic' // Default to diagnostic theme
+  questionTypes = {},
+  currentTopic,
+  currentLessonId,
+  onQuestionComplete = () => {},
+  themeKey = 'diagnostic',
+  loadingIndicator,
+  renderVisualization,
+  autoSelectNextType = false,
+  className = ''
 }) => {
-    // Get theme colors for the section
-    const theme = useSectionTheme(themeKey);
+  // Get theme colors for the section
+  const theme = useSectionTheme(themeKey);
+  
+  // Memoize the type keys to prevent recreating array on each render
+  const typeKeys = useMemo(() => Object.keys(questionTypes), [questionTypes]);
+  
+  // State management for the current question and navigation
+  const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [answered, setAnswered] = useState(false);
+  const { setCurrentSection } = useUI();
+
+  // Set current section on mount
+  useEffect(() => {
+    setCurrentSection('diagnostic');
+  }, [setCurrentSection]);
+
+  // Generate new question when the component mounts or when type index changes
+  useEffect(() => {
+    if (typeKeys.length > 0) {
+      generateNewQuestion();
+    }
+  }, [currentTypeIndex, typeKeys.length]);
+
+  // Question generation and management
+  const generateNewQuestion = useCallback(() => {
+    if (typeKeys.length === 0) return;
     
-    // Memoize the type keys to prevent recreating array on each render
-    const typeKeys = useMemo(() => Object.keys(questionTypes), [questionTypes]);
+    const currentTypeId = typeKeys[currentTypeIndex];
+    if (!questionTypes[currentTypeId]) return;
     
-    // State management for the current question and navigation
-    const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
-    const [currentQuestion, setCurrentQuestion] = useState(null);
-    const [showAnswer, setShowAnswer] = useState(false);
-    const [selectedAnswer, setSelectedAnswer] = useState(null);
-    const { setCurrentSection } = useUI();
-
-    // Set current section on mount
-    useEffect(() => {
-        setCurrentSection('diagnostic');
-    }, [setCurrentSection]);
-
-    // Generate new question when the component mounts or when type index changes
-    // Only run this effect when explicitly needed dependencies change
-    useEffect(() => {
-        if (typeKeys.length > 0) {
-            generateNewQuestion();
-        }
-    }, [currentTypeIndex, typeKeys.length]); // Only depend on the length, not the array itself
-
-    // Question generation and management
-    const generateNewQuestion = () => {
-        if (typeKeys.length === 0) return;
-        
-        const currentTypeId = typeKeys[currentTypeIndex];
-        if (!questionTypes[currentTypeId]) return;
-        
-        const question = questionTypes[currentTypeId].generator();
+    const generator = questionTypes[currentTypeId].generator;
+    
+    if (typeof generator === 'function') {
+      try {
+        const question = generator();
         setCurrentQuestion(question);
         setShowAnswer(false);
         setSelectedAnswer(null);
-    };
-
-    // Answer handling - just show correct/incorrect, no additional UI
-    const checkAnswer = (option) => {
-        if (!currentQuestion) return;
-        
-        setSelectedAnswer(option);
-        setShowAnswer(true);
-        const isCorrect = option === currentQuestion.correctAnswer;
-        onQuestionComplete(isCorrect);
-    };
-
-    // Shape rendering logic with improved styling
-    const renderShape = () => {
-        if (!currentQuestion?.shape) return null;
-        
-        const { component: ShapeComponent, props } = currentQuestion.shape;
-        
-        if (ShapeComponent && props) {
-            return (
-                <div className="flex justify-center items-center w-full my-8" style={{ 
-                    height: '240px',  // Base height for the container
-                    paddingTop: '5%', // 5% extra space on top
-                    paddingBottom: '5%' // 5% extra space on bottom
-                }}>
-                    <ShapeComponent {...props} />
-                </div>
-            );
-        }
-        
-        return null;
-    };
-
-    // Get title based on current question type
-    const getCurrentTitle = () => {
-        if (typeKeys.length === 0) return "Diagnostic Question";
-        const currentTypeId = typeKeys[currentTypeIndex];
-        return questionTypes[currentTypeId]?.title || "Diagnostic Question";
-    };
-
-    // Loading state
-    if (typeKeys.length === 0 || !currentQuestion) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-pulse flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full bg-purple-100 flex justify-center items-center mb-4">
-                        <RefreshCw className="w-6 h-6 text-purple-700 animate-spin" />
-                    </div>
-                    <div className="text-gray-600">Loading diagnostic questions...</div>
-                </div>
-            </div>
-        );
+        setAnswered(false);
+      } catch (error) {
+        console.error("Error generating question:", error);
+        setCurrentQuestion({
+          questionDisplay: "Error generating question",
+          options: ["Try another question type"],
+          correctAnswer: "Try another question type"
+        });
+      }
     }
+  }, [typeKeys, currentTypeIndex, questionTypes]);
 
-    // Main render
+  // Handle answer selection
+  const checkAnswer = useCallback((option) => {
+    if (!currentQuestion || answered) return;
+    
+    setSelectedAnswer(option);
+    setShowAnswer(true);
+    setAnswered(true);
+    
+    const isCorrect = option === currentQuestion.correctAnswer;
+    onQuestionComplete(isCorrect);
+    
+    // Auto-select next question type if enabled
+    if (autoSelectNextType && isCorrect) {
+      const timer = setTimeout(() => {
+        setCurrentTypeIndex(prev => (prev + 1) % typeKeys.length);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentQuestion, answered, onQuestionComplete, autoSelectNextType, typeKeys.length]);
+
+  // Render visualization with better error handling
+  const renderQuestionVisualization = useCallback(() => {
+    if (!currentQuestion) return null;
+    
+    // Use custom renderer if provided
+    if (renderVisualization && typeof renderVisualization === 'function') {
+      return renderVisualization(currentQuestion);
+    }
+    
+    // Support different visualization formats
+    const visualization = currentQuestion.visualization || currentQuestion.shape;
+    
+    if (!visualization) return null;
+    
+    return <VisualizationRenderer visualization={visualization} />;
+  }, [currentQuestion, renderVisualization]);
+
+  // Get title based on current question type
+  const getCurrentTitle = useCallback(() => {
+    if (typeKeys.length === 0) return "Diagnostic Question";
+    const currentTypeId = typeKeys[currentTypeIndex];
+    return questionTypes[currentTypeId]?.title || "Diagnostic Question";
+  }, [typeKeys, currentTypeIndex, questionTypes]);
+
+  // Custom loading indicator or default
+  const renderLoadingState = () => {
+    if (loadingIndicator) return loadingIndicator;
+    
     return (
-        <div className="space-y-6">
-            {/* Header with title, new question button and navigation - matches ExamplesSection */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 px-6 pt-6">
-                {/* Title - from question type */}
-                <h3 className="text-xl font-semibold text-gray-800">
-                    {getCurrentTitle()}
-                </h3>
-                
-                {/* New Question Button - In the middle */}
-                <button
-                    onClick={generateNewQuestion}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-all"
-                >
-                    <RefreshCw size={18} />
-                    <span>New Question</span>
-                </button>
-                
-                {/* Navigation Buttons (1,2,3) - Matching Examples style */}
-                <div className="flex gap-2">
-                    {typeKeys.slice(0, 3).map((_, index) => (
-                        <button
-                            key={index}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                                index === currentTypeIndex
-                                    ? 'bg-purple-500 text-white'
-                                    : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                            }`}
-                            onClick={() => {
-                                setCurrentTypeIndex(index);
-                            }}
-                        >
-                            {index + 1}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Question Card */}
-            <Card>
-                <CardContent className="p-6">
-                    {currentQuestion && (
-                        <div className="space-y-6 w-full max-w-2xl mx-auto">
-                            {/* Question Display */}
-                            <div className="text-lg font-medium text-center text-gray-800 pb-4">
-                                {typeof currentQuestion.questionDisplay === 'string'
-                                    ? currentQuestion.questionDisplay
-                                    : currentQuestion.questionDisplay}
-                            </div>
-
-                            {/* Shape Visualization */}
-                            {renderShape()}
-
-                            {/* Multiple Choice Options */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {currentQuestion.options.map((option, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => checkAnswer(option)}
-                                        disabled={showAnswer}
-                                        className={`
-                                            relative p-3 rounded-lg border-2 transition-all 
-                                            ${showAnswer
-                                                ? option === currentQuestion.correctAnswer
-                                                    ? 'bg-green-50 border-green-500 text-green-700'
-                                                    : option === selectedAnswer
-                                                        ? 'bg-red-50 border-red-500 text-red-700'
-                                                        : 'bg-gray-50 border-gray-200 opacity-70'
-                                                : 'hover:bg-purple-50 border-gray-200 hover:border-purple-300 hover:shadow-md'
-                                            }
-                                        `}
-                                    >
-                                        {/* Option Display - handles LaTeX formatting */}
-                                        {typeof option === 'string' && option.includes('\\text') ? (
-                                            <div className="text-lg">
-                                                <MathDisplay math={option} />
-                                            </div>
-                                        ) : (
-                                            <span className="text-lg">{option}</span>
-                                        )}
-                                        
-                                        {/* Correct Answer Indicator */}
-                                        {showAnswer && option === currentQuestion.correctAnswer && (
-                                            <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1 shadow-md">
-                                                <Check className="w-4 h-4 text-white" />
-                                            </div>
-                                        )}
-                                        
-                                        {/* Incorrect Answer Indicator */}
-                                        {showAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
-                                            <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1 shadow-md">
-                                                <X className="w-4 h-4 text-white" />
-                                            </div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className={`w-12 h-12 rounded-full bg-${theme.secondary} flex justify-center items-center mb-4`}>
+            <RefreshCw className={`w-6 h-6 text-${theme.secondaryText} animate-spin`} />
+          </div>
+          <div className="text-gray-600">Loading diagnostic questions...</div>
         </div>
+      </div>
     );
+  };
+
+  // Loading state
+  if (typeKeys.length === 0 || !currentQuestion) {
+    return renderLoadingState();
+  }
+
+  // Main render
+  return (
+    <div className={`space-y-6 ${className}`}>
+      {/* Header with title, new question button and navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 px-6 pt-6">
+        {/* Title - from question type */}
+        <h3 className="text-xl font-semibold text-gray-800">
+          {getCurrentTitle()}
+        </h3>
+        
+        {/* New Question Button */}
+        <button
+          onClick={generateNewQuestion}
+          className={`flex items-center gap-2 px-4 py-2 bg-${theme.secondary} text-${theme.secondaryText} rounded-lg hover:bg-${theme.primary} hover:text-white transition-all`}
+        >
+          <RefreshCw size={18} />
+          <span>New Question</span>
+        </button>
+        
+        {/* Navigation Buttons - Optimized for up to 5 tabs */}
+        <div className="flex gap-2">
+          {typeKeys.map((typeKey, index) => (
+            <button
+              key={typeKey}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                index === currentTypeIndex
+                  ? `bg-${theme.primary} text-white`
+                  : `bg-${theme.secondary} text-${theme.secondaryText} hover:bg-${theme.primaryHover} hover:text-white`
+              }`}
+              onClick={() => setCurrentTypeIndex(index)}
+              aria-label={questionTypes[typeKey]?.title || `Question Type ${index + 1}`}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Question Card */}
+      <Card>
+        <CardContent className="p-6">
+          {currentQuestion && (
+            <div className="space-y-6 w-full max-w-2xl mx-auto">
+              {/* Question Display */}
+              <div className="text-lg font-medium text-center text-gray-800 pb-4">
+                <ContentRenderer content={currentQuestion.questionDisplay} />
+              </div>
+
+              {/* Visualization */}
+              {renderQuestionVisualization()}
+
+              {/* Multiple Choice Options */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {currentQuestion.options.map((option, index) => (
+                  <button
+                    key={`option-${index}-${option}`}
+                    onClick={() => checkAnswer(option)}
+                    disabled={showAnswer}
+                    className={`
+                      relative p-3 rounded-lg border-2 transition-all 
+                      ${showAnswer
+                        ? option === currentQuestion.correctAnswer
+                          ? 'bg-green-50 border-green-500 text-green-700'
+                          : option === selectedAnswer
+                            ? 'bg-red-50 border-red-500 text-red-700'
+                            : 'bg-gray-50 border-gray-200 opacity-70'
+                        : `hover:bg-${theme.pastelBg} border-gray-200 hover:border-${theme.borderColor} hover:shadow-md`
+                      }
+                    `}
+                  >
+                    {/* Option Display with math support */}
+                    <ContentRenderer content={option} />
+                    
+                    {/* Correct Answer Indicator */}
+                    {showAnswer && option === currentQuestion.correctAnswer && (
+                      <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1 shadow-md">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    
+                    {/* Incorrect Answer Indicator */}
+                    {showAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
+                      <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1 shadow-md">
+                        <X className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Feedback Area (optional) */}
+              {showAnswer && currentQuestion.explanation && (
+                <div className={`mt-4 p-4 rounded-lg bg-${theme.pastelBg} border border-${theme.borderColor}`}>
+                  <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Explanation:</h4>
+                  <ContentRenderer content={currentQuestion.explanation} />
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export default DiagnosticSectionBase;

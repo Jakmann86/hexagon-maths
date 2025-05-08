@@ -1,30 +1,63 @@
-// maths-teaching-app/src/components/sections/StarterSectionBase.jsx
+// src/components/sections/StarterSectionBase.jsx
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import MathDisplay from '../common/MathDisplay';
 import { useUI } from '../../context/UIContext';
 
-// Memoized ContentRenderer component
-const ContentRenderer = memo(({ content, type = 'text', isMath = false }) => {
+/**
+ * Memoized ContentRenderer component for different content types
+ * Ensures consistent shape sizing and proper math formatting
+ */
+const ContentRenderer = memo(({ content, type = 'text' }) => {
     if (!content) return null;
     
-    // Handle React elements (like RightTriangle)
+    // Handle React elements (like RightTriangle, ShapeDisplay, etc.)
     if (React.isValidElement(content)) {
-        // Special handling for RightTriangle - ensure stable key
-        if (content.type?.displayName === 'RightTriangle' || content.type?.name === 'RightTriangle') {
-            // Clone with stabilized properties - create a stable key from props
-            const stableKey = `triangle-${content.props.base}-${content.props.height}-${content.props.orientation || 'default'}`;
+        // Get component type name for stable key generation
+        const componentType = content.type?.displayName || content.type?.name || 'component';
+        const elementKey = content.key || `element-${componentType}-${Math.random().toString(36).substr(2, 5)}`;
+        
+        // Check if this is a shape component (RightTriangle, Square, ShapeDisplay, etc.)
+        const isShapeComponent = (
+            componentType === 'RightTriangle' || 
+            componentType === 'Square' ||
+            componentType === 'Rectangle' ||
+            componentType === 'Triangle' ||
+            componentType === 'ShapeDisplay' ||
+            componentType.includes('Triangle') ||
+            componentType.includes('Shape')
+        );
+        
+        // Enforce consistent height for shape components
+        if (isShapeComponent) {
+            // Standard height for all shapes
+            const STANDARD_SHAPE_HEIGHT = 140;
             
+            // Get current props
+            const currentProps = content.props || {};
+            
+            // Set consistent props based on component type
+            let standardProps = {};
+            
+            if (componentType === 'ShapeDisplay') {
+                standardProps = { height: STANDARD_SHAPE_HEIGHT };
+            } else {
+                standardProps = { 
+                    containerHeight: STANDARD_SHAPE_HEIGHT,
+                    scale: 0.9  // Slightly smaller scale for better fit
+                };
+            }
+            
+            // Create component with standardized height
             return React.cloneElement(content, {
-                key: stableKey,
-                scale: 0.9,
-                containerHeight: 140,
-                orientation: content.props.orientation || 'default'
+                ...standardProps,
+                key: elementKey,
+                // Keep the original orientation if specified
+                orientation: currentProps.orientation || 'default' 
             });
         }
         
-        // Ensure other React elements have a stable key
-        const elementKey = content.key || `element-${content.type.displayName || content.type.name || 'unknown'}`;
+        // Clone with just a key if not a shape component
         if (!content.key) {
             return React.cloneElement(content, { key: elementKey });
         }
@@ -32,11 +65,13 @@ const ContentRenderer = memo(({ content, type = 'text', isMath = false }) => {
         return content;
     }
 
+    // Process text content
     const processText = (text) => {
         if (typeof text !== 'string') return text;
         return text.trim();
     };
 
+    // Render based on content type
     switch (type) {
         case 'visualization':
             return (
@@ -53,6 +88,7 @@ const ContentRenderer = memo(({ content, type = 'text', isMath = false }) => {
                 </div>
             );
         default:
+            // Detect math strings and use MathDisplay when appropriate
             if (typeof content === 'string' && (content.includes('\\') || content.includes('$'))) {
                 return <MathDisplay math={processText(content)} size="normal" />;
             }
@@ -60,19 +96,48 @@ const ContentRenderer = memo(({ content, type = 'text', isMath = false }) => {
     }
 });
 
-// Set displayName for debugging
 ContentRenderer.displayName = 'ContentRenderer';
 
-// Memoized QuestionDisplay component
+/**
+ * Helper function to detect and convert mathematical text to LaTeX
+ * This helps ensure consistent math formatting in answers
+ */
+const formatMathContent = (text) => {
+    if (!text || typeof text !== 'string') return text;
+    
+    // Already has LaTeX commands
+    if (text.includes('\\')) return text;
+    
+    // Replace common mathematical patterns with LaTeX
+    return text
+        // Format squared and cubed numbers
+        .replace(/(\d+)\s*²/g, '$1^2')
+        .replace(/(\d+)\s*³/g, '$1^3')
+        // Format multiplication signs
+        .replace(/(\d+)\s*×\s*(\d+)/g, '$1 \\times $2')
+        // Format division signs
+        .replace(/(\d+)\s*÷\s*(\d+)/g, '\\frac{$1}{$2}')
+        // Format square roots
+        .replace(/√\s*(\d+)/g, '\\sqrt{$1}')
+        // Format fractions like 1/2
+        .replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}')
+        // Format pi
+        .replace(/π/g, '\\pi');
+};
+
+/**
+ * Memoized QuestionDisplay component
+ * Renders a single question card with improved answer display
+ */
 const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
     const typeStyles = {
-        section1: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
-        section2: 'bg-blue-100 hover:bg-blue-200 border-blue-300',
-        section3: 'bg-green-100 hover:bg-green-200 border-green-300',
-        section4: 'bg-orange-100 hover:bg-orange-200 border-orange-300'
+        lastLesson: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
+        lastWeek: 'bg-blue-100 hover:bg-blue-200 border-blue-300',
+        lastTopic: 'bg-green-100 hover:bg-green-200 border-green-300',
+        lastYear: 'bg-orange-100 hover:bg-orange-200 border-orange-300'
     };
 
-    const isPuzzle = data?.difficulty === 'puzzle' || type === 'section4';
+    const isPuzzle = data?.difficulty === 'puzzle' || type === 'lastYear';
     
     // Use ref to store visualization content to prevent re-rendering issues
     const visualizationRef = useRef(data?.visualization || data?.shape);
@@ -91,89 +156,105 @@ const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
     return (
         <div 
             className={`
-                ${typeStyles[type]} 
+                ${typeStyles[type] || 'bg-gray-100 hover:bg-gray-200 border-gray-300'} 
                 p-4 rounded-lg shadow-md
-                min-h-72  
+                min-h-[300px]
                 flex flex-col
                 transform transition-all duration-300
                 hover:shadow-lg hover:translate-y-[-2px]
                 border-2
             `}
         >
-            <h3 className="font-bold mb-1 text-lg text-gray-700 line-clamp-1">
+            <h3 className="font-bold mb-2 text-lg text-gray-700">
                 {title}
             </h3>
 
-            <div className="flex-grow flex flex-col">
-                <div className="text-base">
+            <div className="flex-grow space-y-4">
+                <div>
                     <ContentRenderer content={questionRef.current} />
                 </div>
 
-                {/* Use the ref value to render visualization with a stable key */}
+                {/* Visualization with consistent height */}
                 {visualizationRef.current && (
-                    <div className="mt-1 h-32 flex-shrink-0" key={`vis-container-${type}`}>
+                    <div className="h-32" key={`vis-container-${type}`}>
                         <ContentRenderer 
                             content={visualizationRef.current} 
                             type="visualization" 
                         />
                     </div>
                 )}
-
-                {/* Answers section with stable keys */}
-                {showAnswers && answerRef.current && (
-                    <div className="mt-2 pt-2 border-t-2 border-gray-300" key={`answer-section-${type}`}>
-                        <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
-                        <div className="math-answer">
-                            {typeof answerRef.current === 'string' && answerRef.current.includes('\\') && !isPuzzle ? (
-                                <MathDisplay 
-                                    key={`math-display-${type}`}
-                                    math={answerRef.current} 
-                                    displayMode={false} 
-                                    size="normal" 
-                                />
-                            ) : (
-                                <ContentRenderer 
-                                    key={`answer-content-${type}`}
-                                    content={answerRef.current} 
-                                    type={isPuzzle ? 'puzzle-answer' : 'text'} 
-                                />
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {/* Answer section at the bottom */}
+            {showAnswers && answerRef.current && (
+                <div className="mt-auto pt-3 border-t border-gray-300" key={`answer-section-${type}`}>
+                    <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
+                    <div className="math-answer overflow-y-auto" style={{ maxHeight: '100px' }}>
+                        {isPuzzle || data?.difficulty === 'text' || !(typeof answerRef.current === 'string' && answerRef.current.includes('\\')) ? (
+                            <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
+                                {answerRef.current}
+                            </div>
+                        ) : (
+                            <MathDisplay 
+                                key={`math-display-${type}`}
+                                math={answerRef.current} 
+                                displayMode={true} 
+                                size="normal" 
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 });
 
 QuestionDisplay.displayName = 'QuestionDisplay';
 
+/**
+ * StarterSectionBase - Main component to display starter questions
+ */
 const StarterSectionBase = ({
     questionGenerators = [],
     currentTopic,
-    currentLessonId
+    currentLessonId,
+    sectionConfig = {
+        sections: ['lastLesson', 'lastWeek', 'lastTopic', 'lastYear'],
+        titles: {
+            lastLesson: 'Last Lesson',
+            lastWeek: 'Last Week',
+            lastTopic: 'Last Topic',
+            lastYear: 'Last Year'
+        }
+    },
+    className = ''
 }) => {
     const { showAnswers } = useUI();
     const initializedRef = useRef(false);
 
-    const sectionTitles = {
-        section1: 'Last Lesson',
-        section2: 'Last Week',
-        section3: 'Last Topic',
-        section4: 'Last Year'
+    // Default section titles
+    const sectionTitles = sectionConfig.titles || {
+        lastLesson: 'Last Lesson',
+        lastWeek: 'Last Week',
+        lastTopic: 'Last Topic',
+        lastYear: 'Last Year'
     };
+
+    // Section types to use
+    const sectionTypes = sectionConfig.sections || 
+        ['lastLesson', 'lastWeek', 'lastTopic', 'lastYear'];
 
     // Memoize generators to prevent recreation
     const normalizedGenerators = useMemo(() => {
         const generators = [...questionGenerators];
-        while (generators.length < 4) {
+        while (generators.length < sectionTypes.length) {
             generators.push(() => ({
                 question: 'No question available',
                 answer: 'No answer available'
             }));
         }
         return generators;
-    }, [questionGenerators]);
+    }, [questionGenerators, sectionTypes.length]);
 
     // Use useRef to store a stable reference to the generators
     const generatorsRef = useRef(normalizedGenerators);
@@ -186,12 +267,14 @@ const StarterSectionBase = ({
     // Store generated questions in state, only update when explicitly regenerated
     const [questions, setQuestions] = useState(() => {
         initializedRef.current = true;
-        return {
-            section1: normalizedGenerators[0](),
-            section2: normalizedGenerators[1](),
-            section3: normalizedGenerators[2](),
-            section4: normalizedGenerators[3]()
-        };
+        
+        // Create initial questions object with section types as keys
+        const initialQuestions = {};
+        sectionTypes.forEach((type, index) => {
+            initialQuestions[type] = normalizedGenerators[index]();
+        });
+        
+        return initialQuestions;
     });
 
     // Ensure components don't rerender unnecessarily by memoizing questions
@@ -199,23 +282,22 @@ const StarterSectionBase = ({
 
     // Only regenerate questions when the button is clicked
     const regenerateAllQuestions = () => {
-        setQuestions({
-            section1: generatorsRef.current[0](),
-            section2: generatorsRef.current[1](),
-            section3: generatorsRef.current[2](),
-            section4: generatorsRef.current[3]()
+        const newQuestions = {};
+        sectionTypes.forEach((type, index) => {
+            newQuestions[type] = generatorsRef.current[index]();
         });
+        setQuestions(newQuestions);
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden py-4 px-6">
+        <div className={`bg-white rounded-xl shadow-lg overflow-hidden py-4 px-6 ${className}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {Object.entries(memoizedQuestions).map(([sectionKey, questionData]) => (
+                {sectionTypes.map((sectionType, index) => (
                     <QuestionDisplay
-                        key={`question-${sectionKey}`}
-                        type={sectionKey}
-                        title={sectionTitles[sectionKey]}
-                        data={questionData}
+                        key={`question-${sectionType}`}
+                        type={sectionType}
+                        title={sectionTitles[sectionType] || `Section ${index + 1}`}
+                        data={memoizedQuestions[sectionType]}
                         showAnswers={showAnswers}
                     />
                 ))}
