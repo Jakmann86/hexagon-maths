@@ -8,7 +8,10 @@ const RightTriangle = memo(({
   base = 3,
   height = 4,
   showRightAngle = true,
-  labelStyle = 'numeric', // 'numeric', 'algebraic', or 'custom'
+  showAngles = [false, false], // [origin angle, third angle]
+  angleLabels = ['θ', 'φ'],    // Labels for the non-right angles
+  angleStyle = {},             // Additional styling for angles
+  labelStyle = 'numeric',      // 'numeric', 'algebraic', or 'custom'
   labels = [],
   units = 'cm',
   style = {},
@@ -58,6 +61,14 @@ const RightTriangle = memo(({
         strokeColor = '#3F51B5',
         strokeWidth = 2
       } = style;
+      
+      // Extract angle styling options with defaults
+      const {
+        angleColor = strokeColor,
+        angleFillColor = 'rgba(255, 255, 0, 0.2)',
+        angleRadius = Math.min(base, height) * 0.3,  // Proportional radius
+        angleStrokeWidth = 1.5
+      } = angleStyle;
       
       // Define four standard orientations with points
       // Right angle is always at the first point for consistent angle marking
@@ -235,6 +246,123 @@ const RightTriangle = memo(({
           name: '' // No label
         });
       }
+      
+      // NEW: Add angle markers for non-right angles
+      // Handle showAngles prop (can be array or boolean)
+      const angleVisibility = Array.isArray(showAngles) ? showAngles : [showAngles, showAngles];
+      
+      // Define angle positions based on orientation
+      // For each orientation, we need:
+      // 1. Which angle points to use for each marker (angle1 = origin, angle2 = third angle)
+      // 2. Label offset direction for each angle
+      const angleParams = {
+        default: {
+          angle1: { // Origin angle
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
+            labelOffset: [0.4, 0.4], // Offset for label position
+            radius: angleRadius * 0.8
+          },
+          angle2: { // Third angle
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
+            labelOffset: [-0.4, 0.4], // Offset for label position
+            radius: angleRadius * 0.7
+          }
+        },
+        rotate90: {
+          angle1: { // Origin angle
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
+            labelOffset: [0.4, 0.4], // Offset for label position
+            radius: angleRadius * 0.8
+          },
+          angle2: { // Third angle
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
+            labelOffset: [0.4, -0.4], // Offset for label position
+            radius: angleRadius * 0.7
+          }
+        },
+        rotate180: {
+          angle1: { // Origin angle (now at top right)
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
+            labelOffset: [-0.4, -0.4], // Offset for label position
+            radius: angleRadius * 0.8
+          },
+          angle2: { // Third angle
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
+            labelOffset: [0.4, -0.4], // Offset for label position
+            radius: angleRadius * 0.7
+          }
+        },
+        rotate270: {
+          angle1: { // Origin angle (now at bottom right)
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
+            labelOffset: [-0.4, 0.4], // Offset for label position
+            radius: angleRadius * 0.8
+          },
+          angle2: { // Third angle
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
+            labelOffset: [-0.4, -0.4], // Offset for label position
+            radius: angleRadius * 0.7
+          }
+        }
+      };
+      
+      // Access angle params for the current orientation
+      const currentAngleParams = angleParams[actualOrientation] || angleParams.default;
+      
+      // Create the angles if visible
+      // Angle at origin (angle 1)
+      if (angleVisibility[0]) {
+        const angle1Params = currentAngleParams.angle1;
+        const angle1 = board.create('angle', angle1Params.points, {
+          radius: angle1Params.radius,
+          name: angleLabels[0] || 'θ',
+          fillColor: angleFillColor,
+          strokeColor: angleColor,
+          strokeWidth: angleStrokeWidth,
+          fixed: true
+        });
+        
+        // Fine-tune label position if needed
+        if (angle1 && angle1.label) {
+          const oldPos = angle1.label.coords.usrCoords;
+          
+          // Apply the offset to the current position
+          angle1.label.coords.setCoordinates(
+            JXG.COORDS_BY_USER, 
+            [oldPos[1] + angle1Params.labelOffset[0], oldPos[2] + angle1Params.labelOffset[1]]
+          );
+          
+          // Fix the label at this position
+          angle1.label.fixed = true;
+        }
+      }
+      
+      // Third angle (angle 2)
+      if (angleVisibility[1]) {
+        const angle2Params = currentAngleParams.angle2;
+        const angle2 = board.create('angle', angle2Params.points, {
+          radius: angle2Params.radius,
+          name: angleLabels[1] || 'φ',
+          fillColor: angleFillColor,
+          strokeColor: angleColor,
+          strokeWidth: angleStrokeWidth,
+          fixed: true
+        });
+        
+        // Fine-tune label position if needed
+        if (angle2 && angle2.label) {
+          const oldPos = angle2.label.coords.usrCoords;
+          
+          // Apply the offset to the current position
+          angle2.label.coords.setCoordinates(
+            JXG.COORDS_BY_USER, 
+            [oldPos[1] + angle2Params.labelOffset[0], oldPos[2] + angle2Params.labelOffset[1]]
+          );
+          
+          // Fix the label at this position
+          angle2.label.fixed = true;
+        }
+      }
     } catch (error) {
       console.error("Error creating triangle:", error);
     }
@@ -274,12 +402,14 @@ const RightTriangle = memo(({
         backgroundColor="transparent"
         axis={false}
         onUpdate={updateBoard}
-        // Stable JSON.stringify to avoid unnecessary updates
+        // Add new dependencies to ensure updates
         dependencies={[
           base, 
           height, 
           labelStyle, 
           showRightAngle,
+          Array.isArray(showAngles) ? showAngles.join(',') : showAngles,
+          angleLabels.join(','),
           // These are stable so no need to include in dependencies
           // orientation, labelPositions, JSON.stringify(labels)
         ]}
@@ -295,8 +425,12 @@ const RightTriangle = memo(({
     prevProps.showRightAngle === nextProps.showRightAngle &&
     prevProps.labelStyle === nextProps.labelStyle &&
     prevProps.containerHeight === nextProps.containerHeight &&
+    // Add checks for new angle props
+    JSON.stringify(prevProps.showAngles) === JSON.stringify(nextProps.showAngles) &&
+    JSON.stringify(prevProps.angleLabels) === JSON.stringify(nextProps.angleLabels) &&
     // For complex objects, do a shallow string comparison
     JSON.stringify(prevProps.style) === JSON.stringify(nextProps.style) &&
+    JSON.stringify(prevProps.angleStyle) === JSON.stringify(nextProps.angleStyle) &&
     JSON.stringify(prevProps.labels) === JSON.stringify(nextProps.labels)
   );
 });
