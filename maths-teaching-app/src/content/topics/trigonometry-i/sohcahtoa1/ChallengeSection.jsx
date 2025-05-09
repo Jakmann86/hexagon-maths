@@ -1,11 +1,10 @@
 // src/content/topics/trigonometry-i/sohcahtoa1/ChallengeSection.jsx
 import React, { useState, useEffect } from 'react';
-import JSXGraphBoard from '../../../../components/math/JSXGraphBoard';
 import { Card, CardContent } from '../../../../components/common/Card';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import { useUI } from '../../../../context/UIContext';
-import _ from 'lodash';
 import MathDisplay from '../../../../components/common/MathDisplay';
+import { RefreshCw } from 'lucide-react';
 
 const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   // Get theme colors for challenge section
@@ -14,11 +13,13 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   
   // Challenge state
   const [challenge, setChallenge] = useState(null);
+  const [boardKey, setBoardKey] = useState(Date.now());
 
   // Generate a new challenge
   const generateChallenge = () => {
-    const newChallenge = generateBearingsChallenge();
+    const newChallenge = generateSimpleCoordinateChallenge();
     setChallenge(newChallenge);
+    setBoardKey(Date.now()); // Force board recreation with new key
   };
 
   // Generate challenge on initial render
@@ -26,170 +27,20 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
     generateChallenge();
   }, []);
 
-  // JSXGraph board update function
-  const updateBoard = (board) => {
-    if (!challenge) return;
-    
-    // Clear any existing elements
-    board.suspendUpdate();
-    
-    try {
-      // Store objects to prevent memory leaks and render issues
-      const objects = [];
-      
-      const { start, bearing, distance, secondBearing, secondDistance, directDistance } = challenge;
-      
-      // Create starting point
-      const startPoint = board.create('point', start, {
-        name: 'Start',
-        fixed: true,
-        color: '#e74c3c', // Red
-        size: 5,
-        label: { offset: [10, 10] }
-      });
-      objects.push(startPoint);
-      
-      // Create north line
-      const northEnd = [start[0], start[1] + 3];
-      const northLine = board.create('line', [start, northEnd], {
-        straightFirst: false,
-        straightLast: false,
-        strokeColor: '#3498db', // Blue
-        strokeWidth: 2,
-        dash: 1
-      });
-      objects.push(northLine);
-      
-      // Create North label CORRECTLY using array notation
-      const northText = board.create('text', [start[0], start[1] + 3.3, 'N'], {
-        fontSize: 16,
-        fixed: true,
-        color: '#3498db'
-      });
-      objects.push(northText);
-      
-      // Calculate first journey endpoint
-      const bearingRadians = (450 - bearing) % 360 * Math.PI / 180;
-      const midPoint = [
-        start[0] + distance * Math.cos(bearingRadians),
-        start[1] + distance * Math.sin(bearingRadians)
-      ];
-      
-      // Create midpoint
-      const midPointObj = board.create('point', midPoint, {
-        name: 'Mid',
-        fixed: true,
-        color: secondBearing ? '#9b59b6' : '#f1c40f', // Purple if there's a second leg, otherwise yellow
-        size: 5,
-        label: { offset: [10, 10] },
-        visible: true
-      });
-      objects.push(midPointObj);
-      
-      // Create first leg line
-      const firstLeg = board.create('segment', [startPoint, midPointObj], {
-        strokeColor: '#2ecc71', // Green
-        strokeWidth: 3
-      });
-      objects.push(firstLeg);
-      
-      // Add first bearing angle marker
-      // Create angle points correctly
-      const northPoint = board.create('point', northEnd, { visible: false });
-      objects.push(northPoint);
-      
-      const angleSector = board.create('angle', [northPoint, startPoint, midPointObj], {
-        radius: 1.5,
-        name: `${bearing}°`,
-        type: 'sector',
-        fill: '#f39c12',
-        fillOpacity: 0.4,
-        label: { position: 'inside' }
-      });
-      objects.push(angleSector);
-      
-      // Final point is either midpoint (single leg) or calculated from second leg
-      let finalPoint = [...midPoint];
-      let endPointObj;
-      
-      // Add second leg if needed
-      if (secondBearing && secondDistance) {
-        const secondBearingRadians = (450 - secondBearing) % 360 * Math.PI / 180;
-        finalPoint = [
-          midPoint[0] + secondDistance * Math.cos(secondBearingRadians),
-          midPoint[1] + secondDistance * Math.sin(secondBearingRadians)
-        ];
-        
-        // Create endpoint
-        endPointObj = board.create('point', finalPoint, {
-          name: 'End',
-          fixed: true,
-          color: '#f1c40f', // Yellow
-          size: 5,
-          label: { offset: [10, 10] }
-        });
-        objects.push(endPointObj);
-        
-        // Create second leg line
-        const secondLeg = board.create('segment', [midPointObj, endPointObj], {
-          strokeColor: '#2ecc71', // Green
-          strokeWidth: 3
-        });
-        objects.push(secondLeg);
-        
-        // Draw direct path as dashed line
-        const directLine = board.create('segment', [startPoint, endPointObj], {
-          strokeColor: '#e74c3c', // Red
-          strokeWidth: 2,
-          dash: 2
-        });
-        objects.push(directLine);
-        
-        // If showing answers, show the direct distance
-        if (showAnswers && directDistance) {
-          // Calculate midpoint for distance label
-          const midX = (start[0] + finalPoint[0]) / 2;
-          const midY = (start[1] + finalPoint[1]) / 2 - 0.5;
-          
-          // Create text at midpoint using array notation
-          const distanceText = board.create('text', 
-            [midX, midY, `Distance: ${directDistance.toFixed(2)} units`], 
-            {
-              fontSize: 16,
-              fixed: true,
-              color: '#e74c3c'
-            }
-          );
-          objects.push(distanceText);
-        }
-      } else {
-        // For single leg, create endpoint
-        endPointObj = midPointObj;
-      }
-    } catch (error) {
-      console.error("Error updating JSXGraph board:", error);
-    }
-    
-    board.unsuspendUpdate();
-  };
-
   return (
     <div className="space-y-6 mb-8">
       <div className="border-2 border-t-4 border-red-500 rounded-lg shadow-md bg-white overflow-hidden">
         <div className="px-6 pt-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-gray-800">
-              Bearings and Navigation Challenge
+              Coordinate Geometry Challenge
             </h3>
             
             <button
               onClick={generateChallenge}
               className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
-                <path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
-              </svg>
+              <RefreshCw size={18} />
               <span>New Challenge</span>
             </button>
           </div>
@@ -206,16 +57,14 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                   </div>
                 </div>
 
-                {/* Visualization */}
+                {/* Coordinate Grid Visualization */}
                 <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '400px' }}>
-                  <JSXGraphBoard
-                    id="bearings-challenge-board"
-                    boundingBox={challenge.boundingBox}
-                    axis={false} // Disable axis to fix grid error
-                    grid={false} // Disable grid to fix grid error
-                    height="350px"
-                    onUpdate={updateBoard}
-                    dependencies={[challenge, showAnswers]}
+                  <CoordinateGrid 
+                    key={boardKey}
+                    point1={challenge.point1}
+                    point2={challenge.point2}
+                    showSolution={showAnswers}
+                    distance={challenge.distance}
                   />
                 </div>
 
@@ -246,147 +95,180 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   );
 };
 
-// Function to generate a bearings challenge
-const generateBearingsChallenge = () => {
-  // Starting point (always origin for simplicity)
-  const start = [0, 0];
-  
-  // Generate random bearing and distance
-  const bearing = Math.floor(Math.random() * 36) * 10; // Multiple of 10 degrees
-  const distance = Math.floor(Math.random() * 5) + 3; // 3 to 7 units
-  
-  // 70% chance to have a second leg for more interesting challenges
-  const hasSecondLeg = Math.random() < 0.7;
-  
-  let secondBearing, secondDistance, finalPoint, directDistance;
-  let problemText, solution;
-  
-  // Convert bearing to radians for calculation
-  const bearingRadians = (450 - bearing) % 360 * Math.PI / 180;
-  
-  // Calculate end point after first leg
-  const midPoint = [
-    start[0] + distance * Math.cos(bearingRadians),
-    start[1] + distance * Math.sin(bearingRadians)
-  ];
-  
-  // Handle case with a second leg
-  if (hasSecondLeg) {
-    // Generate second bearing and distance
-    secondBearing = (bearing + 90 + Math.floor(Math.random() * 180)) % 360; // Different direction
-    secondDistance = Math.floor(Math.random() * 5) + 3; // 3 to 7 units
-    
-    // Calculate final position
-    const secondBearingRadians = (450 - secondBearing) % 360 * Math.PI / 180;
-    finalPoint = [
-      midPoint[0] + secondDistance * Math.cos(secondBearingRadians),
-      midPoint[1] + secondDistance * Math.sin(secondBearingRadians)
-    ];
-    
-    // Calculate direct distance from start to final
-    const dx = finalPoint[0] - start[0];
-    const dy = finalPoint[1] - start[1];
-    directDistance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Create problem text and solution
-    problemText = `A ship starts at port O and sails ${distance} nautical miles on a bearing of ${bearing}°. It then changes course and sails ${secondDistance} nautical miles on a bearing of ${secondBearing}°. How far is the ship from the starting point?`;
-    
-    // Calculate components for both legs
-    const dx1 = distance * Math.sin(bearing * Math.PI / 180);
-    const dy1 = distance * Math.cos(bearing * Math.PI / 180);
-    const dx2 = secondDistance * Math.sin(secondBearing * Math.PI / 180);
-    const dy2 = secondDistance * Math.cos(secondBearing * Math.PI / 180);
-    const totalDx = dx1 + dx2;
-    const totalDy = dy1 + dy2;
-    
-    solution = [
-      {
-        explanation: "We need to find the distance between the starting point and the final position using the Pythagorean theorem.",
-        formula: "\\text{Distance} = \\sqrt{(\\text{east-west displacement})^2 + (\\text{north-south displacement})^2}"
-      },
-      {
-        explanation: `For the first leg (bearing: ${bearing}°, distance: ${distance} miles):`,
-        formula: `\\begin{align} \\text{East component} &= ${distance} \\times \\sin(${bearing}°) = ${dx1.toFixed(2)} \\\\ \\text{North component} &= ${distance} \\times \\cos(${bearing}°) = ${dy1.toFixed(2)} \\end{align}`
-      },
-      {
-        explanation: `For the second leg (bearing: ${secondBearing}°, distance: ${secondDistance} miles):`,
-        formula: `\\begin{align} \\text{East component} &= ${secondDistance} \\times \\sin(${secondBearing}°) = ${dx2.toFixed(2)} \\\\ \\text{North component} &= ${secondDistance} \\times \\cos(${secondBearing}°) = ${dy2.toFixed(2)} \\end{align}`
-      },
-      {
-        explanation: "Calculate the total displacement in each direction:",
-        formula: `\\begin{align} \\text{Total East displacement} &= ${dx1.toFixed(2)} + ${dx2.toFixed(2)} = ${totalDx.toFixed(2)} \\\\ \\text{Total North displacement} &= ${dy1.toFixed(2)} + ${dy2.toFixed(2)} = ${totalDy.toFixed(2)} \\end{align}`
-      },
-      {
-        explanation: "Now apply the Pythagorean theorem to find the direct distance:",
-        formula: `\\text{Distance} = \\sqrt{(${totalDx.toFixed(2)})^2 + (${totalDy.toFixed(2)})^2}`
-      },
-      {
-        explanation: "Calculate:",
-        formula: `\\text{Distance} = \\sqrt{${(Math.pow(totalDx, 2) + Math.pow(totalDy, 2)).toFixed(2)}} = ${directDistance.toFixed(2)}\\text{ nautical miles}`
+// Clean, simplified coordinate grid component
+const CoordinateGrid = ({ point1, point2, showSolution, distance }) => {
+  const boardId = `coord-grid-${Math.random().toString(36).substring(2, 9)}`;
+  const boardRef = React.useRef(null);
+
+  // Initialize the board when the component mounts
+  useEffect(() => {
+    // Create the board
+    const board = JXG.JSXGraph.initBoard(boardId, {
+      boundingbox: [-6, 6, 6, -6],
+      axis: true,
+      showCopyright: false,
+      showNavigation: false,
+      // Disable panning and zooming for more stability
+      pan: { enabled: false },
+      zoom: { enabled: false }
+    });
+
+    // Store reference to the board
+    boardRef.current = board;
+
+    // Add points and other elements
+    if (point1 && point2) {
+      // Create points A and B
+      const p1 = board.create('point', point1, {
+        name: 'A',
+        fixed: true,
+        size: 4,
+        color: '#e74c3c', // Red
+        label: { offset: [10, 10] }
+      });
+
+      const p2 = board.create('point', point2, {
+        name: 'B',
+        fixed: true,
+        size: 4,
+        color: '#3498db', // Blue
+        label: { offset: [10, 10] }
+      });
+
+      // Create line segment between points
+      board.create('segment', [p1, p2], {
+        strokeColor: '#9b59b6', // Purple
+        strokeWidth: 2
+      });
+
+      // Add right triangle construction if solution should be shown
+      if (showSolution) {
+        // Create right angle point
+        const rightAnglePoint = board.create('point', [point2[0], point1[1]], {
+          name: 'C',
+          fixed: true,
+          size: 4,
+          color: '#2ecc71', // Green
+          label: { offset: [10, 10] }
+        });
+
+        // Create horizontal and vertical legs
+        board.create('segment', [p1, rightAnglePoint], {
+          strokeColor: '#2ecc71', // Green
+          strokeWidth: 2,
+          dash: 2
+        });
+
+        board.create('segment', [rightAnglePoint, p2], {
+          strokeColor: '#2ecc71', // Green
+          strokeWidth: 2,
+          dash: 2
+        });
+
+        // Add right angle marker
+        board.create('angle', [p2, rightAnglePoint, p1], {
+          radius: 0.3,
+          type: 'square',
+          fillColor: '#2ecc71',
+          fillOpacity: 0.4,
+          name: '90°'
+        });
+
+        // Add distance label
+        const midX = (point1[0] + point2[0]) / 2;
+        const midY = (point1[1] + point2[1]) / 2;
+        board.create('text', [midX + 0.5, midY + 0.5, `d = ${distance}`], {
+          fontSize: 16,
+          color: '#9b59b6' // Purple
+        });
       }
-    ];
-  } 
-  // Simple single-leg problem
-  else {
-    finalPoint = [...midPoint];
-    directDistance = distance; // For single leg, direct distance is just the distance
-    
-    problemText = `A ship sails from port on a bearing of ${bearing}° for a distance of ${distance} nautical miles. Calculate the ship's displacement (direct distance) from the port.`;
-    
-    // For simple case, explain that the distance is the same as traveled
-    if (bearing % 90 === 0) {
-      solution = [
-        {
-          explanation: "Since the bearing is a cardinal direction (0°, 90°, 180°, or 270°), the ship moves in a straight line.",
-          formula: `\\text{Displacement} = ${distance}\\text{ nautical miles}`
-        }
-      ];
-    } else {
-      // Calculate eastward/northward components
-      const dx = distance * Math.sin(bearing * Math.PI / 180);
-      const dy = distance * Math.cos(bearing * Math.PI / 180);
-      
-      solution = [
-        {
-          explanation: "We need to find the components of the ship's journey in terms of east-west and north-south.",
-          formula: "\\text{Displacement} = \\sqrt{(\\text{East component})^2 + (\\text{North component})^2}"
-        },
-        {
-          explanation: `For a bearing of ${bearing}°, we calculate:`,
-          formula: `\\begin{align} \\text{East component} &= ${distance} \\times \\sin(${bearing}°) = ${dx.toFixed(2)} \\\\ \\text{North component} &= ${distance} \\times \\cos(${bearing}°) = ${dy.toFixed(2)} \\end{align}`
-        },
-        {
-          explanation: "Apply the Pythagorean theorem:",
-          formula: `\\text{Displacement} = \\sqrt{(${dx.toFixed(2)})^2 + (${dy.toFixed(2)})^2}`
-        },
-        {
-          explanation: "This simplifies to just the original distance:",
-          formula: `\\text{Displacement} = ${distance}\\text{ nautical miles}`
-        }
-      ];
     }
-  }
+
+    // Clean up when the component unmounts
+    return () => {
+      if (boardRef.current) {
+        JXG.JSXGraph.freeBoard(boardRef.current);
+        boardRef.current = null;
+      }
+    };
+  }, [boardId, point1, point2, showSolution, distance]);
+
+  return (
+    <div 
+      id={boardId} 
+      style={{ 
+        width: '100%', 
+        height: '350px' 
+      }}
+    />
+  );
+};
+
+// Function to generate a coordinate distance challenge
+const generateSimpleCoordinateChallenge = () => {
+  // Generate points within fixed -4 to 4 range for readability
+  const generatePointsOnGrid = () => {
+    const min = -4;
+    const max = 4;
+    
+    const x1 = Math.floor(Math.random() * (max - min + 1)) + min;
+    const y1 = Math.floor(Math.random() * (max - min + 1)) + min;
+    
+    // Ensure second point is sufficiently separated but still on grid
+    let x2, y2;
+    do {
+      x2 = Math.floor(Math.random() * (max - min + 1)) + min;
+      y2 = Math.floor(Math.random() * (max - min + 1)) + min;
+    } while (Math.abs(x2 - x1) < 2 || Math.abs(y2 - y1) < 2);
+    
+    return [[x1, y1], [x2, y2]];
+  };
   
-  // Calculate appropriate bounding box
-  const maxDistance = Math.max(distance, secondDistance || 0, 5);
-  const padding = maxDistance / 2;
+  // Generate points
+  const [point1, point2] = generatePointsOnGrid();
   
-  // Adjust bounding box to ensure the north indicator is visible
-  const boundingBox = [-padding, maxDistance * 1.5, maxDistance * 1.5, -padding];
+  // Calculate horizontal and vertical differences
+  const dx = point2[0] - point1[0];
+  const dy = point2[1] - point1[1];
   
+  // Calculate distance using Pythagoras' theorem
+  const exactDistance = Math.sqrt(dx * dx + dy * dy);
+  const distance = Math.round(exactDistance * 100) / 100; // Round to 2 decimal places
+  
+  // Generate problem
   return {
-    start,
-    bearing,
+    point1,
+    point2,
+    dx,
+    dy,
     distance,
-    secondBearing,
-    secondDistance,
-    midPoint,
-    finalPoint,
-    directDistance,
-    problemText,
-    solution,
-    boundingBox,
-    hasSecondLeg
+    problemText: `Find the distance between the points A(${point1[0]}, ${point1[1]}) and B(${point2[0]}, ${point2[1]}) on the coordinate plane.`,
+    solution: [
+      {
+        explanation: "To find the distance between two points, we use the distance formula, which is derived from the Pythagorean theorem.",
+        formula: "d = \\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}"
+      },
+      {
+        explanation: "Substitute the coordinates of points A and B:",
+        formula: `d = \\sqrt{(${point2[0]} - ${point1[0]})^2 + (${point2[1]} - ${point1[1]})^2}`
+      },
+      {
+        explanation: "Calculate the differences:",
+        formula: `d = \\sqrt{(${dx})^2 + (${dy})^2}`
+      },
+      {
+        explanation: "Square the differences:",
+        formula: `d = \\sqrt{${dx * dx} + ${dy * dy}}`
+      },
+      {
+        explanation: "Add the squares:",
+        formula: `d = \\sqrt{${dx * dx + dy * dy}}`
+      },
+      {
+        explanation: "Take the square root to find the distance:",
+        formula: `d = ${distance}`
+      }
+    ]
   };
 };
 

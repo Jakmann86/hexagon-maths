@@ -1,11 +1,10 @@
-// maths-teaching-app/src/content/topics/trigonometry-i/pythagoras/ChallengeSection.jsx
+// src/content/topics/trigonometry-i/sohcahtoa1/ChallengeSection.jsx
 import React, { useState, useEffect } from 'react';
-import JSXGraphBoard from '../../../../components/math/JSXGraphBoard';
 import { Card, CardContent } from '../../../../components/common/Card';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import { useUI } from '../../../../context/UIContext';
-import _ from 'lodash';
 import MathDisplay from '../../../../components/common/MathDisplay';
+import { RefreshCw } from 'lucide-react';
 
 const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   // Get theme colors for challenge section
@@ -14,117 +13,19 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   
   // Challenge state
   const [challenge, setChallenge] = useState(null);
-  // Track board refresh ID to force complete rerender when needed
-  const [boardId, setBoardId] = useState(`coordinate-challenge-${Math.random().toString(36).substr(2, 9)}`);
+  const [boardKey, setBoardKey] = useState(Date.now()); // For forcing re-renders
 
   // Generate a new challenge
   const generateChallenge = () => {
-    const newChallenge = generateCoordinateDistanceChallenge();
+    const newChallenge = generateSimpleCoordinateChallenge();
     setChallenge(newChallenge);
-    // Create a new board ID to force a complete redraw
-    setBoardId(`coordinate-challenge-${Math.random().toString(36).substr(2, 9)}`);
+    setBoardKey(Date.now()); // Force board recreation
   };
 
   // Generate challenge on initial render
   useEffect(() => {
     generateChallenge();
   }, []);
-
-  // JSXGraph board update function
-  const updateBoard = (board) => {
-    if (!challenge) return;
-    
-    board.suspendUpdate();
-    
-    try {
-      // Clear any existing objects
-      Object.keys(board.objects).forEach(id => {
-        const obj = board.objects[id];
-        // Keep the axes but remove other objects
-        if (obj && obj.elType !== 'axis' && obj.elType !== 'ticks') {
-          try {
-            board.removeObject(obj);
-          } catch (e) {
-            // Ignore errors
-          }
-        }
-      });
-      
-      const { point1, point2 } = challenge;
-      
-      // Create points
-      const p1 = board.create('point', point1, {
-        name: 'A',
-        fixed: true,
-        color: '#e74c3c', // Red
-        size: 4,
-        withLabel: true
-      });
-      
-      const p2 = board.create('point', point2, {
-        name: 'B',
-        fixed: true,
-        color: '#3498db', // Blue
-        size: 4,
-        withLabel: true
-      });
-      
-      // Create line between points
-      board.create('segment', [p1, p2], {
-        strokeColor: '#9b59b6', // Purple
-        strokeWidth: 2
-      });
-      
-      // If showing answers, add the right triangle construction
-      if (showAnswers) {
-        // Create right angle point
-        const rightAnglePoint = board.create('point', [point2[0], point1[1]], {
-          name: 'C',
-          fixed: true,
-          color: '#2ecc71', // Green
-          size: 4,
-          withLabel: true
-        });
-        
-        // Create horizontal and vertical lines
-        board.create('segment', [p1, rightAnglePoint], {
-          strokeColor: '#2ecc71', // Green
-          strokeWidth: 2,
-          dash: 2
-        });
-        
-        board.create('segment', [rightAnglePoint, p2], {
-          strokeColor: '#2ecc71', // Green
-          strokeWidth: 2,
-          dash: 2
-        });
-        
-        // Add right angle marker
-        board.create('angle', [p2, rightAnglePoint, p1], {
-          radius: 0.25,
-          name: '90°',
-          type: 'square',
-          fillColor: '#2ecc71',
-          fillOpacity: 0.4
-        });
-        
-        // Add distance label
-        board.create('text', [
-          (point1[0] + point2[0]) / 2 - 0.5,
-          (point1[1] + point2[1]) / 2 - 0.5,
-          `d = ${challenge.distance}`
-        ], {
-          fontSize: 16,
-          fixed: true,
-          color: '#9b59b6'
-        });
-      }
-    } catch (error) {
-      console.error("Error updating JSXGraph board:", error);
-    }
-    
-    board.unsuspendUpdate();
-  };
 
   return (
     <div className="space-y-6 mb-8">
@@ -139,10 +40,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
               onClick={generateChallenge}
               className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
-                <path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
-              </svg>
+              <RefreshCw size={18} />
               <span>New Challenge</span>
             </button>
           </div>
@@ -159,17 +57,14 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                   </div>
                 </div>
 
-                {/* Visualization with built-in grid */}
-                <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '350px' }}>
-                  <JSXGraphBoard
-                    id={boardId}
-                    boundingBox={[-6, 6, 6, -6]}
-                    axis={true}  // Use JSXGraph's built-in axes
-                    grid={true}  // Use JSXGraph's built-in grid
-                    height={300}
-                    backgroundColor="#f9f9f9"
-                    onUpdate={updateBoard}
-                    dependencies={[challenge, showAnswers]}
+                {/* Coordinate Grid Visualization */}
+                <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '400px' }}>
+                  <CoordinateGrid 
+                    key={boardKey}
+                    point1={challenge.point1}
+                    point2={challenge.point2}
+                    showSolution={showAnswers}
+                    distance={challenge.distance}
                   />
                 </div>
 
@@ -200,12 +95,117 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   );
 };
 
+// Simple coordinate grid component with complete board recreation on each render
+const CoordinateGrid = ({ point1, point2, showSolution, distance }) => {
+  const boardId = `coord-grid-${Math.random().toString(36).substring(2, 9)}`;
+  
+  // Initialize the board when the component mounts
+  useEffect(() => {
+    // Create the board
+    const board = JXG.JSXGraph.initBoard(boardId, {
+      boundingbox: [-6, 6, 6, -6],
+      axis: true,
+      grid: true,
+      showCopyright: false,
+      showNavigation: false,
+      // Disable panning and zooming for more stability
+      pan: { enabled: false },
+      zoom: { enabled: false }
+    });
+
+    // Create points
+    const p1 = board.create('point', point1, {
+      name: 'A',
+      withLabel: true,
+      fixed: true,
+      size: 4,
+      color: '#e74c3c', // Red
+      label: { offset: [10, 10] }
+    });
+
+    const p2 = board.create('point', point2, {
+      name: 'B',
+      withLabel: true,
+      fixed: true,
+      size: 4,
+      color: '#3498db', // Blue
+      label: { offset: [10, 10] }
+    });
+
+    // Create line segment between points
+    board.create('segment', [p1, p2], {
+      strokeColor: '#9b59b6', // Purple
+      strokeWidth: 2
+    });
+
+    // Add right triangle construction if solution should be shown
+    if (showSolution) {
+      // Create right angle point
+      const rightAnglePoint = board.create('point', [point2[0], point1[1]], {
+        name: 'C',
+        fixed: true,
+        size: 4,
+        color: '#2ecc71', // Green
+        label: { offset: [10, 10] }
+      });
+
+      // Create horizontal and vertical legs
+      board.create('segment', [p1, rightAnglePoint], {
+        strokeColor: '#2ecc71', // Green
+        strokeWidth: 2,
+        dash: 2
+      });
+
+      board.create('segment', [rightAnglePoint, p2], {
+        strokeColor: '#2ecc71', // Green
+        strokeWidth: 2,
+        dash: 2
+      });
+
+      // Add right angle marker
+      board.create('angle', [p2, rightAnglePoint, p1], {
+        radius: 0.3,
+        type: 'square',
+        fillColor: '#2ecc71',
+        fillOpacity: 0.4,
+        name: '90°'
+      });
+
+      // Add distance label
+      const midX = (point1[0] + point2[0]) / 2;
+      const midY = (point1[1] + point2[1]) / 2;
+      board.create('text', [midX + 0.5, midY + 0.5, `d = ${distance}`], {
+        fontSize: 16,
+        color: '#9b59b6' // Purple
+      });
+    }
+
+    // Clean up when the component unmounts
+    return () => {
+      JXG.JSXGraph.freeBoard(board);
+    };
+  }, [boardId]); // boardId changes on every render due to the random ID
+
+  return (
+    <div 
+      id={boardId} 
+      style={{ 
+        width: '100%', 
+        height: '350px',
+        background: '#f9f9f9', // Light background for better visibility
+        border: '1px solid #eee',
+        borderRadius: '4px'
+      }}
+    />
+  );
+};
+
 // Function to generate a coordinate distance challenge
-const generateCoordinateDistanceChallenge = () => {
-  // Generate points within fixed -6 to 6 range
+const generateSimpleCoordinateChallenge = () => {
+  // Generate points within fixed -4 to 4 range for readability
   const generatePointsOnGrid = () => {
-    const min = -5;  // Leaving 1 unit buffer from edge
-    const max = 5;
+    const min = -4;
+    const max = 4;
     
     const x1 = Math.floor(Math.random() * (max - min + 1)) + min;
     const y1 = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -238,7 +238,6 @@ const generateCoordinateDistanceChallenge = () => {
     dx,
     dy,
     distance,
-    exactDistance,
     problemText: `Find the distance between the points A(${point1[0]}, ${point1[1]}) and B(${point2[0]}, ${point2[1]}) on the coordinate plane.`,
     solution: [
       {

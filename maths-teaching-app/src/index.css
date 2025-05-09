@@ -361,3 +361,26 @@ header h2 {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* Special class for coordinate grids that overrides your hiding rule */
+.coordinate-grid .JXGtext {
+  visibility: visible !important;
+  display: block !important;
+  opacity: 1 !important;
+}
+
+/* Make sure grid lines are visible in coordinate grids */
+.coordinate-grid .JXGgrid {
+  stroke: #ddd !important;
+  stroke-width: 0.5 !important;
+  stroke-opacity: 0.5 !important;
+  visibility: visible !important;
+}
+
+/* Make sure axes are visible in coordinate grids */
+.coordinate-grid .JXGaxis {
+  stroke: #666 !important;
+  stroke-width: 1.5 !important;
+  stroke-opacity: 1 !important;
+  visibility: visible !important;
+}
