@@ -44,11 +44,12 @@ const RightTriangle = memo(({
     // Clear existing objects - more safely using suspendUpdate
     board.suspendUpdate();
     try {
-      Object.keys(board.objects).forEach(id => {
+      // Clear ALL existing objects to avoid any label issues
+      while (board.objectsList.length > 0) {
         try {
-          board.removeObject(board.objects[id]);
+          board.removeObject(board.objectsList[0]);
         } catch (e) {}
-      });
+      }
     } catch (error) {
       console.error("Error clearing board:", error);
     }
@@ -99,9 +100,15 @@ const RightTriangle = memo(({
       const actualOrientation = orientationRef.current;
       const points = orientations[actualOrientation] || orientations.default;
       
-      // Create triangle points (fixed and invisible)
+      // Create triangle points - EXPLICITLY WITHOUT LABELS
       const trianglePoints = points.map(p => 
-        board.create('point', p, { visible: false, fixed: true })
+        board.create('point', p, { 
+          visible: false, 
+          fixed: true,
+          showInfobox: false,
+          name: '',
+          withLabel: false
+        })
       );
       
       // Create the triangle
@@ -110,7 +117,12 @@ const RightTriangle = memo(({
         fillOpacity, 
         strokeColor,
         strokeWidth,
-        vertices: { visible: false }
+        vertices: { 
+          visible: false,
+          withLabel: false
+        },
+        withLabel: false,
+        name: ''
       });
       
       // Determine side labels based on labelStyle
@@ -220,12 +232,14 @@ const RightTriangle = memo(({
         const x = position.pos ? position.pos[0] : position.x;
         const y = position.pos ? position.pos[1] : position.y;
         
+        // Create side label text as text object (not attached to any element)
         board.create('text', [x, y, sideLabels[i]], {
           fontSize: 14,
           fixed: true,
           anchorX: 'middle',
           anchorY: 'middle',
-          color: '#000000'
+          color: '#000000',
+          useMathJax: false // No LaTeX processing needed for simple labels
         });
       }
       
@@ -243,7 +257,8 @@ const RightTriangle = memo(({
           fillColor: 'none',
           strokeWidth: 1.5,
           fixed: true,
-          name: '' // No label
+          name: '', // No label
+          withLabel: false
         });
       }
       
@@ -319,7 +334,8 @@ const RightTriangle = memo(({
           fillColor: angleFillColor,
           strokeColor: angleColor,
           strokeWidth: angleStrokeWidth,
-          fixed: true
+          fixed: true,
+          withLabel: true // Explicitly enable to show angle label
         });
         
         // Fine-tune label position if needed
@@ -346,7 +362,8 @@ const RightTriangle = memo(({
           fillColor: angleFillColor,
           strokeColor: angleColor,
           strokeWidth: angleStrokeWidth,
-          fixed: true
+          fixed: true,
+          withLabel: true // Explicitly enable to show angle label
         });
         
         // Fine-tune label position if needed
@@ -410,8 +427,7 @@ const RightTriangle = memo(({
           showRightAngle,
           Array.isArray(showAngles) ? showAngles.join(',') : showAngles,
           angleLabels.join(','),
-          // These are stable so no need to include in dependencies
-          // orientation, labelPositions, JSON.stringify(labels)
+          JSON.stringify(labels)
         ]}
       />
     </div>

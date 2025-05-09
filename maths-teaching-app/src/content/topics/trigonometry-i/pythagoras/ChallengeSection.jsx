@@ -5,7 +5,7 @@ import { Card, CardContent } from '../../../../components/common/Card';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import { useUI } from '../../../../context/UIContext';
 import _ from 'lodash';
-import katex from 'katex';
+import MathDisplay from '../../../../components/common/MathDisplay';
 
 const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   // Get theme colors for challenge section
@@ -15,14 +15,14 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   // Challenge state
   const [challenge, setChallenge] = useState(null);
   // Track board refresh ID to force complete rerender when needed
-  const [boardRefreshId, setBoardRefreshId] = useState(0);
+  const [boardId, setBoardId] = useState(`coordinate-challenge-${Math.random().toString(36).substr(2, 9)}`);
 
   // Generate a new challenge
   const generateChallenge = () => {
     const newChallenge = generateCoordinateDistanceChallenge();
     setChallenge(newChallenge);
-    // Force complete board redraw by incrementing the refresh ID
-    setBoardRefreshId(prev => prev + 1);
+    // Create a new board ID to force a complete redraw
+    setBoardId(`coordinate-challenge-${Math.random().toString(36).substr(2, 9)}`);
   };
 
   // Generate challenge on initial render
@@ -30,142 +30,35 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
     generateChallenge();
   }, []);
 
-  // JSXGraph board mount function to create grid
-  const onMountBoard = (board) => {
-    // Create custom grid explicitly
-    for (let x = -6; x <= 6; x++) {
-      board.create('line', [[x, -6], [x, 6]], {
-        strokeColor: '#dddddd',
-        strokeWidth: 1,
-        fixed: true,
-        highlight: false,
-        hasGrid: true,  // Mark as grid for identification
-        id: `grid-x-${x}` // Unique ID for each grid line
-      });
-    }
-    
-    for (let y = -6; y <= 6; y++) {
-      board.create('line', [[-6, y], [6, y]], {
-        strokeColor: '#dddddd',
-        strokeWidth: 1,
-        fixed: true,
-        highlight: false,
-        hasGrid: true,  // Mark as grid for identification
-        id: `grid-y-${y}` // Unique ID for each grid line
-      });
-    }
-    
-    // Create axes with thicker lines
-    const xAxis = board.create('line', [[-6, 0], [6, 0]], {
-      strokeColor: '#666666',
-      strokeWidth: 2,
-      fixed: true,
-      highlight: false,
-      name: 'xAxis',
-      id: 'xAxis' // Unique ID for x-axis
-    });
-    
-    const yAxis = board.create('line', [[0, -6], [0, 6]], {
-      strokeColor: '#666666',
-      strokeWidth: 2,
-      fixed: true,
-      highlight: false,
-      name: 'yAxis',
-      id: 'yAxis' // Unique ID for y-axis
-    });
-    
-    // Add axis labels
-    for (let x = -6; x <= 6; x++) {
-      if (x !== 0) {
-        board.create('text', [x, -0.3, x.toString()], {
-          fixed: true,
-          anchorX: 'middle',
-          anchorY: 'top',
-          fontSize: 14,
-          id: `label-x-${x}` // Unique ID for each x label
-        });
-      }
-    }
-    
-    for (let y = -6; y <= 6; y++) {
-      if (y !== 0) {
-        board.create('text', [-0.3, y, y.toString()], {
-          fixed: true,
-          anchorX: 'right',
-          anchorY: 'middle',
-          fontSize: 14,
-          id: `label-y-${y}` // Unique ID for each y label
-        });
-      }
-    }
-    
-    // Add origin label
-    board.create('text', [-0.3, -0.3, '0'], {
-      fixed: true,
-      anchorX: 'right',
-      anchorY: 'top',
-      fontSize: 14,
-      id: 'label-origin' // Unique ID for origin label
-    });
-  };
-
-  // JSXGraph board update function with improved element cleanup
+  // JSXGraph board update function
   const updateBoard = (board) => {
     if (!challenge) return;
     
     board.suspendUpdate();
     
     try {
-      // IMPROVED ELEMENT CLEANUP: Use a whitelist approach for what to keep
-      // First, identify elements that we want to keep (grid, axes, permanent labels)
-      const keepIds = new Set();
-      
-      // Add grid line IDs to keep
-      for (let x = -6; x <= 6; x++) {
-        keepIds.add(`grid-x-${x}`);
-      }
-      for (let y = -6; y <= 6; y++) {
-        keepIds.add(`grid-y-${y}`);
-      }
-      
-      // Add axis IDs to keep
-      keepIds.add('xAxis');
-      keepIds.add('yAxis');
-      
-      // Add axis label IDs to keep
-      for (let x = -6; x <= 6; x++) {
-        if (x !== 0) keepIds.add(`label-x-${x}`);
-      }
-      for (let y = -6; y <= 6; y++) {
-        if (y !== 0) keepIds.add(`label-y-${y}`);
-      }
-      keepIds.add('label-origin');
-      
-      // Remove all elements EXCEPT those in our keepIds set
+      // Clear any existing objects
       Object.keys(board.objects).forEach(id => {
-        if (!keepIds.has(id)) {
+        const obj = board.objects[id];
+        // Keep the axes but remove other objects
+        if (obj && obj.elType !== 'axis' && obj.elType !== 'ticks') {
           try {
-            board.removeObject(id, false); // Don't update yet
+            board.removeObject(obj);
           } catch (e) {
-            // Silently catch errors during removal
+            // Ignore errors
           }
         }
       });
       
-      // Now create new elements for the current challenge
       const { point1, point2 } = challenge;
       
-      // Create points with unique IDs
+      // Create points
       const p1 = board.create('point', point1, {
         name: 'A',
         fixed: true,
         color: '#e74c3c', // Red
         size: 4,
-        label: { 
-          offset: [10, 10],
-          strokeColor: '#e74c3c'
-        },
-        id: 'challenge-point-A' // Unique ID
+        withLabel: true
       });
       
       const p2 = board.create('point', point2, {
@@ -173,104 +66,58 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
         fixed: true,
         color: '#3498db', // Blue
         size: 4,
-        label: { 
-          offset: [10, 10],
-          strokeColor: '#3498db'
-        },
-        id: 'challenge-point-B' // Unique ID
+        withLabel: true
       });
       
-      // Create line between points with unique ID
-      const line = board.create('line', [p1, p2], {
-        straightFirst: false,
-        straightLast: false,
+      // Create line between points
+      board.create('segment', [p1, p2], {
         strokeColor: '#9b59b6', // Purple
-        strokeWidth: 2,
-        id: 'challenge-line-AB' // Unique ID
+        strokeWidth: 2
       });
       
       // If showing answers, add the right triangle construction
       if (showAnswers) {
-        // Create right angle point with unique ID
+        // Create right angle point
         const rightAnglePoint = board.create('point', [point2[0], point1[1]], {
           name: 'C',
           fixed: true,
           color: '#2ecc71', // Green
           size: 4,
-          label: { 
-            offset: [10, -10],
-            strokeColor: '#2ecc71'
-          },
-          id: 'challenge-point-C' // Unique ID
+          withLabel: true
         });
         
-        // Create triangle sides with unique IDs
-        const horizontalLine = board.create('line', [p1, rightAnglePoint], {
-          straightFirst: false,
-          straightLast: false,
+        // Create horizontal and vertical lines
+        board.create('segment', [p1, rightAnglePoint], {
           strokeColor: '#2ecc71', // Green
           strokeWidth: 2,
-          dash: 2,
-          id: 'challenge-line-AC' // Unique ID
+          dash: 2
         });
         
-        const verticalLine = board.create('line', [rightAnglePoint, p2], {
-          straightFirst: false,
-          straightLast: false,
+        board.create('segment', [rightAnglePoint, p2], {
           strokeColor: '#2ecc71', // Green
           strokeWidth: 2,
-          dash: 2,
-          id: 'challenge-line-CB' // Unique ID
+          dash: 2
         });
         
-        // Add right angle marker with unique ID
+        // Add right angle marker
         board.create('angle', [p2, rightAnglePoint, p1], {
           radius: 0.25,
           name: '90°',
           type: 'square',
           fillColor: '#2ecc71',
-          fillOpacity: 0.4,
-          label: { offset: [0, 0] },
-          id: 'challenge-angle-BCA' // Unique ID
+          fillOpacity: 0.4
         });
         
-        // Add dimension labels with unique IDs
-        const dx = Math.abs(point2[0] - point1[0]);
-        const dy = Math.abs(point2[1] - point1[1]);
-        
+        // Add distance label
         board.create('text', [
-          (point1[0] + point2[0]) / 2,
-          point1[1] - 0.5,
-          `a = ${dx.toFixed(1)} units`
-        ], { 
-          fontSize: 14,
+          (point1[0] + point2[0]) / 2 - 0.5,
+          (point1[1] + point2[1]) / 2 - 0.5,
+          `d = ${challenge.distance}`
+        ], {
+          fontSize: 16,
           fixed: true,
-          id: 'challenge-label-a' // Unique ID
+          color: '#9b59b6'
         });
-        
-        board.create('text', [
-          point2[0] + 0.3,
-          (point1[1] + point2[1]) / 2,
-          `b = ${dy.toFixed(1)} units`
-        ], { 
-          fontSize: 14,
-          fixed: true,
-          id: 'challenge-label-b' // Unique ID
-        });
-        
-        if (challenge.distance) {
-          board.create('text', [
-            (point1[0] + point2[0]) / 2 - 0.5,
-            (point1[1] + point2[1]) / 2 - 0.5,
-            `d = ${challenge.distance}`
-          ], { 
-            fontSize: 16,
-            fixed: true,
-            color: '#9b59b6', // Purple
-            strokeColor: '#9b59b6',
-            id: 'challenge-label-d' // Unique ID
-          });
-        }
       }
     } catch (error) {
       console.error("Error updating JSXGraph board:", error);
@@ -278,9 +125,6 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
     
     board.unsuspendUpdate();
   };
-
-  // Ensure board has unique ID for this lesson plus refresh ID to force full redraw
-  const boardId = `coordinate-challenge-board-${currentTopic}-${currentLessonId}-${boardRefreshId}`;
 
   return (
     <div className="space-y-6 mb-8">
@@ -315,18 +159,17 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                   </div>
                 </div>
 
-                {/* Visualization with fixed grid */}
+                {/* Visualization with built-in grid */}
                 <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '350px' }}>
                   <JSXGraphBoard
                     id={boardId}
-                    boundingBox={[-6, 6, 6, -6]}  // Fixed grid -6 to 6
-                    axis={false}  // Disable default axes
-                    grid={false}  // Disable default grid
-                    height="300px"
-                    backgroundColor="#f9f9f9"  // Light gray background
-                    onMount={onMountBoard}
+                    boundingBox={[-6, 6, 6, -6]}
+                    axis={true}  // Use JSXGraph's built-in axes
+                    grid={true}  // Use JSXGraph's built-in grid
+                    height={300}
+                    backgroundColor="#f9f9f9"
                     onUpdate={updateBoard}
-                    dependencies={[challenge, showAnswers, boardRefreshId]} // Include boardRefreshId in dependencies
+                    dependencies={[challenge, showAnswers]}
                   />
                 </div>
 
@@ -340,7 +183,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                           <p className="text-gray-700">{step.explanation}</p>
                           {step.formula && (
                             <div className="mt-2 text-center bg-white p-2 rounded-md">
-                              <div dangerouslySetInnerHTML={{ __html: katex.renderToString(step.formula, { displayMode: true }) }} />
+                              <MathDisplay math={step.formula} displayMode={true} />
                             </div>
                           )}
                         </div>

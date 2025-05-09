@@ -3,6 +3,7 @@
 import MafsWrapper from './MafsWrapper';
 import MathView from './MathView';
 import ShapeDisplay from './ShapeDisplay';
+import CoordinateGrid from './CoordinateGrid'; // Add the new component
 
 // Shape components
 import Square from './shapes/Square';
@@ -11,7 +12,7 @@ import RightTriangle from './shapes/RightTriangle';
 import Triangle from './shapes/Triangle';
 import IsoscelesTriangle from './shapes/IsoscelesTriangle';
 
-// Primitive components
+// Primitive components - these were missing imports but referenced later
 import Point from './primitives/Point';
 import Line from './primitives/Line';
 import Polygon from './primitives/Polygon';
@@ -49,7 +50,8 @@ export const Visualizations = {
   PythagorasVisualization,
   CoordinateVisualization,
   NavigationVisualization,
-  StackedTrianglesVisualization
+  StackedTrianglesVisualization,
+  CoordinateGrid // Add to the visualizations object
 };
 
 // Named exports of all components
@@ -58,6 +60,7 @@ export {
   MafsWrapper,
   MathView,
   ShapeDisplay,
+  CoordinateGrid, // Add to named exports
   
   // Shapes
   Square,
@@ -86,6 +89,7 @@ export default {
   MafsWrapper,
   MathView,
   ShapeDisplay,
+  CoordinateGrid, // Add to default export
   Shapes,
   Primitives,
   Visualizations
