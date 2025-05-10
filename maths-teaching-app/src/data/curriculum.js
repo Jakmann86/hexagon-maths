@@ -48,5 +48,43 @@ export const curriculum = {
                 }
             }
         ]
+    },
+    'Algebra I': {
+        title: 'Algebra I: Working With Expressions',
+        lessons: [
+            {
+                id: 1,
+                title: "Expanding Double Brackets",
+                sections: {
+                    starter: 'expanding-brackets/StarterSection',
+                    diagnostic: 'expanding-brackets/DiagnosticSection',
+                    learn: 'expanding-brackets/LearnSection',
+                    examples: 'expanding-brackets/ExamplesSection',
+                    challenge: 'expanding-brackets/ChallengeSection'
+                }
+            },
+            {
+                id: 2,
+                title: "Collecting Like Terms",
+                sections: {
+                    starter: 'collecting-terms/StarterSection',
+                    diagnostic: 'collecting-terms/DiagnosticSection',
+                    learn: 'collecting-terms/LearnSection',
+                    examples: 'collecting-terms/ExamplesSection',
+                    challenge: 'collecting-terms/ChallengeSection'
+                }
+            },
+            {
+                id: 3,
+                title: "Substituting Values",
+                sections: {
+                    starter: 'substitution/StarterSection',
+                    diagnostic: 'substitution/DiagnosticSection',
+                    learn: 'substitution/LearnSection',
+                    examples: 'substitution/ExamplesSection',
+                    challenge: 'substitution/ChallengeSection'
+                }
+            }
+        ]
     }
 };

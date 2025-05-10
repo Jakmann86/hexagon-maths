@@ -1,10 +1,12 @@
 import React from 'react';
 
-// Import Pythagoras (Lesson 1) components
+// Import Trigonometry I components
 import * as PythagorasComponents from './topics/trigonometry-i/pythagoras';
-
-// Import SOHCAHTOA (Lesson 2) components
 import * as SohcahtoaComponents from './topics/trigonometry-i/sohcahtoa1';
+// We'll handle sohcahtoa2 with placeholder content for now
+
+// Import Algebra I components
+import * as ExpandingBracketsComponents from './topics/algebra-i/expanding-brackets';
 
 /**
  * Component that renders the appropriate lesson section based on topic, lesson ID, and section
@@ -92,10 +94,57 @@ const LessonContentProvider = ({
     }
   };
 
+  // Function to render Algebra I lessons
+  const renderAlgebraI = () => {
+    // Lesson 1: Expanding Double Brackets
+    if (currentLessonId === 1) {
+      switch (currentSection) {
+        case 'starter':
+          return <ExpandingBracketsComponents.StarterSection 
+            currentTopic={currentTopic} 
+            currentLessonId={currentLessonId} 
+          />;
+        case 'diagnostic':
+          return <ExpandingBracketsComponents.DiagnosticSection 
+            currentTopic={currentTopic} 
+            currentLessonId={currentLessonId}
+          />;
+        case 'learn':
+          return <ExpandingBracketsComponents.LearnSection 
+            currentTopic={currentTopic} 
+            currentLessonId={currentLessonId}
+          />;
+        case 'examples':
+          return <ExpandingBracketsComponents.ExamplesSection 
+            currentTopic={currentTopic} 
+            currentLessonId={currentLessonId}
+          />;
+        case 'challenge':
+          return <ExpandingBracketsComponents.ChallengeSection 
+            currentTopic={currentTopic} 
+            currentLessonId={currentLessonId}
+          />;
+        default:
+          return <div>Select a section</div>;
+      }
+    }
+    // Other lessons not yet implemented
+    else {
+      return (
+        <div className="p-6 bg-white border rounded-lg shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Lesson {currentLessonId} - {currentSection}</h2>
+          <p>Content for this lesson is still in development.</p>
+        </div>
+      );
+    }
+  };
+
   // Main renderer based on topic
   switch (currentTopic) {
     case 'Trigonometry I':
       return renderTrigonometryI();
+    case 'Algebra I':
+      return renderAlgebraI();
     default:
       return (
         <div className="p-6 bg-white border rounded-lg shadow-sm">

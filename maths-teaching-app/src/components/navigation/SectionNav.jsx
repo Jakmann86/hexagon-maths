@@ -1,5 +1,5 @@
-// Updated SectionNav.jsx without the sticky positioning
-import React, { useState } from 'react';
+// Updated SectionNav.jsx
+import React, { useState, useEffect } from 'react';
 import { PlayCircle, Brain, LineChart, BookOpen, Target, Timer, Eye, EyeOff } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
 
@@ -9,7 +9,7 @@ export const SectionNav = ({ activeSection, onSectionChange }) => {
     
     // Timer duration options with more increments
     const timerOptions = [1, 2, 3, 5, 10, 15, 20, 25, 30, 45, 60];
-    
+
     // Enhanced styling with original MathStarters colors
     const sectionColors = {
         starter: {
@@ -43,7 +43,19 @@ export const SectionNav = ({ activeSection, onSectionChange }) => {
         { name: 'challenge', icon: Target }
     ];
     
-    // Handle timer duration selection - fixed to properly call adjustTimer
+    // Close timer settings dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showTimerSettings && !event.target.closest('.timer-dropdown')) {
+                setShowTimerSettings(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showTimerSettings]);
+    
+    // Handle timer duration selection
     const handleTimerSelection = (minutes) => {
         // Call the adjustTimer function with the selected minutes
         adjustTimer(minutes);
@@ -76,7 +88,7 @@ export const SectionNav = ({ activeSection, onSectionChange }) => {
                         </button>
 
                         {showTimerSettings && (
-                            <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                            <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200 timer-dropdown">
                                 <div className="p-2">
                                     <div className="grid grid-cols-3 gap-2">
                                         {timerOptions.map((minutes) => (

@@ -7,7 +7,7 @@ export const UIProvider = ({ children }) => {
     // Sidebar state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
-    // Answers visibility state (already used in Header)
+    // Answers visibility state
     const [showAnswers, setShowAnswers] = useState(false);
     
     // Current section tracking
@@ -69,14 +69,6 @@ export const UIProvider = ({ children }) => {
         setTimerSeconds(minutes * 60);
     }, [pauseTimer]);
 
-    
-    
-    // Pythagoras visualization specific states
-    const [showBaseSquare, setShowBaseSquare] = useState(true);
-    const [showHeightSquare, setShowHeightSquare] = useState(true);
-    const [showHypotenuseSquare, setShowHypotenuseSquare] = useState(true);
-    const [showLabels, setShowLabels] = useState(true);
-    
     return (
         <UIContext.Provider
             value={{
@@ -101,16 +93,6 @@ export const UIProvider = ({ children }) => {
                 pauseTimer,
                 resetTimer,
                 adjustTimer,
-                
-                // Pythagoras visualization
-                showBaseSquare,
-                setShowBaseSquare,
-                showHeightSquare,
-                setShowHeightSquare,
-                showHypotenuseSquare,
-                setShowHypotenuseSquare,
-                showLabels,
-                setShowLabels
             }}
         >
             {children}
