@@ -3,8 +3,129 @@ import React from 'react';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import RightTriangle from '../../../../components/math/shapes/RightTriangle';
-import Rectangle from '../../../../components/math/shapes/Rectangle';
 import _ from 'lodash';
+
+/**
+ * Generate a SOHCAHTOA question for "Last Lesson"
+ */
+const generateSohcahtoaQuestion = () => {
+  // Common angles with exact trig values
+  const commonAngles = [30, 45, 60];
+  const angle = _.sample(commonAngles);
+  
+  // Values for sine, cosine, and tangent at these angles
+  const trigValues = {
+    30: { sin: 0.5, cos: 0.866, tan: 0.577 },
+    45: { sin: 0.707, cos: 0.707, tan: 1 },
+    60: { sin: 0.866, cos: 0.5, tan: 1.732 }
+  };
+  
+  // Randomly choose between finding a side and finding an angle
+  const findSide = Math.random() > 0.5; // 50% chance of finding a side
+  
+  if (findSide) {
+    // Choose which side to find
+    const sides = ['opposite', 'adjacent', 'hypotenuse'];
+    const sideToFind = _.sample(sides);
+    
+    // Choose which trig ratio to use based on the side to find
+    let trigRatio, knownSide, knownValue;
+    
+    if (sideToFind === 'opposite') {
+      // SOH or TOA
+      const useSOH = Math.random() > 0.5;
+      trigRatio = useSOH ? 'sin' : 'tan';
+      knownSide = useSOH ? 'hypotenuse' : 'adjacent';
+      knownValue = _.random(5, 10);
+    } else if (sideToFind === 'adjacent') {
+      // CAH or TOA
+      const useCAH = Math.random() > 0.5;
+      trigRatio = useCAH ? 'cos' : 'tan';
+      knownSide = useCAH ? 'hypotenuse' : 'opposite';
+      knownValue = _.random(5, 10);
+    } else { // hypotenuse
+      // SOH or CAH
+      const useSOH = Math.random() > 0.5;
+      trigRatio = useSOH ? 'sin' : 'cos';
+      knownSide = useSOH ? 'opposite' : 'adjacent';
+      knownValue = _.random(5, 10);
+    }
+    
+    // Calculate the unknown side
+    const ratio = trigValues[angle][trigRatio];
+    let unknownValue;
+    
+    if (trigRatio === 'sin') { // SOH
+      unknownValue = sideToFind === 'opposite' ? knownValue * ratio : knownValue / ratio;
+    } else if (trigRatio === 'cos') { // CAH
+      unknownValue = sideToFind === 'adjacent' ? knownValue * ratio : knownValue / ratio;
+    } else { // TOA
+      unknownValue = sideToFind === 'opposite' ? knownValue * ratio : knownValue / ratio;
+    }
+    
+    // Round to 2 decimal places
+    unknownValue = Math.round(unknownValue * 100) / 100;
+    
+    return {
+      question: `In a right-angled triangle, the angle is ${angle}° and the ${knownSide} is ${knownValue} cm. Find the ${sideToFind}.`,
+      answer: `\\text{Using ${trigRatio}(${angle}°) = ${ratio.toFixed(3)}}\\\\
+               ${sideToFind === 'opposite' ? `\\text{opposite} = ${knownValue} \\times ${ratio.toFixed(3)} = ${unknownValue}\\text{ cm}` : 
+                 sideToFind === 'adjacent' ? `\\text{adjacent} = ${knownValue} \\times ${ratio.toFixed(3)} = ${unknownValue}\\text{ cm}` :
+                 `\\text{hypotenuse} = \\frac{${knownValue}}{${ratio.toFixed(3)}} = ${unknownValue}\\text{ cm}`}`,
+      visualization: (
+        <RightTriangle
+          base={sideToFind === 'adjacent' ? 0 : (sideToFind === 'opposite' ? knownValue : (knownSide === 'adjacent' ? knownValue : 0))}
+          height={sideToFind === 'opposite' ? 0 : (sideToFind === 'adjacent' ? knownValue : (knownSide === 'opposite' ? knownValue : 0))}
+          showRightAngle={true}
+          showAngles={[false, true]}
+          angleLabels={['', `${angle}°`]}
+          labelStyle="custom"
+          labels={[`${sideToFind === 'adjacent' ? '?' : (knownSide === 'adjacent' ? knownValue + ' cm' : '')}`, 
+                   `${sideToFind === 'opposite' ? '?' : (knownSide === 'opposite' ? knownValue + ' cm' : '')}`,
+                   `${sideToFind === 'hypotenuse' ? '?' : (knownSide === 'hypotenuse' ? knownValue + ' cm' : '')}`]}
+          orientation="default"
+          style={{
+            fillColor: '#3498db',
+            fillOpacity: 0.2
+          }}
+        />
+      )
+    };
+  } else {
+    // Find an angle
+    const hypotenuse = _.random(5, 12);
+    const opposite = _.random(3, hypotenuse - 1);
+    
+    // Calculate the sine of the angle
+    const sinValue = opposite / hypotenuse;
+    
+    // Calculate the angle (approximately)
+    const calculatedAngle = Math.round(Math.asin(sinValue) * 180 / Math.PI);
+    
+    return {
+      question: `In a right-angled triangle, the hypotenuse is ${hypotenuse} cm and the opposite side is ${opposite} cm. Find the angle θ.`,
+      answer: `\\text{Using } \\sin(\\theta) = \\frac{\\text{opposite}}{\\text{hypotenuse}}\\\\
+               \\sin(\\theta) = \\frac{${opposite}}{${hypotenuse}} = ${(sinValue).toFixed(3)}\\\\
+               \\theta = \\sin^{-1}(${(sinValue).toFixed(3)}) = ${calculatedAngle}°`,
+      visualization: (
+        <RightTriangle
+          base={Math.sqrt(hypotenuse*hypotenuse - opposite*opposite)}
+          height={opposite}
+          showRightAngle={true}
+          showAngles={[false, true]}
+          angleLabels={['', 'θ']}
+          labelStyle="custom"
+          labels={['', `${opposite} cm`, `${hypotenuse} cm`]}
+          orientation="default"
+          style={{
+            fillColor: '#3498db',
+            fillOpacity: 0.2
+          }}
+        />
+      )
+    };
+  }
+};
 
 /**
  * Generate a Pythagoras question for "Last Week"
@@ -77,96 +198,6 @@ const generatePythagorasQuestion = () => {
 };
 
 /**
- * Generate a SOHCAHTOA question for "Last Topic"
- */
-const generateSohcahtoaQuestion = () => {
-  // Common angles with exact trig values
-  const commonAngles = [30, 45, 60];
-  const angle = _.sample(commonAngles);
-  
-  // Values for sine, cosine, and tangent at these angles
-  const trigValues = {
-    30: { sin: 0.5, cos: 0.866, tan: 0.577 },
-    45: { sin: 0.707, cos: 0.707, tan: 1 },
-    60: { sin: 0.866, cos: 0.5, tan: 1.732 }
-  };
-  
-  // Randomly choose between finding a side and finding an angle
-  const findSide = Math.random() > 0.4; // 60% chance of finding a side
-  
-  if (findSide) {
-    // Choose which side to find
-    const sides = ['opposite', 'adjacent', 'hypotenuse'];
-    const sideToFind = _.sample(sides);
-    
-    // Choose which trig ratio to use based on the side to find
-    let trigRatio, knownSide, knownValue;
-    
-    if (sideToFind === 'opposite') {
-      // SOH or TOA
-      const useSOH = Math.random() > 0.5;
-      trigRatio = useSOH ? 'sin' : 'tan';
-      knownSide = useSOH ? 'hypotenuse' : 'adjacent';
-      knownValue = _.random(5, 10);
-    } else if (sideToFind === 'adjacent') {
-      // CAH or TOA
-      const useCAH = Math.random() > 0.5;
-      trigRatio = useCAH ? 'cos' : 'tan';
-      knownSide = useCAH ? 'hypotenuse' : 'opposite';
-      knownValue = _.random(5, 10);
-    } else { // hypotenuse
-      // SOH or CAH
-      const useSOH = Math.random() > 0.5;
-      trigRatio = useSOH ? 'sin' : 'cos';
-      knownSide = useSOH ? 'opposite' : 'adjacent';
-      knownValue = _.random(5, 10);
-    }
-    
-    // Calculate the unknown side
-    const ratio = trigValues[angle][trigRatio];
-    let unknownValue;
-    
-    if (trigRatio === 'sin') { // SOH
-      unknownValue = sideToFind === 'opposite' ? knownValue * ratio : knownValue / ratio;
-    } else if (trigRatio === 'cos') { // CAH
-      unknownValue = sideToFind === 'adjacent' ? knownValue * ratio : knownValue / ratio;
-    } else { // TOA
-      unknownValue = sideToFind === 'opposite' ? knownValue * ratio : knownValue / ratio;
-    }
-    
-    // Round to 2 decimal places
-    unknownValue = Math.round(unknownValue * 100) / 100;
-    
-    return {
-      question: `In a right-angled triangle, the angle is ${angle}° and the ${knownSide} is ${knownValue} cm. Find the ${sideToFind}.`,
-      answer: `\\text{Using ${trigRatio}(${angle}°) = ${ratio.toFixed(3)}}\\\\
-               ${sideToFind === 'opposite' ? `\\text{opposite} = ${knownValue} \\times ${ratio.toFixed(3)} = ${unknownValue}\\text{ cm}` : 
-                 sideToFind === 'adjacent' ? `\\text{adjacent} = ${knownValue} \\times ${ratio.toFixed(3)} = ${unknownValue}\\text{ cm}` :
-                 `\\text{hypotenuse} = \\frac{${knownValue}}{${ratio.toFixed(3)}} = ${unknownValue}\\text{ cm}`}`,
-      difficulty: 'medium'
-    };
-  } else {
-    // Find an angle
-    const hypotenuse = _.random(5, 12);
-    const opposite = _.random(3, hypotenuse - 1);
-    
-    // Calculate the sine of the angle
-    const sinValue = opposite / hypotenuse;
-    
-    // Calculate the angle (approximately)
-    const calculatedAngle = Math.round(Math.asin(sinValue) * 180 / Math.PI);
-    
-    return {
-      question: `In a right-angled triangle, the hypotenuse is ${hypotenuse} cm and the opposite side is ${opposite} cm. Find the angle.`,
-      answer: `\\text{Using } \\sin(\\theta) = \\frac{\\text{opposite}}{\\text{hypotenuse}}\\\\
-               \\sin(\\theta) = \\frac{${opposite}}{${hypotenuse}} = ${(sinValue).toFixed(3)}\\\\
-               \\theta = \\sin^{-1}(${(sinValue).toFixed(3)}) = ${calculatedAngle}°`,
-      difficulty: 'medium'
-    };
-  }
-};
-
-/**
  * Generate a "think of a number" question for "Last Year"
  */
 const generateThinkOfNumberQuestion = () => {
@@ -214,7 +245,7 @@ const generateThinkOfNumberQuestion = () => {
 };
 
 /**
- * Generate an expanding single brackets question for "Last Lesson"
+ * Generate an expanding single brackets question for "Last Topic"
  */
 const generateExpandingSingleBracketsQuestion = () => {
   // Generate a simple expression with single brackets
@@ -227,20 +258,8 @@ const generateExpandingSingleBracketsQuestion = () => {
   const expandedSecond = outsideFactor * secondTerm;
   
   return {
-    question: `Expand ${outsideFactor}(${firstTerm} + ${secondTerm})`,
-    answer: `${outsideFactor}(${firstTerm} + ${secondTerm}) = ${outsideFactor} \\times ${firstTerm} + ${outsideFactor} \\times ${secondTerm} = ${expandedFirst} + ${expandedSecond}`,
-    visualization: (
-      <Rectangle
-        width={firstTerm + secondTerm}
-        height={outsideFactor}
-        showDimensions={true}
-        units=""
-        style={{
-          fillColor: '#2ecc71',
-          fillOpacity: 0.2
-        }}
-      />
-    )
+    question: `Expand ${outsideFactor}(${firstTerm}x + ${secondTerm})`,
+    answer: `${outsideFactor}(${firstTerm}x + ${secondTerm}) = ${outsideFactor} \\times ${firstTerm}x + ${outsideFactor} \\times ${secondTerm} = ${expandedFirst}x + ${expandedSecond}`
   };
 };
 
@@ -250,10 +269,10 @@ const generateExpandingSingleBracketsQuestion = () => {
 const StarterSection = ({ currentTopic, currentLessonId }) => {
   // Define the question generators for each section type
   const questionGenerators = [
-    generateExpandingSingleBracketsQuestion,  // Last Lesson
-    generatePythagorasQuestion,               // Last Week 
-    generateSohcahtoaQuestion,                // Last Topic
-    generateThinkOfNumberQuestion,            // Last Year
+    generateSohcahtoaQuestion,              // Last Lesson (SOHCAHTOA mix)
+    generatePythagorasQuestion,             // Last Week 
+    generateExpandingSingleBracketsQuestion, // Last Topic (expanding brackets)
+    generateThinkOfNumberQuestion,          // Last Year
   ];
 
   return (
