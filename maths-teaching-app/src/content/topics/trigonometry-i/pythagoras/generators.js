@@ -1,19 +1,17 @@
 // src/content/topics/trigonometry-i/pythagoras/generators.js
 import _ from 'lodash';
-
-// Useful Pythagorean triples for realistic problems
-const PYTHAGOREAN_TRIPLES = [
-    { a: 3, b: 4, c: 5 },
-    { a: 5, b: 12, c: 13 },
-    { a: 6, b: 8, c: 10 },
-    { a: 8, b: 15, c: 17 },
-    { a: 9, b: 12, c: 15 },
-    { a: 7, b: 24, c: 25 },
-];
+import React from 'react';
+import {
+    createPythagoreanTriangle,
+    createPythagoreanTripleTriangle,
+    PYTHAGOREAN_TRIPLES
+} from '../../../../factories/triangleFactories';
+import MathDisplay from '../../../../components/common/MathDisplay';
 
 /**
- * Base generator for Pythagoras theorem questions
- * @param {Object} config Configuration options
+ * Core generator for Pythagoras' theorem questions
+ * 
+ * @param {Object} config - Configuration for the question
  * @returns {Object} Question data
  */
 export const generatePythagorasQuestion = (config = {}) => {
@@ -21,68 +19,70 @@ export const generatePythagorasQuestion = (config = {}) => {
         difficulty = 'medium',
         units = 'cm',
         questionType = _.sample(['findHypotenuse', 'findLeg']),
-        orientation = _.sample(['right', 'left', 'up', 'down']),
-        labelStyle = _.sample(['numeric', 'algebraic']),
+        orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270'])
     } = config;
 
-    // Select an appropriate triple based on difficulty
+    // Choose appropriate triples based on difficulty
     let triples = [...PYTHAGOREAN_TRIPLES];
     if (difficulty === 'easy') {
-        triples = triples.slice(0, 2); // Easier triples
+        triples = triples.slice(0, 2); // Easier triples (3,4,5 and 5,12,13)
     } else if (difficulty === 'hard') {
         triples = triples.slice(3); // Harder triples
     }
 
+    // Randomly select a triple
     const triple = _.sample(triples);
+    const [a, b, c] = triple;
 
-    // Determine which value to ask for
+    // Determine what to ask for
     let missingValue, correctAnswer, questionText;
 
     if (questionType === 'findHypotenuse') {
-        missingValue = 'c';
-        correctAnswer = triple.c;
+        missingValue = 'hypotenuse';
+        correctAnswer = c;
         questionText = `Find the length of the hypotenuse in this right-angled triangle.`;
     } else {
         // Randomly choose which leg to find
-        const legToFind = _.sample(['a', 'b']);
+        const legToFind = _.sample(['base', 'height']);
         missingValue = legToFind;
-        correctAnswer = triple[legToFind];
+        correctAnswer = legToFind === 'base' ? a : b;
         questionText = `Find the length of the missing side in this right-angled triangle.`;
     }
 
-    // Generate plausible distractors
+    // Generate distractors (plausible wrong answers)
     const distractors = generateDistractors(correctAnswer, triple);
 
-    // Create shape configuration for visualization
-    const shapeConfig = {
-        orientation,
-        labelStyle,
-        base: triple.a,
-        height: triple.b,
-        hypotenuse: triple.c,
-        missingValue,
-        units,
-    };
+    // Create solution steps
+    const solution = generateSolution(triple, missingValue);
 
     return {
         questionText,
         correctAnswer,
         options: _.shuffle([correctAnswer, ...distractors]),
-        shapeConfig,
-        solution: generateSolution(triple, missingValue),
-        difficulty,
+        visualization: createPythagoreanTripleTriangle({
+            triple,
+            unknownSide: missingValue,
+            orientation,
+            units,
+            sectionType: 'diagnostic'
+        }),
+        solution,
+        difficulty
     };
 };
 
 /**
- * Generate plausible wrong answers for Pythagoras problems
+ * Generate plausible distractors (wrong answers) for Pythagoras problems
  */
 function generateDistractors(correctAnswer, triple) {
+    const [a, b, c] = triple;
     const distractors = new Set();
 
-    // Common mistakes
-    distractors.add(triple.a + triple.b); // Adding instead of using Pythagoras
-    distractors.add(Math.round(Math.sqrt(Math.abs(triple.a * triple.a - triple.b * triple.b)))); // Subtracting squares
+    // Common mistake: adding instead of using Pythagoras
+    distractors.add(a + b);
+
+    // Common mistake: subtracting squares instead of adding
+    distractors.add(Math.round(Math.sqrt(Math.abs(a * a - b * b))));
 
     // Close but incorrect values
     distractors.add(correctAnswer + _.random(1, 2));
@@ -96,82 +96,83 @@ function generateDistractors(correctAnswer, triple) {
  * Generate solution steps for Pythagoras problems
  */
 function generateSolution(triple, missingValue) {
-    let steps = [];
+    const [a, b, c] = triple;
+    const steps = [];
 
     steps.push({
         explanation: "Use Pythagoras' theorem: a² + b² = c²",
         formula: "a² + b² = c²"
     });
 
-    if (missingValue === 'c') {
+    if (missingValue === 'hypotenuse') {
         steps.push({
             explanation: "Substitute the known values",
-            formula: `${triple.a}² + ${triple.b}² = c²`
+            formula: `${a}² + ${b}² = c²`
         });
 
         steps.push({
             explanation: "Calculate the squares",
-            formula: `${triple.a * triple.a} + ${triple.b * triple.b} = c²`
+            formula: `${a * a} + ${b * b} = c²`
         });
 
         steps.push({
             explanation: "Add the values",
-            formula: `${triple.a * triple.a + triple.b * triple.b} = c²`
+            formula: `${a * a + b * b} = c²`
         });
 
         steps.push({
             explanation: "Take the square root of both sides",
-            formula: `c = √${triple.a * triple.a + triple.b * triple.b} = ${triple.c}`
+            formula: `c = √${a * a + b * b} = ${c}`
         });
-    } else if (missingValue === 'a') {
+    } else if (missingValue === 'base') {
         steps.push({
             explanation: "Substitute the known values",
-            formula: `a² + ${triple.b}² = ${triple.c}²`
+            formula: `a² + ${b}² = ${c}²`
         });
 
         steps.push({
             explanation: "Rearrange to find a²",
-            formula: `a² = ${triple.c}² - ${triple.b}²`
+            formula: `a² = ${c}² - ${b}²`
         });
 
         steps.push({
             explanation: "Calculate the squares",
-            formula: `a² = ${triple.c * triple.c} - ${triple.b * triple.b}`
+            formula: `a² = ${c * c} - ${b * b}`
         });
 
         steps.push({
             explanation: "Subtract the values",
-            formula: `a² = ${triple.c * triple.c - triple.b * triple.b}`
+            formula: `a² = ${c * c - b * b}`
         });
 
         steps.push({
             explanation: "Take the square root of both sides",
-            formula: `a = √${triple.c * triple.c - triple.b * triple.b} = ${triple.a}`
+            formula: `a = √${c * c - b * b} = ${a}`
         });
-    } else if (missingValue === 'b') {
+    } else if (missingValue === 'height') {
         steps.push({
             explanation: "Substitute the known values",
-            formula: `${triple.a}² + b² = ${triple.c}²`
+            formula: `${a}² + b² = ${c}²`
         });
 
         steps.push({
             explanation: "Rearrange to find b²",
-            formula: `b² = ${triple.c}² - ${triple.a}²`
+            formula: `b² = ${c}² - ${a}²`
         });
 
         steps.push({
             explanation: "Calculate the squares",
-            formula: `b² = ${triple.c * triple.c} - ${triple.a * triple.a}`
+            formula: `b² = ${c * c} - ${a * a}`
         });
 
         steps.push({
             explanation: "Subtract the values",
-            formula: `b² = ${triple.c * triple.c - triple.a * triple.a}`
+            formula: `b² = ${c * c - a * a}`
         });
 
         steps.push({
             explanation: "Take the square root of both sides",
-            formula: `b = √${triple.c * triple.c - triple.a * triple.a} = ${triple.b}`
+            formula: `b = √${c * c - a * a} = ${b}`
         });
     }
 
@@ -179,7 +180,7 @@ function generateSolution(triple, missingValue) {
 }
 
 /**
- * Generate a simple square area/perimeter question
+ * Generate a square area/perimeter question
  */
 export const generateSquareQuestion = (config = {}) => {
     const {
@@ -201,23 +202,20 @@ export const generateSquareQuestion = (config = {}) => {
     const area = side * side;
     const perimeter = side * 4;
 
-    let questionText, correctAnswer, missingValue;
+    let questionText, correctAnswer;
 
     switch (questionType) {
         case 'findArea':
             questionText = `Find the area of a square with side length ${side}${units}.`;
             correctAnswer = area;
-            missingValue = 'area';
             break;
         case 'findPerimeter':
             questionText = `Find the perimeter of a square with side length ${side}${units}.`;
             correctAnswer = perimeter;
-            missingValue = 'perimeter';
             break;
         case 'findSide':
             questionText = `Find the side length of a square with area ${area}${units}².`;
             correctAnswer = side;
-            missingValue = 'side';
             break;
     }
 
@@ -237,21 +235,36 @@ export const generateSquareQuestion = (config = {}) => {
         distractors.push(Math.sqrt(area) + 1); // Just slightly off
     }
 
-    // Shape configuration
-    const shapeConfig = {
-        sideLength: questionType === 'findSide' ? '?' : side,
-        showArea: questionType === 'findSide' || questionType === 'findArea',
-        showPerimeter: questionType === 'findPerimeter',
-        areaValue: questionType === 'findSide' ? area : undefined,
-        units,
-    };
+    // Create square visualization config
+    const squareVisualization = React.createElement(
+        'div',
+        { style: { height: '220px', width: '100%' } },
+        React.createElement(
+            'div',
+            {
+                style: {
+                    height: '150px',
+                    width: '150px',
+                    backgroundColor: '#e0f2fe',
+                    border: '2px solid #3b82f6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto'
+                }
+            },
+            questionType === 'findSide'
+                ? `Area = ${area} ${units}²`
+                : `Side = ${side} ${units}`
+        )
+    );
 
     return {
         questionText,
         correctAnswer,
         options: _.shuffle([correctAnswer, ...distractors]),
-        shapeConfig,
-        solution: generateSquareSolution(side, questionType),
+        visualization: squareVisualization,
+        solution: generateSquareSolution(side, questionType, units),
         difficulty,
     };
 };
@@ -259,52 +272,54 @@ export const generateSquareQuestion = (config = {}) => {
 /**
  * Generate solution steps for square problems
  */
-function generateSquareSolution(side, questionType) {
+function generateSquareSolution(side, questionType, units) {
     const steps = [];
 
     if (questionType === 'findArea') {
         steps.push({
             explanation: "Use the formula for the area of a square",
-            formula: "Area = side² = side × side"
+            formula: "\\text{Area} = \\text{side}^2"
         });
 
         steps.push({
             explanation: "Substitute the side length",
-            formula: `Area = ${side} × ${side} = ${side * side}`
+            formula: `\\text{Area} = ${side}^2 = ${side * side}\\text{ ${units}}^2`
         });
     }
     else if (questionType === 'findPerimeter') {
         steps.push({
             explanation: "Use the formula for the perimeter of a square",
-            formula: "Perimeter = 4 × side"
+            formula: "\\text{Perimeter} = 4 \\times \\text{side}"
         });
 
         steps.push({
             explanation: "Substitute the side length",
-            formula: `Perimeter = 4 × ${side} = ${side * 4}`
+            formula: `\\text{Perimeter} = 4 \\times ${side} = ${side * 4}\\text{ ${units}}`
         });
     }
     else if (questionType === 'findSide') {
         steps.push({
             explanation: "Use the formula for the area of a square",
-            formula: "Area = side²"
+            formula: "\\text{Area} = \\text{side}^2"
         });
 
         steps.push({
             explanation: "Rearrange to find the side length",
-            formula: "side = √Area"
+            formula: "\\text{side} = \\sqrt{\\text{Area}}"
         });
 
         steps.push({
             explanation: "Substitute the area",
-            formula: `side = √${side * side} = ${side}`
+            formula: `\\text{side} = \\sqrt{${side * side}} = ${side}\\text{ ${units}}`
         });
     }
 
     return steps;
 }
 
-// Diagnostic question generators for Pythagoras topic
+/**
+ * Specialized diagnostic question generators for Pythagoras topic
+ */
 export const pythagoras = {
     // Basic identification of the Pythagorean theorem
     conceptIdentification: (difficulty = 'medium') => {
@@ -341,7 +356,10 @@ export const pythagoras = {
         });
     },
 
-    // Generate a starter question set
+    /**
+     * Generate starter questions for the Pythagoras topic
+     * Returns an object with questions for different review categories
+     */
     generateStarterQuestions: () => {
         return {
             lastLesson: pythagoras.findHypotenuse('easy'),
@@ -349,6 +367,127 @@ export const pythagoras = {
             lastTopic: pythagoras.conceptIdentification('medium'),
             lastYear: pythagoras.squareArea('easy')
         };
+    },
+
+    /**
+     * Generate example questions with specific triple values for worked examples
+     */
+    generateExampleQuestions: () => {
+        // Create examples with specific triples and orientations
+        return [
+            // Example 1: Find hypotenuse of a 3-4-5 triangle
+            {
+                title: "Find the Hypotenuse",
+                question: "Find the length of the hypotenuse in this right-angled triangle.",
+                triple: [3, 4, 5],
+                missingValue: 'hypotenuse',
+                orientation: 'default',
+                steps: generateSolution([3, 4, 5], 'hypotenuse'),
+                visualization: createPythagoreanTripleTriangle({
+                    triple: [3, 4, 5],
+                    unknownSide: 'hypotenuse',
+                    orientation: 'default',
+                    sectionType: 'examples'
+                })
+            },
+
+            // Example 2: Find the leg of a 5-12-13 triangle
+            {
+                title: "Find the Missing Side",
+                question: "Find the length of the missing side in this right-angled triangle.",
+                triple: [5, 12, 13],
+                missingValue: 'base',
+                orientation: 'rotate90',
+                steps: generateSolution([5, 12, 13], 'base'),
+                visualization: createPythagoreanTripleTriangle({
+                    triple: [5, 12, 13],
+                    unknownSide: 'base',
+                    orientation: 'rotate90',
+                    sectionType: 'examples'
+                })
+            },
+
+            // Example 3: Find the leg with decimal answer
+            {
+                title: "Find the Missing Side",
+                question: "Find the length of the missing side to 1 decimal place.",
+                triple: [6, 8, 10],
+                missingValue: 'height',
+                orientation: 'rotate180',
+                steps: generateSolution([6, 8, 10], 'height'),
+                visualization: createPythagoreanTripleTriangle({
+                    triple: [6, 8, 10],
+                    unknownSide: 'height',
+                    orientation: 'rotate180',
+                    sectionType: 'examples'
+                })
+            }
+        ];
+    },
+
+    /**
+     * Generate challenge questions for the challenge section
+     */
+    generateChallengeQuestions: () => {
+        // Create more complex Pythagoras challenges
+        const challenges = [
+            // Challenge 1: Finding height of a ladder against a wall
+            {
+                problemText: "A ladder of length 10m reaches a height of 8m up a wall. How far is the base of the ladder from the wall?",
+                solution: [
+                    {
+                        explanation: "Let x be the distance from the wall to the base of the ladder.",
+                        formula: "x^2 + 8^2 = 10^2"
+                    },
+                    {
+                        explanation: "Substitute the values:",
+                        formula: "x^2 + 64 = 100"
+                    },
+                    {
+                        explanation: "Rearrange to find x²:",
+                        formula: "x^2 = 100 - 64 = 36"
+                    },
+                    {
+                        explanation: "Take the square root:",
+                        formula: "x = \\sqrt{36} = 6\\text{ m}"
+                    }
+                ],
+                visualization: createPythagoreanTriangle({
+                    base: 6,
+                    height: 8,
+                    unknownSide: 'base',
+                    orientation: 'rotate270',
+                    sectionType: 'challenge'
+                })
+            },
+
+            // Challenge 2: Ship navigation problem
+            {
+                problemText: "A ship sails 24km east and then 10km north. How far is the ship from its starting point?",
+                solution: [
+                    {
+                        explanation: "The ship's journey creates a right-angled triangle.",
+                        formula: "\\text{distance}^2 = 24^2 + 10^2"
+                    },
+                    {
+                        explanation: "Calculate the squares:",
+                        formula: "\\text{distance}^2 = 576 + 100 = 676"
+                    },
+                    {
+                        explanation: "Take the square root:",
+                        formula: "\\text{distance} = \\sqrt{676} = 26\\text{ km}"
+                    }
+                ],
+                visualization: createPythagoreanTriangle({
+                    base: 24,
+                    height: 10,
+                    orientation: 'default',
+                    sectionType: 'challenge'
+                })
+            }
+        ];
+
+        return challenges;
     }
 };
 

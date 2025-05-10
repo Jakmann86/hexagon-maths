@@ -1,28 +1,13 @@
-// maths-teaching-app/src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
+// Updated maths-teaching-app/src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
 import React, { useState, useEffect } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
 import MathDisplay from '../../../../components/common/MathDisplay';
-import RightTriangle from '../../../../components/math/shapes/RightTriangle';
-import IsoscelesTriangle from '../../../../components/math/shapes/IsoscelesTriangle';
 import _ from 'lodash';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 
-// Pythagorean triples and non-integer examples
-const PYTHAGOREAN_EXAMPLES = [
-  // Integer examples (Pythagorean triples)
-  { a: 3, b: 4, c: 5 },
-  { a: 5, b: 12, c: 13 },
-  { a: 6, b: 8, c: 10 },
-  { a: 8, b: 15, c: 17 },
-  { a: 9, b: 12, c: 15 },
-  { a: 7, b: 24, c: 25 },
-  // Non-integer examples
-  { a: 5, b: 6, c: 7.81 },
-  { a: 4, b: 7, c: 8.06 },
-  { a: 6, b: 9, c: 10.82 },
-  { a: 5, b: 8, c: 9.43 },
-  { a: 3, b: 7, c: 7.62 }
-];
+// Import our new generators and triangle component
+import { pythagoras } from './generators';
+import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
 
 const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   // Get theme colors for examples section
@@ -37,200 +22,15 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     generateExamples();
   }, []);
 
-  // Regenerate all examples
+  // Regenerate all examples using our new generator
   const generateExamples = () => {
-    setExamples([
-      generateHypotenuseExample(),
-      generateLegExample(),
-      generateIsoscelesExample()
-    ]);
+    // Use our new generator function
+    setExamples(pythagoras.generateExampleQuestions());
     // Reset height toggle when generating new examples
     setShowHeight(false);
   };
 
- // Generate an example for finding the hypotenuse
-const generateHypotenuseExample = () => {
-  // Filter for examples with reasonably sized triangles (minimum dimension 3)
-  const suitableExamples = PYTHAGOREAN_EXAMPLES.filter(ex => ex.a >= 3 && ex.b >= 3);
-  
-  // Include some examples with decimal answers
-  const example = _.sample(suitableExamples);
-  
-  // Generate a random orientation for each question
-  const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
-
-  // Format calculator input
-  const calculatorInput = `\\sqrt{${example.a}^2 + ${example.b}^2}`;
-
-  return {
-    title: "Find the Hypotenuse",
-    question: `Find the length of the hypotenuse. The other sides are ${example.a} cm and ${example.b} cm.`,
-    triple: example,
-    missingValue: 'c',
-    orientation: orientation, // Add orientation to the example object
-    steps: [
-      {
-        explanation: "Use Pythagoras' theorem: a² + b² = c²",
-        math: <MathDisplay math="a^2 + b^2 = c^2" />
-      },
-      {
-        explanation: "Substitute the known values",
-        math: <MathDisplay math={`${example.a}^2 + ${example.b}^2 = c^2`} />
-      },
-      {
-        explanation: "Calculate the squares",
-        math: <MathDisplay math={`${example.a * example.a} + ${example.b * example.b} = c^2`} />
-      },
-      {
-        explanation: "Add the values",
-        math: <MathDisplay math={`${example.a * example.a + example.b * example.b} = c^2`} />
-      },
-      {
-        explanation: "Take the square root of both sides",
-        math: <MathDisplay math={`c = \\sqrt{${example.a * example.a + example.b * example.b}} = ${example.c}`} />
-      },
-      {
-        explanation: "Calculator input:",
-        math: <MathDisplay math={calculatorInput} />
-      },
-      {
-        explanation: "The hypotenuse is",
-        math: <MathDisplay math={`c = ${example.c}\\text{ cm}`} />
-      }
-    ]
-  };
-};
-
-// Generate an example for finding a leg (non-hypotenuse side)
-const generateLegExample = () => {
-  // Filter for examples with reasonably sized triangles (minimum dimension 3)
-  const suitableExamples = PYTHAGOREAN_EXAMPLES.filter(ex => ex.a >= 3 && ex.b >= 3);
-  
-  // Include some examples with decimal answers
-  const example = _.sample(suitableExamples);
-
-  // Randomly decide whether to find side a or b
-  const findSide = _.sample(['a', 'b']);
-  const knownSide = findSide === 'a' ? 'b' : 'a';
-  
-  // Generate a random orientation for each question (avoid very small triangles)
-  const orientation = _.sample(['default', 'rotate90', 'rotate180', 'rotate270']);
-
-  // Format calculator input
-  const calculatorInput = `\\sqrt{${example.c}^2 - ${example[knownSide]}^2}`;
-
-  return {
-    title: "Find the Missing Side",
-    question: `Find the missing side. The hypotenuse is ${example.c} cm and the other side is ${example[knownSide]} cm.`,
-    triple: example,
-    missingValue: findSide,
-    knownSide: knownSide,
-    orientation: orientation, // Add orientation to the example object
-    steps: [
-      {
-        explanation: "Use Pythagoras' theorem: a² + b² = c²",
-        math: <MathDisplay math="a^2 + b^2 = c^2" />
-      },
-      {
-        explanation: "Rearrange to find the missing side",
-        math: <MathDisplay math={`${findSide}^2 = c^2 - ${knownSide}^2`} />
-      },
-      {
-        explanation: "Substitute the known values",
-        math: <MathDisplay math={`${findSide}^2 = ${example.c}^2 - ${example[knownSide]}^2`} />
-      },
-      {
-        explanation: "Calculate the squares",
-        math: <MathDisplay math={`${findSide}^2 = ${example.c * example.c} - ${example[knownSide] * example[knownSide]}`} />
-      },
-      {
-        explanation: "Subtract the values",
-        math: <MathDisplay math={`${findSide}^2 = ${example.c * example.c - example[knownSide] * example[knownSide]}`} />
-      },
-      {
-        explanation: "Take the square root of both sides",
-        math: <MathDisplay math={`${findSide} = \\sqrt{${example.c * example.c - example[knownSide] * example[knownSide]}} = ${example[findSide]}`} />
-      },
-      {
-        explanation: "Calculator input:",
-        math: <MathDisplay math={calculatorInput} />
-      },
-      {
-        explanation: "The missing side is",
-        math: <MathDisplay math={`${findSide} = ${example[findSide]}\\text{ cm}`} />
-      }
-    ]
-  };
-};
-
-  // Generate an isosceles triangle example for finding area
-  const generateIsoscelesExample = () => {
-    // Create an isosceles triangle with a height that forms a right angle
-    const base = _.random(6, 12, false); // Even number for easier splitting
-    const height = _.random(4, 10);
-    const halfBase = base / 2;
-
-    // Calculate the equal sides using Pythagoras' theorem
-    const equalSide = Math.sqrt(halfBase * halfBase + height * height);
-    // Keep 2 decimal places for non-integer results
-    const roundedEqualSide = Math.round(equalSide * 100) / 100;
-
-    // Calculate area
-    const area = (base * height) / 2;
-    const roundedArea = Math.round(area * 100) / 100;
-
-    return {
-      title: "Find the Area",
-      question: `Find the area of this isosceles triangle. The base is ${base} cm and the equal sides are ${roundedEqualSide} cm each.`,
-      base: base,
-      height: height,
-      equalSide: roundedEqualSide,
-      area: roundedArea,
-      halfBase: halfBase,
-      type: 'isosceles',
-      steps: [
-        {
-          explanation: "To find the area, we need the height of the triangle",
-          math: <MathDisplay math="\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}" />
-        },
-        {
-          explanation: "Let's draw the height and split the triangle into two right triangles",
-          math: <MathDisplay math="\\text{The height divides the base into two equal parts}" />,
-          toggleHeight: true
-        },
-        {
-          explanation: "The base is split into two equal parts",
-          math: <MathDisplay math={`\\text{Half base} = \\frac{${base}}{2} = ${halfBase}\\text{ cm}`} />
-        },
-        {
-          explanation: "Using Pythagoras' theorem in the right triangle, we can find the height",
-          math: <MathDisplay math={`h^2 + (\\frac{b}{2})^2 = s^2`} />
-        },
-        {
-          explanation: "Substitute the known values",
-          math: <MathDisplay math={`h^2 + ${halfBase}^2 = ${roundedEqualSide}^2`} />
-        },
-        {
-          explanation: "Rearrange to find h²",
-          math: <MathDisplay math={`h^2 = ${roundedEqualSide}^2 - ${halfBase}^2`} />
-        },
-        {
-          explanation: "Calculate",
-          math: <MathDisplay math={`h^2 = ${roundedEqualSide * roundedEqualSide} - ${halfBase * halfBase}`} />
-        },
-        {
-          explanation: "Solve for h",
-          math: <MathDisplay math={`h = \\sqrt{${roundedEqualSide * roundedEqualSide - halfBase * halfBase}} = ${height}`} />
-        },
-        {
-          explanation: "Now we can calculate the area",
-          math: <MathDisplay math={`\\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${roundedArea}\\text{ cm}^2`} />
-        }
-      ]
-    };
-  };
-
-  // Handle toggling the height for isosceles triangle
+  // Handle toggling the height for example visualization
   const handleStepAction = (step) => {
     if (step && step.toggleHeight) {
       setShowHeight(true);
@@ -246,15 +46,12 @@ const generateLegExample = () => {
   const renderExampleContent = (example) => {
     if (!example) return null;
 
-    const triangleVisualization = example.type === 'isosceles'
-      ? renderIsoscelesTriangle(example)
-      : renderRightTriangle(example);
-
     return (
       <div className="flex flex-col-reverse md:flex-row gap-6 items-center pt-4">
         {/* Triangle visualization on the left - moved down and left */}
         <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0">
-          {triangleVisualization}
+          {/* Render the triangle visualization from our example data */}
+          {example.visualization}
         </div>
 
         {/* Question with plenty of space for the teacher to write */}
@@ -271,71 +68,6 @@ const generateLegExample = () => {
       </div>
     );
   };
-
-  // Render an isosceles triangle using JSXGraph
-  const renderIsoscelesTriangle = (example) => {
-    return (
-      <div style={{ height: "350px", width: "100%" }}>
-        <IsoscelesTriangle
-          base={example.base}
-          height={example.height}
-          showHeight={showHeight}
-          labelStyle="numeric"
-          labels={{
-            sides: [
-              `${example.base} cm`,
-              `${example.equalSide} cm`,
-              `${example.equalSide} cm`
-            ]
-          }}
-          units="cm"
-          style={{
-            fillColor: "#4CAF50", // Green
-            fillOpacity: 0.2,
-            heightColor: "#2196F3" // Blue
-          }}
-        />
-      </div>
-    );
-  };
-
- // Fixed renderRightTriangle function for ExamplesSection
-
-// Render a right triangle with random orientation - PASS THE ORIENTATION HERE
-const renderRightTriangle = (example) => {
-  const triple = example.triple;
-  const missingValue = example.missingValue;
-
-  // The labels array should be [base, height, hypotenuse]
-  const labels = [
-    missingValue === 'a' ? '?' : `${triple.a} cm`,  // base label
-    missingValue === 'b' ? '?' : `${triple.b} cm`,  // height label
-    missingValue === 'c' ? '?' : `${triple.c} cm`   // hypotenuse label
-  ];
-
-  // Ensure minimum size for better label positioning
-  const minSize = 3;
-  const adjustedBase = Math.max(triple.a, minSize);
-  const adjustedHeight = Math.max(triple.b, minSize);
-
-  return (
-    <div style={{ height: "350px", width: "100%" }}>
-      <RightTriangle
-        base={adjustedBase}
-        height={adjustedHeight}
-        showRightAngle={true}
-        labelStyle="custom" // MUST explicitly set to 'custom' to use custom labels
-        orientation={example.orientation} // Use the orientation from the example object
-        labels={labels}
-        units="cm"
-        style={{
-          fillColor: "#3F51B5", // Indigo
-          fillOpacity: 0.2
-        }}
-      />
-    </div>
-  );
-};
 
   return (
     <div className="space-y-6 mb-8">
