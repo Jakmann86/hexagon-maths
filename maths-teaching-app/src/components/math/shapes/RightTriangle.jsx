@@ -1,16 +1,18 @@
 // maths-teaching-app/src/components/math/shapes/RightTriangle.jsx
 import React, { useRef, useEffect, memo } from 'react';
 import JSXGraphBoard from '../JSXGraphBoard';
-import { STANDARD_SHAPES } from '../../../config/standardShapes';
+import { STANDARD_SHAPES, DEFAULT_BOARD_CONFIG } from '../../../config/standardShapes';
 
-// Memoize the entire component to prevent unnecessary re-renders
+/**
+ * RightTriangle - A component for rendering right triangles with consistent sizing and labeling
+ * Optimized for educational use with standardized dimensions
+ */
 const RightTriangle = memo(({
   base = 3,
   height = 4,
   showRightAngle = true,
   showAngles = [false, false], // [origin angle, third angle]
   angleLabels = ['θ', 'φ'],    // Labels for the non-right angles
-  angleStyle = {},             // Additional styling for angles
   labelStyle = 'numeric',      // 'numeric', 'algebraic', or 'custom'
   labels = [],
   units = 'cm',
@@ -19,36 +21,39 @@ const RightTriangle = memo(({
   containerHeight = 250,
   labelPositions = null,
 }) => {
-  // Create stable board ID using a ref that doesn't change between renders
+  // Create stable board ID and refs
   const boardIdRef = useRef(`right-triangle-${Math.random().toString(36).substr(2, 9)}`);
+  const boardRef = useRef(null);
   
-  // Calculate hypotenuse
-  const hypotenuse = Math.sqrt(base * base + height * height);
-  const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
-
+  // Standard dimensions from configuration - using these for consistency
+  const STANDARD_BASE = STANDARD_SHAPES.rightTriangle.base;
+  const STANDARD_HEIGHT = STANDARD_SHAPES.rightTriangle.height;
+  const STANDARD_BOUNDS = STANDARD_SHAPES.rightTriangle.boundingBox;
+  
   // Handle random orientation only once on mount
   const orientationRef = useRef(
     orientation === 'random' 
       ? ['default', 'rotate90', 'rotate180', 'rotate270'][Math.floor(Math.random() * 4)]
       : orientation
   );
-
-  // Store the JSXGraph board reference
-  const boardRef = useRef(null);
+  
+  // Calculate hypotenuse based on the actual input dimensions (for labels)
+  const hypotenuse = Math.sqrt(base * base + height * height);
+  const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
 
   // Update function that gets called by JSXGraphBoard
   const updateBoard = (board) => {
     // Store the board reference
     boardRef.current = board;
     
-    // Clear existing objects - more safely using suspendUpdate
+    // Clear existing objects - safely using suspendUpdate
     board.suspendUpdate();
     try {
-      // Clear ALL existing objects to avoid any label issues
+      // Clear ALL existing objects
       while (board.objectsList.length > 0) {
         try {
           board.removeObject(board.objectsList[0]);
-        } catch (e) {}
+        } catch (e) { }
       }
     } catch (error) {
       console.error("Error clearing board:", error);
@@ -63,36 +68,40 @@ const RightTriangle = memo(({
         strokeWidth = 2
       } = style;
       
-      // Extract angle styling options with defaults
-      const {
-        angleColor = strokeColor,
-        angleFillColor = 'rgba(255, 255, 0, 0.2)',
-        angleRadius = Math.min(base, height) * 0.3,  // Proportional radius
-        angleStrokeWidth = 1.5
-      } = angleStyle;
-      
       // Define four standard orientations with points
-      // Right angle is always at the first point for consistent angle marking
+      // We'll scale the display to match STANDARD dimensions
+      // But keep original proportions for consistent visuals
+      
+      // Calculate scaling factors to fit triangle to standard dimensions
+      const scaleX = STANDARD_BASE / Math.max(2, base);  // At least 2 for visibility
+      const scaleY = STANDARD_HEIGHT / Math.max(2, height);  // At least 2 for visibility
+      
+      // Scale the triangle while maintaining proportions
+      // But use standard dimensions for the overall size
+      const scaledBase = base * scaleX;
+      const scaledHeight = height * scaleY;
+      
+      // Define triangle points based on orientation
       const orientations = {
         default: [
-          [0, 0],        // Right angle at origin
-          [base, 0],     // Horizontal leg
-          [0, height]    // Vertical leg
+          [0, 0],                // Right angle at origin
+          [scaledBase, 0],       // Horizontal leg
+          [0, scaledHeight]      // Vertical leg
         ],
         rotate90: [
-          [0, 0],        // Right angle at origin
-          [0, base],     // Vertical leg (was horizontal)
-          [height, 0]    // Horizontal leg (was vertical)
+          [0, 0],                // Right angle at origin
+          [0, scaledBase],       // Vertical leg (was horizontal)
+          [scaledHeight, 0]      // Horizontal leg (was vertical)
         ],
         rotate180: [
-          [base, height], // Right angle at top-right
-          [0, height],    // Horizontal leg
-          [base, 0]       // Vertical leg
+          [scaledBase, scaledHeight], // Right angle at top-right
+          [0, scaledHeight],    // Horizontal leg
+          [scaledBase, 0]       // Vertical leg
         ],
         rotate270: [
-          [height, base], // Right angle at bottom-right
-          [height, 0],    // Vertical leg
-          [0, base]       // Horizontal leg
+          [scaledHeight, scaledBase], // Right angle at bottom-right
+          [scaledHeight, 0],     // Vertical leg
+          [0, scaledBase]        // Horizontal leg
         ]
       };
       
@@ -100,10 +109,10 @@ const RightTriangle = memo(({
       const actualOrientation = orientationRef.current;
       const points = orientations[actualOrientation] || orientations.default;
       
-      // Create triangle points - EXPLICITLY WITHOUT LABELS
-      const trianglePoints = points.map(p => 
-        board.create('point', p, { 
-          visible: false, 
+      // Create triangle points WITHOUT LABELS
+      const trianglePoints = points.map(p =>
+        board.create('point', p, {
+          visible: false,
           fixed: true,
           showInfobox: false,
           name: '',
@@ -114,10 +123,10 @@ const RightTriangle = memo(({
       // Create the triangle
       board.create('polygon', trianglePoints, {
         fillColor,
-        fillOpacity, 
+        fillOpacity,
         strokeColor,
         strokeWidth,
-        vertices: { 
+        vertices: {
           visible: false,
           withLabel: false
         },
@@ -128,7 +137,7 @@ const RightTriangle = memo(({
       // Determine side labels based on labelStyle
       let sideLabels;
       if (labelStyle === 'numeric') {
-        // Label order always matches sides: base, height, hypotenuse
+        // Keep original values in the labels
         sideLabels = [
           `${base} ${units}`,
           `${height} ${units}`,
@@ -143,240 +152,215 @@ const RightTriangle = memo(({
         sideLabels = ['', '', ''];
       }
       
-      // IMPROVED LABEL POSITIONING: Define fixed positions for each orientation
-      // Scale offsets based on triangle size for better positioning
+      // Fixed label position offsets for consistency
+      const LABEL_OFFSETS = {
+        base: 0.8,     // Offset for base label
+        height: 0.8,   // Offset for height label
+        hypotenuse: 0.6 // Offset for hypotenuse label
+      };
       
-      // For better height label positioning - move it further out from the triangle
-      const heightOffset = Math.max(1.0, Math.min(base, height) * 0.25);
-      
-      // For better base label positioning
-      const baseOffset = Math.max(0.8, Math.min(base, height) * 0.2);
-      
-      // Hypotenuse label should be outside the triangle, not in the center
-      // Calculate the midpoint of the hypotenuse
+      // Helper function to get midpoint of a line
       const getMidpoint = (p1, p2) => [(p1[0] + p2[0])/2, (p1[1] + p2[1])/2];
       
-      // Get vectors for positioning hypotenuse label
-      const hypLabelPositionByOrientation = {
-        default: () => {
-          // Find midpoint of hypotenuse
-          const midpoint = getMidpoint([0, height], [base, 0]);
-          // Calculate perpendicular offset in outward direction
-          return [midpoint[0] + 0.6, midpoint[1] + 0.6]; // Offset outward
-        },
-        rotate90: () => {
-          // Find midpoint of hypotenuse
-          const midpoint = getMidpoint([0, base], [height, 0]);
-          // Calculate perpendicular offset in outward direction
-          return [midpoint[0] + 0.6, midpoint[1] + 0.6]; // Offset outward
-        },
-        rotate180: () => {
-          // Find midpoint of hypotenuse
-          const midpoint = getMidpoint([base, height], [0, 0]);
-          // Calculate perpendicular offset in outward direction
-          return [midpoint[0] - 0.6, midpoint[1] - 0.6]; // Offset outward
-        },
-        rotate270: () => {
-          // Find midpoint of hypotenuse
-          const midpoint = getMidpoint([height, base], [0, 0]);
-          // Calculate perpendicular offset in outward direction
-          return [midpoint[0] - 0.6, midpoint[1] - 0.6]; // Offset outward
-        }
-      };
-      
-      // Calculate hypotenuse label position
-      const getHypotenusePosition = () => {
-        if (hypLabelPositionByOrientation[actualOrientation]) {
-          return hypLabelPositionByOrientation[actualOrientation]();
-        }
-        return [base/2, height/2]; // Default fallback
-      };
-      
-      // New improved label positions by orientation
-      const labelPositionsByOrientation = {
+      // Define standard label positions for each orientation
+      const standardLabelPositions = {
         default: [
-          { x: base/2, y: -baseOffset }, // Base (move down further)
-          { x: -heightOffset, y: height/2 }, // Height (move further left)
-          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+          { x: scaledBase/2, y: -LABEL_OFFSETS.base }, // Base (below)
+          { x: -LABEL_OFFSETS.height, y: scaledHeight/2 }, // Height (left)
+          // Hypotenuse (centered with offset)
+          { 
+            pos: () => {
+              const mid = getMidpoint([0, scaledHeight], [scaledBase, 0]);
+              return [mid[0] + LABEL_OFFSETS.hypotenuse, mid[1] + LABEL_OFFSETS.hypotenuse];
+            }
+          }
         ],
         rotate90: [
-          { x: -baseOffset, y: base/2 }, // Base (now on left)
-          { x: height/2, y: -heightOffset }, // Height (move down further)
-          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+          { x: -LABEL_OFFSETS.base, y: scaledBase/2 }, // Base (left)
+          { x: scaledHeight/2, y: -LABEL_OFFSETS.height }, // Height (below)
+          // Hypotenuse
+          { 
+            pos: () => {
+              const mid = getMidpoint([0, scaledBase], [scaledHeight, 0]);
+              return [mid[0] + LABEL_OFFSETS.hypotenuse, mid[1] + LABEL_OFFSETS.hypotenuse];
+            }
+          }
         ],
         rotate180: [
-          { x: base/2, y: height + baseOffset }, // Base (top)
-          { x: base + heightOffset, y: height/2 }, // Height (move further right)
-          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+          { x: scaledBase/2, y: scaledHeight + LABEL_OFFSETS.base }, // Base (above)
+          { x: scaledBase + LABEL_OFFSETS.height, y: scaledHeight/2 }, // Height (right)
+          // Hypotenuse
+          { 
+            pos: () => {
+              const mid = getMidpoint([scaledBase, scaledHeight], [0, 0]);
+              return [mid[0] - LABEL_OFFSETS.hypotenuse, mid[1] - LABEL_OFFSETS.hypotenuse];
+            }
+          }
         ],
         rotate270: [
-          { x: height + baseOffset, y: base/2 }, // Base (right)
-          { x: height/2, y: base + heightOffset }, // Height (move up further)
-          { pos: getHypotenusePosition() } // Hypotenuse (outside the triangle)
+          { x: scaledHeight + LABEL_OFFSETS.base, y: scaledBase/2 }, // Base (right)
+          { x: scaledHeight/2, y: scaledBase + LABEL_OFFSETS.height }, // Height (above)
+          // Hypotenuse
+          { 
+            pos: () => {
+              const mid = getMidpoint([scaledHeight, scaledBase], [0, 0]);
+              return [mid[0] - LABEL_OFFSETS.hypotenuse, mid[1] - LABEL_OFFSETS.hypotenuse];
+            }
+          }
         ]
       };
       
-      // Use custom positions if provided, otherwise use the improved positioning
-      const positions = (labelPositions && labelPositions[actualOrientation]) || 
-                         labelPositionsByOrientation[actualOrientation] || 
-                         labelPositionsByOrientation.default;
+      // Get label positions for current orientation
+      const positions = standardLabelPositions[actualOrientation] || standardLabelPositions.default;
       
-      // Create side labels with fixed, optimized positions
+      // Create side labels with fixed positions
       for (let i = 0; i < 3; i++) {
         if (!sideLabels[i]) continue;
         
         const position = positions[i];
         if (!position) continue;
         
-        // Special handling for hypotenuse position which uses 'pos' property
-        const x = position.pos ? position.pos[0] : position.x;
-        const y = position.pos ? position.pos[1] : position.y;
+        // Handle position function for hypotenuse
+        let x, y;
+        if (position.pos && typeof position.pos === 'function') {
+          const pos = position.pos();
+          x = pos[0];
+          y = pos[1];
+        } else {
+          x = position.x;
+          y = position.y;
+        }
         
-        // Create side label text as text object (not attached to any element)
+        // Create text label
         board.create('text', [x, y, sideLabels[i]], {
           fontSize: 14,
-          fixed: true,
+          fixed: true, 
           anchorX: 'middle',
           anchorY: 'middle',
-          color: '#000000',
-          useMathJax: false // No LaTeX processing needed for simple labels
+          color: '#000000'
         });
       }
       
-      // Add right angle marker
+      // Add right angle marker if needed
       if (showRightAngle) {
-        // Create right angle using JSXGraph's built-in angle object
-        // The right angle is always at point 0 and between points 1 and 2
         board.create('angle', [
-          trianglePoints[2],  // Third point
+          trianglePoints[2],  // Third point 
           trianglePoints[0],  // Right angle (first point)
           trianglePoints[1]   // Second point
         ], {
-          radius: Math.min(base, height) * 0.15, // Proportional size
+          radius: Math.min(scaledBase, scaledHeight) * 0.15,
           type: 'square',
           fillColor: 'none',
           strokeWidth: 1.5,
           fixed: true,
-          name: '', // No label
+          name: '',
           withLabel: false
         });
       }
       
-      // NEW: Add angle markers for non-right angles
-      // Handle showAngles prop (can be array or boolean)
+      // Add other angle markers if requested
       const angleVisibility = Array.isArray(showAngles) ? showAngles : [showAngles, showAngles];
       
-      // Define angle positions based on orientation
-      // For each orientation, we need:
-      // 1. Which angle points to use for each marker (angle1 = origin, angle2 = third angle)
-      // 2. Label offset direction for each angle
-      const angleParams = {
+      // Angle marker radiuses - consistent proportions
+      const angleRadius = Math.min(scaledBase, scaledHeight) * 0.25;
+      
+      // Standard angle parameters for each orientation
+      const angleConfig = {
         default: {
           angle1: { // Origin angle
-            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
-            labelOffset: [0.4, 0.4], // Offset for label position
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]],
+            labelOffset: [0.4, 0.4],
             radius: angleRadius * 0.8
           },
-          angle2: { // Third angle
-            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
-            labelOffset: [-0.4, 0.4], // Offset for label position
+          angle2: { // Third angle  
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]],
+            labelOffset: [-0.4, 0.4],
             radius: angleRadius * 0.7
           }
         },
         rotate90: {
-          angle1: { // Origin angle
-            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
-            labelOffset: [0.4, 0.4], // Offset for label position
+          angle1: {
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]],
+            labelOffset: [0.4, 0.4],
             radius: angleRadius * 0.8
           },
-          angle2: { // Third angle
-            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
-            labelOffset: [0.4, -0.4], // Offset for label position
+          angle2: {
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]],
+            labelOffset: [0.4, -0.4],
             radius: angleRadius * 0.7
           }
         },
         rotate180: {
-          angle1: { // Origin angle (now at top right)
-            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
-            labelOffset: [-0.4, -0.4], // Offset for label position
+          angle1: {
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]],
+            labelOffset: [-0.4, -0.4],
             radius: angleRadius * 0.8
           },
-          angle2: { // Third angle
-            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
-            labelOffset: [0.4, -0.4], // Offset for label position
+          angle2: {
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]],
+            labelOffset: [0.4, -0.4],
             radius: angleRadius * 0.7
           }
         },
         rotate270: {
-          angle1: { // Origin angle (now at bottom right)
-            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Points to form angle
-            labelOffset: [-0.4, 0.4], // Offset for label position
+          angle1: {
+            points: [trianglePoints[2], trianglePoints[0], trianglePoints[1]],
+            labelOffset: [-0.4, 0.4],
             radius: angleRadius * 0.8
           },
-          angle2: { // Third angle
-            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]], // Points to form angle
-            labelOffset: [-0.4, -0.4], // Offset for label position
+          angle2: {
+            points: [trianglePoints[0], trianglePoints[2], trianglePoints[1]],
+            labelOffset: [-0.4, -0.4],
             radius: angleRadius * 0.7
           }
         }
       };
       
-      // Access angle params for the current orientation
-      const currentAngleParams = angleParams[actualOrientation] || angleParams.default;
+      const currentAngleConfig = angleConfig[actualOrientation] || angleConfig.default;
       
-      // Create the angles if visible
-      // Angle at origin (angle 1)
+      // Create angle markers
       if (angleVisibility[0]) {
-        const angle1Params = currentAngleParams.angle1;
+        const angle1Params = currentAngleConfig.angle1;
         const angle1 = board.create('angle', angle1Params.points, {
           radius: angle1Params.radius,
-          name: angleLabels[0] || 'θ',
-          fillColor: angleFillColor,
-          strokeColor: angleColor,
-          strokeWidth: angleStrokeWidth,
+          name: angleLabels[0],
+          fillColor: 'rgba(255, 255, 0, 0.2)', 
+          strokeColor: strokeColor,
+          strokeWidth: 1.5,
           fixed: true,
-          withLabel: true // Explicitly enable to show angle label
+          withLabel: true
         });
         
-        // Fine-tune label position if needed
+        // Adjust label position if needed
         if (angle1 && angle1.label) {
           const oldPos = angle1.label.coords.usrCoords;
-          
-          // Apply the offset to the current position
           angle1.label.coords.setCoordinates(
-            JXG.COORDS_BY_USER, 
+            JXG.COORDS_BY_USER,
             [oldPos[1] + angle1Params.labelOffset[0], oldPos[2] + angle1Params.labelOffset[1]]
           );
-          
-          // Fix the label at this position
           angle1.label.fixed = true;
         }
       }
       
-      // Third angle (angle 2)
       if (angleVisibility[1]) {
-        const angle2Params = currentAngleParams.angle2;
+        const angle2Params = currentAngleConfig.angle2;
         const angle2 = board.create('angle', angle2Params.points, {
           radius: angle2Params.radius,
-          name: angleLabels[1] || 'φ',
-          fillColor: angleFillColor,
-          strokeColor: angleColor,
-          strokeWidth: angleStrokeWidth,
+          name: angleLabels[1],
+          fillColor: 'rgba(255, 255, 0, 0.2)',
+          strokeColor: strokeColor,
+          strokeWidth: 1.5,
           fixed: true,
-          withLabel: true // Explicitly enable to show angle label
+          withLabel: true
         });
         
-        // Fine-tune label position if needed
+        // Adjust label position if needed
         if (angle2 && angle2.label) {
           const oldPos = angle2.label.coords.usrCoords;
-          
-          // Apply the offset to the current position
           angle2.label.coords.setCoordinates(
-            JXG.COORDS_BY_USER, 
+            JXG.COORDS_BY_USER,
             [oldPos[1] + angle2Params.labelOffset[0], oldPos[2] + angle2Params.labelOffset[1]]
           );
-          
-          // Fix the label at this position
           angle2.label.fixed = true;
         }
       }
@@ -387,21 +371,11 @@ const RightTriangle = memo(({
     board.unsuspendUpdate();
   };
   
-  // Calculate appropriate bounding box
-  const getBoundingBox = () => {
-    const maxDim = Math.max(base, height);
-    const padding = maxDim * 0.25; // Increased padding
-    
-    // Create a bounding box with sufficient padding
-    return [-padding, maxDim + padding, maxDim + padding, -padding];
-  };
-
-  // Clean up the board when component unmounts or boundingBox changes
+  // Clean up the board when component unmounts
   useEffect(() => {
     return () => {
       if (boardRef.current) {
         try {
-          // Attempts to clean up properly on unmount
           JXG.JSXGraph.freeBoard(boardRef.current);
         } catch (e) {
           // Ignore errors during cleanup
@@ -414,44 +388,42 @@ const RightTriangle = memo(({
     <div className="w-full h-full flex items-center justify-center">
       <JSXGraphBoard
         id={boardIdRef.current}
-        boundingBox={getBoundingBox()}
+        boundingBox={STANDARD_BOUNDS}
         height={containerHeight}
         backgroundColor="transparent"
         axis={false}
+        grid={false}
         onUpdate={updateBoard}
-        // Add new dependencies to ensure updates
         dependencies={[
-          base, 
-          height, 
-          labelStyle, 
+          base,
+          height,
+          labelStyle,
           showRightAngle,
           Array.isArray(showAngles) ? showAngles.join(',') : showAngles,
           angleLabels.join(','),
-          JSON.stringify(labels)
+          JSON.stringify(labels),
+          orientation
         ]}
       />
     </div>
   );
 }, (prevProps, nextProps) => {
   // Deep comparison for complex objects to avoid unnecessary re-renders
-  // Only re-render if these specific props change
   return (
     prevProps.base === nextProps.base &&
     prevProps.height === nextProps.height &&
     prevProps.showRightAngle === nextProps.showRightAngle &&
     prevProps.labelStyle === nextProps.labelStyle &&
     prevProps.containerHeight === nextProps.containerHeight &&
-    // Add checks for new angle props
+    prevProps.orientation === nextProps.orientation &&
     JSON.stringify(prevProps.showAngles) === JSON.stringify(nextProps.showAngles) &&
     JSON.stringify(prevProps.angleLabels) === JSON.stringify(nextProps.angleLabels) &&
-    // For complex objects, do a shallow string comparison
     JSON.stringify(prevProps.style) === JSON.stringify(nextProps.style) &&
-    JSON.stringify(prevProps.angleStyle) === JSON.stringify(nextProps.angleStyle) &&
     JSON.stringify(prevProps.labels) === JSON.stringify(nextProps.labels)
   );
 });
 
-// Ensure displayName is set for dev tools
+// Set display name for dev tools
 RightTriangle.displayName = 'RightTriangle';
 
 export default RightTriangle;
