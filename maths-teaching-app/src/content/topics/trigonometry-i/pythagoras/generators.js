@@ -7,6 +7,8 @@ import {
     PYTHAGOREAN_TRIPLES
 } from '../../../../factories/triangleFactories';
 import MathDisplay from '../../../../components/common/MathDisplay';
+import { createSquare } from '../../../../factories/quadrilateralFactories';
+import Square from '../../../../components/math/shapes/quadrilaterals/Square';
 
 /**
  * Core generator for Pythagoras' theorem questions
@@ -124,11 +126,11 @@ function generateSolution(triple, missingValue) {
             explanation: "Take the square root of both sides",
             formula: `c = \\sqrt{${a * a + b * b}} = ${c}`
         });
-        
+
         // Add calculator method
         steps.push({
             explanation: "Quick calculator method:",
-            formula: `c = \\sqrt{${a}^2 + ${b}^2} = \\sqrt{${a*a + b*b}} = ${c}`
+            formula: `c = \\sqrt{${a}^2 + ${b}^2} = \\sqrt{${a * a + b * b}} = ${c}`
         });
     } else if (missingValue === 'base') {
         steps.push({
@@ -155,11 +157,11 @@ function generateSolution(triple, missingValue) {
             explanation: "Take the square root of both sides",
             formula: `a = \\sqrt{${c * c - b * b}} = ${a}`
         });
-        
+
         // Add calculator method
         steps.push({
             explanation: "Quick calculator method:",
-            formula: `a = \\sqrt{${c}^2 - ${b}^2} = \\sqrt{${c*c} - ${b*b}} = ${a}`
+            formula: `a = \\sqrt{${c}^2 - ${b}^2} = \\sqrt{${c * c} - ${b * b}} = ${a}`
         });
     } else if (missingValue === 'height') {
         steps.push({
@@ -186,11 +188,11 @@ function generateSolution(triple, missingValue) {
             explanation: "Take the square root of both sides",
             formula: `b = \\sqrt{${c * c - a * a}} = ${b}`
         });
-        
+
         // Add calculator method
         steps.push({
             explanation: "Quick calculator method:",
-            formula: `b = \\sqrt{${c}^2 - ${a}^2} = \\sqrt{${c*c} - ${a*a}} = ${b}`
+            formula: `b = \\sqrt{${c}^2 - ${a}^2} = \\sqrt{${c * c} - ${a * a}} = ${b}`
         });
     }
 
@@ -336,6 +338,242 @@ function generateSquareSolution(side, questionType, units) {
 }
 
 /**
+ * Generate a square area and perimeter question for "Last Lesson"
+ * Creates a consistent question with visualization using the quadrilateral factory
+ */
+export const generateSquareAreaPerimeterQuestion = () => {
+    const side = _.random(3, 8);
+    const area = side * side;
+    const perimeter = side * 4;
+
+    return {
+        question: `Find the area and perimeter of a square with sides ${side} cm.`,
+        answer: `\\text{Area} = ${side}^2 = ${area}\\text{ cm}^2\\\\\\text{Perimeter} = 4 \\times ${side} = ${perimeter}\\text{ cm}`,
+        visualization: createSquare({
+            sideLength: side,
+            showDimensions: true,
+            units: 'cm',
+            sectionType: 'starter',
+            style: {
+                fillColor: '#3498db',
+                fillOpacity: 0.2
+            }
+        })
+    };
+};
+
+/**
+ * Generate a triangle area question for "Last Topic"
+ * Creates a consistent question with visualization
+ */
+export const generateTriangleAreaQuestion = () => {
+    const base = _.random(4, 10);
+    const height = _.random(3, 8);
+    const area = (base * height) / 2;
+
+    return {
+        question: `Calculate the area of this triangle with base ${base} cm and height ${height} cm.`,
+        answer: `\\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${area}\\text{ cm}^2`,
+        visualization: createPythagoreanTriangle({
+            base: base,
+            height: height,
+            showRightAngle: true,
+            labelStyle: "custom",
+            labels: [`${base} cm`, `${height} cm`, null],
+            units: 'cm',
+            sectionType: 'starter',
+            style: {
+                fillColor: '#2ecc71',
+                fillOpacity: 0.2
+            }
+        })
+    };
+};
+
+/**
+ * Generate a number puzzle for "Last Year" with complete solution
+ */
+export const generateNumberPuzzle = () => {
+    // Start with numbers that will work for a valid solution
+    let target, numbers, operations, steps;
+
+    // Generate a valid puzzle by working backward from the solution
+    const generateValidPuzzle = () => {
+        // Pick 4 single-digit numbers
+        numbers = [_.random(2, 9), _.random(2, 9), _.random(2, 9), _.random(2, 9)];
+
+        // Start with the first two numbers and apply an operation
+        let result1 = numbers[0] * numbers[1]; // Use multiplication as first step
+
+        // Second step - addition
+        let result2 = result1 + numbers[2];
+
+        // Final step - use the last number to get a nice target
+        // Subtraction usually gives a clean result
+        target = result2 - numbers[3];
+
+        // Check if target is in a good range (20-100)
+        if (target < 20 || target > 100) {
+            return false;
+        }
+
+        // Define the operations used
+        operations = ['×', '+', '-'];
+
+        // Define the solution steps
+        steps = [
+            `Step 1: ${numbers[0]} × ${numbers[1]} = ${result1}`,
+            `Step 2: ${result1} + ${numbers[2]} = ${result2}`,
+            `Step 3: ${result2} - ${numbers[3]} = ${target}`
+        ];
+
+        return true;
+    };
+
+    // Keep trying until we get a valid puzzle
+    while (!generateValidPuzzle()) {
+        // Try again until success
+    }
+
+    return {
+        question: `Using the numbers ${numbers.join(', ')} and the operations +, -, ×, ÷, find a way to make ${target}. You can use each number only once.`,
+        answer: steps.join('\n'),
+        difficulty: 'puzzle'
+    };
+};
+
+/**
+ * Diagnostic Question Generators for Pythagoras topic
+ * Add these to your existing generators.js file
+ */
+
+// Adapter for square area questions
+export const generateSquareAreaQuestion = () => {
+    // Generate side length between 3 and 8
+    const side = _.random(3, 8);
+    const area = side * side;
+
+    return {
+        questionDisplay: `Find the area of this square with side length ${side} cm.`,
+        correctAnswer: `${area}\\text{ cm}^2`,
+        options: [
+            `${area}\\text{ cm}^2`,
+            `${area + 2}\\text{ cm}^2`,
+            `${area - 2}\\text{ cm}^2`,
+            `${side * 4}\\text{ cm}^2`  // Common mistake: using perimeter
+        ].sort(() => Math.random() - 0.5),
+        explanation: `Area of a square = side² = ${side}² = ${area} cm²`,
+        visualization: createSquare({
+            sideLength: side,
+            showDimensions: true,
+            units: 'cm',
+            sectionType: 'diagnostic',
+            style: {
+                fillColor: '#3498db',
+                fillOpacity: 0.2
+            }
+        })
+    };
+};
+
+// Adapter for square root questions
+export const generateSquareRootQuestion = () => {
+    // Generate a perfect square area between 16 and 100
+    const perfectSquares = [16, 25, 36, 49, 64, 81, 100];
+    const area = _.sample(perfectSquares);
+    const side = Math.sqrt(area);
+    
+    return {
+        questionDisplay: `Find the side length of a square with area ${area} cm².`,
+        correctAnswer: `${side}\\text{ cm}`,
+        options: [
+            `${side}\\text{ cm}`,
+            `${side + 1}\\text{ cm}`,
+            `${side - 1}\\text{ cm}`,
+            `${area / 4}\\text{ cm}`  // Common mistake: dividing by 4 instead of square root
+        ].sort(() => Math.random() - 0.5),
+        explanation: `Side length = √Area = √${area} = ${side} cm`,
+        visualization: createSquare({
+            sideLength: side,
+            showDimensions: false,
+            showArea: true,
+            areaLabel: `${area} cm²`, // Original label format
+            units: 'cm',
+            containerHeight: 240,     // Match original height
+            style: {
+                fillColor: '#3498db',
+                fillOpacity: 0.3,
+                backgroundTransparent: true  // Include this prop from original
+            }
+        })
+    };
+};
+
+// Adapter for Pythagoras concept identification with enhanced randomization
+export const generatePythagorasConceptQuestion = () => {
+    // Use a common Pythagorean triple
+    const pythagoreanTriples = [
+        { a: 3, b: 4, c: 5 },
+        { a: 5, b: 12, c: 13 },
+        { a: 6, b: 8, c: 10 },
+        { a: 8, b: 15, c: 17 },
+        { a: 9, b: 12, c: 15 }
+    ];
+    
+    const triple = _.sample(pythagoreanTriples);
+    
+    // Random orientation for more variety
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientation = _.sample(orientations);
+    
+    // Choose between algebraic and numeric labeling
+    const useAlgebraic = Math.random() > 0.5;
+    
+    let questionText, correctAnswer, options, labels;
+    
+    if (useAlgebraic) {
+        // Algebraic labels (a, b, c)
+        questionText = 'Which side is the hypotenuse in this right-angled triangle?';
+        correctAnswer = 'c'; // Always 'c' for algebraic labeling
+        options = ['a', 'b', 'c', 'none'].sort(() => Math.random() - 0.5);
+        labels = ['a', 'b', 'c']; // Standard algebraic labels
+    } else {
+        // Numeric labels showing measurements
+        questionText = 'Which is the longest side (the hypotenuse) in this right-angled triangle?';
+        correctAnswer = `${triple.c} cm`; // The c value with units
+        options = [
+            `${triple.a} cm`, 
+            `${triple.b} cm`, 
+            `${triple.c} cm`, 
+            'none'
+        ].sort(() => Math.random() - 0.5);
+        labels = [`${triple.a} cm`, `${triple.b} cm`, `${triple.c} cm`];
+    }
+    
+    return {
+        questionDisplay: questionText,
+        correctAnswer: correctAnswer,
+        options: options,
+        explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
+        visualization: createPythagoreanTriangle({
+            base: triple.a,
+            height: triple.b,
+            showRightAngle: true,
+            labelStyle: useAlgebraic ? "algebraic" : "custom",
+            labels: labels,
+            orientation: orientation,
+            units: 'cm',
+            sectionType: 'diagnostic',
+            containerHeight: 200, // Reduced size
+            style: {
+                fillColor: '#9b59b6',
+                fillOpacity: 0.2
+            }
+        })
+    };
+};
+
+/**
  * Specialized diagnostic question generators for Pythagoras topic
  */
 export const pythagoras = {
@@ -375,15 +613,42 @@ export const pythagoras = {
     },
 
     /**
-     * Generate starter questions for the Pythagoras topic
-     * Returns an object with questions for different review categories
-     */
+    * Generate starter questions for the Pythagoras topic
+    * Returns an object with questions for different review categories
+    */
     generateStarterQuestions: () => {
+        // Create the questions
+        const questions = {
+            lastLesson: generateSquareAreaPerimeterQuestion(),
+            lastTopic: generateTriangleAreaQuestion(),
+            lastWeek: {
+                question: "Name all the quadrilaterals (4-sided shapes):",
+                answer: `• Square: Equal sides, all 90° angles\n• Rectangle: Opposite sides equal, all angles 90°\n• Rhombus: All sides equal, opposite angles equal\n• Parallelogram: Opposite sides parallel & equal`,
+                difficulty: 'text' // Mark as text to avoid LaTeX formatting
+            },
+            lastYear: generateNumberPuzzle()
+        };
+
+        return questions;
+    },
+
+    /**
+ * Add this to the pythagoras object in generators.js
+ */
+    generateDiagnosticQuestions: () => {
         return {
-            lastLesson: pythagoras.findHypotenuse('easy'),
-            lastWeek: pythagoras.findLeg('medium'),
-            lastTopic: pythagoras.conceptIdentification('medium'),
-            lastYear: pythagoras.squareArea('easy')
+            squareArea: {
+                title: 'Find Square Area',
+                generator: generateSquareAreaQuestion
+            },
+            squareRoot: {
+                title: 'Find Side Length',
+                generator: generateSquareRootQuestion
+            },
+            pythagorasTheorem: {
+                title: 'Identify Hypotenuse',
+                generator: generatePythagorasConceptQuestion
+            }
         };
     },
 

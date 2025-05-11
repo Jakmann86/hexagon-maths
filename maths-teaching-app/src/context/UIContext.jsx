@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback, useRef } from 'react';
+import React, { createContext, useState, useContext, useCallback, useRef, useMemo } from 'react';
 
 // Extended UI Context
 const UIContext = createContext();
@@ -7,8 +7,9 @@ export const UIProvider = ({ children }) => {
     // Sidebar state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
-    // Answers visibility state
-    const [showAnswers, setShowAnswers] = useState(false);
+    // Answers visibility state - use useRef and useState together
+    const [showAnswersState, setShowAnswersState] = useState(false);
+    const showAnswersRef = useRef(showAnswersState);
     
     // Current section tracking
     const [currentSection, setCurrentSection] = useState('starter');
@@ -18,15 +19,28 @@ export const UIProvider = ({ children }) => {
     const [isTimerActive, setIsTimerActive] = useState(false);
     const intervalIdRef = useRef(null); // Use ref to avoid issues with state updates
     
-    // Toggle answers visibility
-    const toggleAnswers = () => setShowAnswers(!showAnswers);
+    // Toggle answers visibility with ref update
+    const toggleAnswers = useCallback(() => {
+        const newValue = !showAnswersRef.current;
+        showAnswersRef.current = newValue;
+        setShowAnswersState(newValue);
+    }, []);
+    
+    // Expose showAnswers as a getter that reads from the ref
+    const showAnswers = showAnswersRef.current;
+    
+    // Expose setShowAnswers that updates both state and ref
+    const setShowAnswers = useCallback((value) => {
+        showAnswersRef.current = value;
+        setShowAnswersState(value);
+    }, []);
     
     // Timer functions
-    const formatTime = () => {
+    const formatTime = useCallback(() => {
         const minutes = Math.floor(timerSeconds / 60);
         const seconds = timerSeconds % 60;
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    };
+    }, [timerSeconds]);
     
     const startTimer = useCallback(() => {
         if (isTimerActive) return;
@@ -69,32 +83,46 @@ export const UIProvider = ({ children }) => {
         setTimerSeconds(minutes * 60);
     }, [pauseTimer]);
 
+    // Memoize the context value to prevent unnecessary re-renders
+    const contextValue = useMemo(() => ({
+        // Sidebar
+        isSidebarOpen,
+        setIsSidebarOpen,
+        
+        // Answers visibility
+        showAnswers,
+        setShowAnswers,
+        toggleAnswers,
+        
+        // Current section
+        currentSection,
+        setCurrentSection,
+        
+        // Timer
+        timerSeconds,
+        isTimerActive,
+        formatTime,
+        startTimer,
+        pauseTimer,
+        resetTimer,
+        adjustTimer,
+    }), [
+        isSidebarOpen, 
+        showAnswersState, // Use state for dependency, but expose ref value
+        currentSection, 
+        timerSeconds, 
+        isTimerActive, 
+        formatTime, 
+        startTimer, 
+        pauseTimer, 
+        resetTimer, 
+        adjustTimer,
+        setShowAnswers,
+        toggleAnswers
+    ]);
+
     return (
-        <UIContext.Provider
-            value={{
-                // Sidebar
-                isSidebarOpen,
-                setIsSidebarOpen,
-                
-                // Answers visibility
-                showAnswers,
-                setShowAnswers,
-                toggleAnswers,
-                
-                // Current section
-                currentSection,
-                setCurrentSection,
-                
-                // Timer
-                timerSeconds,
-                isTimerActive,
-                formatTime,
-                startTimer,
-                pauseTimer,
-                resetTimer,
-                adjustTimer,
-            }}
-        >
+        <UIContext.Provider value={contextValue}>
             {children}
         </UIContext.Provider>
     );

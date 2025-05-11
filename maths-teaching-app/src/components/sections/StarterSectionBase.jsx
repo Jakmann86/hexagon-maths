@@ -128,6 +128,7 @@ const formatMathContent = (text) => {
 /**
  * Memoized QuestionDisplay component
  * Renders a single question card with improved answer display
+ * Now with better stability when toggling answers
  */
 const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
     const typeStyles = {
@@ -139,22 +140,39 @@ const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
 
     const isPuzzle = data?.difficulty === 'puzzle' || type === 'lastYear';
     
-    // Use ref to store visualization content to prevent re-rendering issues
-    const visualizationRef = useRef(data?.visualization || data?.shape);
-
-    // Store question/answer refs to prevent recreation
-    const questionRef = useRef(data?.question);
-    const answerRef = useRef(data?.answer);
-
-    // Update refs when data changes (not on every render)
+    // Use refs to hold stable data and prevent re-renders
+    const dataRef = useRef(data);
+    
+    // Only update the data ref if it's actually a new question
+    // This prevents unnecessary updates when toggling answers
     useEffect(() => {
-        visualizationRef.current = data?.visualization || data?.shape;
-        questionRef.current = data?.question;
-        answerRef.current = data?.answer;
-    }, [data?.visualization, data?.shape, data?.question, data?.answer]);
+        // Only update if data is a new question (deep check for visualization to be safe)
+        if (data && 
+            (data !== dataRef.current || 
+             data.question !== dataRef.current?.question ||
+             data.visualization !== dataRef.current?.visualization)) {
+            dataRef.current = data;
+        }
+    }, [data]);
+    
+    // Get data from our stable ref
+    const stableData = dataRef.current;
+    
+    // Early return if no question data
+    if (!stableData) {
+        return (
+            <div className={`
+                ${typeStyles[type] || 'bg-gray-100 hover:bg-gray-200 border-gray-300'} 
+                p-4 rounded-lg shadow-md min-h-[300px] flex flex-col border-2
+                items-center justify-center text-gray-500 italic
+            `}>
+                <p>No question available</p>
+            </div>
+        );
+    }
 
     return (
-        <div 
+        <div
             className={`
                 ${typeStyles[type] || 'bg-gray-100 hover:bg-gray-200 border-gray-300'} 
                 p-4 rounded-lg shadow-md
@@ -171,35 +189,34 @@ const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
 
             <div className="flex-grow space-y-4">
                 <div>
-                    <ContentRenderer content={questionRef.current} />
+                    <ContentRenderer content={stableData.question} />
                 </div>
 
                 {/* Visualization with consistent height */}
-                {visualizationRef.current && (
-                    <div className="h-32" key={`vis-container-${type}`}>
-                        <ContentRenderer 
-                            content={visualizationRef.current} 
-                            type="visualization" 
+                {stableData.visualization && (
+                    <div className="h-32">
+                        <ContentRenderer
+                            content={stableData.visualization}
+                            type="visualization"
                         />
                     </div>
                 )}
             </div>
 
-            {/* Answer section at the bottom */}
-            {showAnswers && answerRef.current && (
-                <div className="mt-auto pt-3 border-t border-gray-300" key={`answer-section-${type}`}>
+            {/* Answer section at the bottom - only shows/hides based on showAnswers prop */}
+            {showAnswers && stableData.answer && (
+                <div className="mt-auto pt-3 border-t border-gray-300">
                     <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
                     <div className="math-answer overflow-y-auto" style={{ maxHeight: '100px' }}>
-                        {isPuzzle || data?.difficulty === 'text' || !(typeof answerRef.current === 'string' && answerRef.current.includes('\\')) ? (
+                        {isPuzzle || stableData.difficulty === 'text' || !(typeof stableData.answer === 'string' && stableData.answer.includes('\\')) ? (
                             <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
-                                {answerRef.current}
+                                {stableData.answer}
                             </div>
                         ) : (
-                            <MathDisplay 
-                                key={`math-display-${type}`}
-                                math={answerRef.current} 
-                                displayMode={true} 
-                                size="normal" 
+                            <MathDisplay
+                                math={stableData.answer}
+                                displayMode={true}
+                                size="normal"
                             />
                         )}
                     </div>
@@ -227,7 +244,8 @@ const StarterSectionBase = ({
             lastYear: 'Last Year'
         }
     },
-    className = ''
+    className = '',
+    onRegenerateAllQuestions = null
 }) => {
     const { showAnswers } = useUI();
     const initializedRef = useRef(false);
@@ -243,6 +261,9 @@ const StarterSectionBase = ({
     // Section types to use
     const sectionTypes = sectionConfig.sections || 
         ['lastLesson', 'lastWeek', 'lastTopic', 'lastYear'];
+    
+    // Add question cache state to prevent regeneration on toggle
+    const [questionCache, setQuestionCache] = useState({});
 
     // Memoize generators to prevent recreation
     const normalizedGenerators = useMemo(() => {
@@ -274,6 +295,9 @@ const StarterSectionBase = ({
             initialQuestions[type] = normalizedGenerators[index]();
         });
         
+        // Store these initial questions in our cache
+        setQuestionCache(initialQuestions);
+        
         return initialQuestions;
     });
 
@@ -282,11 +306,22 @@ const StarterSectionBase = ({
 
     // Only regenerate questions when the button is clicked
     const regenerateAllQuestions = () => {
+        // Force new questions
         const newQuestions = {};
         sectionTypes.forEach((type, index) => {
             newQuestions[type] = generatorsRef.current[index]();
         });
+        
+        // Update our question cache with these new questions
+        setQuestionCache(newQuestions);
+        
+        // Update the displayed questions
         setQuestions(newQuestions);
+        
+        // Call the external regenerate function if provided
+        if (onRegenerateAllQuestions && typeof onRegenerateAllQuestions === 'function') {
+            onRegenerateAllQuestions();
+        }
     };
 
     return (
