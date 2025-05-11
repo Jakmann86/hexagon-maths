@@ -1,11 +1,11 @@
 // src/generators/geometry/pythagorasGenerators.js
 import React from 'react';
 import _ from 'lodash';
-import { 
-  createPythagoreanTriangle, 
-  createPythagoreanTripleTriangle, 
+import {
+  createPythagoreanTriangle,
+  createPythagoreanTripleTriangle,
   createIsoscelesTriangle,  // Import directly
-  PYTHAGOREAN_TRIPLES 
+  PYTHAGOREAN_TRIPLES
 } from '../../factories/triangleFactories';
 
 /**
@@ -127,14 +127,14 @@ export const PythagorasGenerators = {
       },
       {
         explanation: "Rearrange to find the missing side",
-        formula: legToFind === 'base' 
-          ? `a^2 = c^2 - b^2` 
+        formula: legToFind === 'base'
+          ? `a^2 = c^2 - b^2`
           : `b^2 = c^2 - a^2`
       },
       {
         explanation: "Substitute the known values",
-        formula: legToFind === 'base' 
-          ? `a^2 = ${c}^2 - ${b}^2` 
+        formula: legToFind === 'base'
+          ? `a^2 = ${c}^2 - ${b}^2`
           : `b^2 = ${c}^2 - ${a}^2`
       },
       {
@@ -199,30 +199,55 @@ export const PythagorasGenerators = {
 
     console.log(`Generating isosceles triangle area example with seed: ${seed}`);
 
-    // Generate dimensions based on difficulty and seed
-    let base, height;
-    if (difficulty === 'easy') {
-      base = 4 + (seed % 4); // 4-7
-      height = 3 + (seed % 3); // 3-5
-    } else if (difficulty === 'medium') {
-      base = 6 + (seed % 4); // 6-9
-      height = 5 + (seed % 3); // 5-7
-    } else {
-      base = 8 + (seed % 6); // 8-13
-      height = 6 + (seed % 6); // 6-11
-    }
+    // Use predefined triangles with integer leg lengths
+    const triangleSets = [
+      { base: 6, height: 4, leg: 5 },     // 3-4-5 triangle folded
+      { base: 8, height: 6, leg: 7 },     // Clean integer values
+      { base: 10, height: 8, leg: 9 },    // Clean integer values
+      { base: 12, height: 5, leg: 13 }    // 5-12-13 Pythagorean triple
+    ];
 
-    // Calculate area
+    // Select one of the predefined sets based on seed
+    const setIndex = seed % triangleSets.length;
+    const selectedSet = triangleSets[setIndex];
+
+    // Extract values from the selected set
+    const base = selectedSet.base;
+    const height = selectedSet.height;
+    const leg = selectedSet.leg;  // Already an integer, no need to round
+
+    // Calculate other values needed for solution
+    const halfBase = base / 2;
     const area = (base * height) / 2;
 
-    // Create solution steps
+    // Create solution steps with steps to find height using Pythagoras
     const solution = [
       {
-        explanation: "Use the formula for the area of a triangle",
-        formula: "\\text{Area} = \\frac{1}{2} × \\text{base} × \\text{height}"
+        explanation: "For an isosceles triangle, we need to find the height first using Pythagoras' theorem",
+        formula: "\\text{leg}^2 = \\text{height}^2 + (\\frac{\\text{base}}{2})^2"
       },
       {
         explanation: "Substitute the known values",
+        formula: `${leg}^2 = \\text{height}^2 + (\\frac{${base}}{2})^2`
+      },
+      {
+        explanation: "Calculate the squared terms",
+        formula: `${leg * leg} = \\text{height}^2 + ${halfBase * halfBase}`
+      },
+      {
+        explanation: "Rearrange to find height²",
+        formula: `\\text{height}^2 = ${leg * leg} - ${halfBase * halfBase}`
+      },
+      {
+        explanation: "Calculate height",
+        formula: `\\text{height} = \\sqrt{${leg * leg - halfBase * halfBase}} = ${height}\\text{ cm}`
+      },
+      {
+        explanation: "Now we can find the area using the formula",
+        formula: "\\text{Area} = \\frac{1}{2} × \\text{base} × \\text{height}"
+      },
+      {
+        explanation: "Substitute the values",
         formula: `\\text{Area} = \\frac{1}{2} × ${base} × ${height}`
       },
       {
@@ -231,28 +256,26 @@ export const PythagorasGenerators = {
       }
     ];
 
-    // Calculate the equal legs of the isosceles triangle
-    const halfBase = base / 2;
-    const legLength = Math.sqrt(halfBase * halfBase + height * height);
-    const roundedLegLength = Math.round(legLength * 100) / 100;
-
     // Create an isosceles triangle with proper dimensions
-    // Note: We're using both createIsoscelesTriangle and createPythagoreanTriangle based on availability
     let triangleVisualization;
-    
+
     try {
-      // First, try to use createIsoscelesTriangle if it exists
+      // Create with explicit properties to avoid factory overrides
       triangleVisualization = createIsoscelesTriangle({
         base,
         height,
         showArea: false,
-        showHeight: true,
+        showHeight: false,
         showEqualSides: true,
         units: 'cm',
         sectionType,
-        // Custom labels with proper measurements
+        // Use custom labels with exact integer values 
         labelStyle: "custom",
-        labels: [`${base} cm`, `${roundedLegLength} cm`, `${roundedLegLength} cm`]
+        labels: [`${base} cm`, `${leg} cm`, `${leg} cm`],
+        // Add style with label offset multiplier for better spacing
+        style: {
+          labelOffsetMultiplier: 2.0 // Increase offset to move labels away from sides
+        }
       });
       console.log("Created isosceles triangle visualization");
     } catch (error) {
@@ -271,7 +294,7 @@ export const PythagorasGenerators = {
 
     return {
       title: "Finding the Area of an Isosceles Triangle",
-      questionText: `Find the area of this isosceles triangle with base ${base} cm and height ${height} cm.`,
+      questionText: `Find the area of this isosceles triangle with base ${base} cm and equal sides of length ${leg} cm. (First find the height using Pythagoras' theorem, then calculate the area.)`,
       visualization: triangleVisualization,
       solution
     };

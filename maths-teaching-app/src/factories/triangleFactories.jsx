@@ -1,6 +1,6 @@
 // maths-teaching-app/src/factories/triangleFactories.jsx
 import React from 'react';
-import RightTriangle from '../components/math/shapes/triangles/RightTriangle';
+import { RightTriangle, IsoscelesTriangle } from '../components/math/shapes/triangles';
 import _ from 'lodash';
 
 /**
@@ -31,7 +31,7 @@ export const createPythagoreanTriangle = ({
   // Calculate hypotenuse
   const hypotenuse = Math.sqrt(base * base + height * height);
   const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
-  
+
   // Create custom labels based on which side is unknown
   let labels;
   if (unknownSide === 'base') {
@@ -44,7 +44,7 @@ export const createPythagoreanTriangle = ({
     // No unknown side, show all values
     labels = [`${base} ${units}`, `${height} ${units}`, `${roundedHypotenuse} ${units}`];
   }
-  
+
   // Return configured triangle with section-appropriate styling
   return (
     <RightTriangle
@@ -84,11 +84,11 @@ export const createSOHCAHTOATriangle = ({
 }) => {
   // Calculate all side lengths based on angle and known side
   let base, height, hypotenuse;
-  
+
   const sinAngle = Math.sin(angle * Math.PI / 180);
   const cosAngle = Math.cos(angle * Math.PI / 180);
   const tanAngle = Math.tan(angle * Math.PI / 180);
-  
+
   if (knownSide === 'hypotenuse') {
     hypotenuse = knownValue;
     base = hypotenuse * cosAngle;
@@ -102,12 +102,12 @@ export const createSOHCAHTOATriangle = ({
     base = height / tanAngle;
     hypotenuse = height / sinAngle;
   }
-  
+
   // Round values for display
   const roundedBase = Math.round(base * 100) / 100;
   const roundedHeight = Math.round(height * 100) / 100;
   const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
-  
+
   // Create labels based on which side is unknown
   let labels;
   if (unknownSide === 'opposite') {
@@ -120,7 +120,7 @@ export const createSOHCAHTOATriangle = ({
     // No unknown side, show all values
     labels = [`${roundedBase} ${units}`, `${roundedHeight} ${units}`, `${roundedHypotenuse} ${units}`];
   }
-  
+
   return (
     <RightTriangle
       base={roundedBase}
@@ -157,7 +157,7 @@ export const createPythagoreanTripleTriangle = ({
 }) => {
   // Extract the triple values
   const [a, b, c] = triple;
-  
+
   // Create labels based on which side is unknown
   let labels;
   if (unknownSide === 'base') {
@@ -170,7 +170,7 @@ export const createPythagoreanTripleTriangle = ({
     // No unknown side, show all values
     labels = [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`];
   }
-  
+
   return (
     <RightTriangle
       base={a}
@@ -207,7 +207,7 @@ export const createSpecialAngleTriangle = ({
 }) => {
   let base, height, hypotenuse;
   let angles = [30, 60]; // Default for 30-60-90 triangle
-  
+
   if (type === '30-60-90') {
     base = scale;
     height = scale * Math.sqrt(3);
@@ -219,12 +219,12 @@ export const createSpecialAngleTriangle = ({
     hypotenuse = scale * Math.sqrt(2);
     angles = [45, 45];
   }
-  
+
   // Round values
   const roundedBase = Math.round(base * 100) / 100;
   const roundedHeight = Math.round(height * 100) / 100;
   const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
-  
+
   // Create labels
   let labels;
   if (unknownSide === 'base') {
@@ -236,7 +236,7 @@ export const createSpecialAngleTriangle = ({
   } else {
     labels = [`${roundedBase} ${units}`, `${roundedHeight} ${units}`, `${roundedHypotenuse} ${units}`];
   }
-  
+
   return (
     <RightTriangle
       base={roundedBase}
@@ -272,19 +272,21 @@ export const createIsoscelesTriangle = ({
   height = 4,
   showArea = false,
   areaLabel = null,
+  showHeight = false, // Make sure showHeight has a default value
   unknownSide = null,
   orientation = 'default',
   units = 'cm',
-  sectionType = 'examples'
+  sectionType = 'examples',
+  labelOffsets = null
 }) => {
   // Calculate legs (the equal sides)
-  const legLength = Math.sqrt((base/2) * (base/2) + height * height);
+  const legLength = Math.sqrt((base / 2) * (base / 2) + height * height);
   const roundedLegLength = Math.round(legLength * 100) / 100;
-  
+
   // Calculate area
   const area = (base * height) / 2;
   const roundedArea = Math.round(area * 100) / 100;
-  
+
   // Create custom labels based on which side is unknown
   let labels;
   if (unknownSide === 'base') {
@@ -298,7 +300,7 @@ export const createIsoscelesTriangle = ({
     // No unknown side, show all values
     labels = [`${base} ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
   }
-  
+
   // Return configured triangle with section-appropriate styling
   return (
     <IsoscelesTriangle
@@ -310,12 +312,14 @@ export const createIsoscelesTriangle = ({
       showArea={showArea}
       areaLabel={areaLabel || (showArea ? `Area = ${roundedArea} ${units}²` : null)}
       showEqualSides={true}
-      showHeight={unknownSide === 'height' ? false : true}
+      showHeight={unknownSide === 'height' ? true : false} // Use false directly, not the variable
       units={units}
       sectionType={sectionType}
+      labelOffsets={labelOffsets}
     />
   );
 };
+
 
 // Export a list of common Pythagorean triples for convenience
 export const PYTHAGOREAN_TRIPLES = [

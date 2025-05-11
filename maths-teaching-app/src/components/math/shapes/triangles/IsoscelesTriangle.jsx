@@ -6,34 +6,34 @@ import useShapeConfiguration from '../base/useShapeConfiguration';
 const IsoscelesTriangle = (props) => {
   // Process and standardize configuration
   const config = useShapeConfiguration(props, 'isoscelesTriangle');
-  
+
   // Use useMemo for orientation with stable reference
   const orientation = useMemo(() => {
-    return config.orientation === 'random' 
+    return config.orientation === 'random'
       ? ['default', 'rotate90', 'rotate180', 'rotate270'][Math.floor(Math.random() * 4)]
       : config.orientation;
   }, [config.orientation]);
-  
+
   // Calculate leg length (equal sides)
-  const legLength = Math.sqrt((props.base/2) * (props.base/2) + props.height * props.height);
+  const legLength = Math.sqrt((props.base / 2) * (props.base / 2) + props.height * props.height);
   const roundedLegLength = Math.round(legLength * 100) / 100;
-  
+
   // Calculate area
   const area = (props.base * props.height) / 2;
   const roundedArea = Math.round(area * 100) / 100;
-  
+
   // Generate a deterministic ID based on props
   const triangleId = useMemo(() => {
     return `it-${props.base}-${props.height}-${orientation}-${Math.random().toString(36).substr(2, 5)}`;
   }, [props.base, props.height, orientation]);
-  
+
   // JSXGraph board update function
   const updateBoard = (board) => {
     if (!board) return;
-    
+
     // Clear existing objects for clean redraw
     board.suspendUpdate();
-    
+
     try {
       // Clear all existing objects first
       for (const id in board.objects) {
@@ -41,7 +41,7 @@ const IsoscelesTriangle = (props) => {
           board.removeObject(board.objects[id], false);
         }
       }
-      
+
       // Extract styling options
       const {
         fillColor = '#3F51B5',
@@ -49,30 +49,30 @@ const IsoscelesTriangle = (props) => {
         strokeColor = '#3F51B5',
         strokeWidth = 2
       } = config.style;
-      
+
       // Define the triangle points based on orientation
       const base = props.base;
       const height = props.height;
-      
+
       let points;
       switch (orientation) {
         case 'rotate90':
           points = [
-            [0, base/2],          // Apex (rotated left)
+            [0, base / 2],          // Apex (rotated left)
             [height, 0],          // Bottom right
             [height, base]        // Top right
           ];
           break;
         case 'rotate180':
           points = [
-            [base/2, 0],          // Apex (rotated bottom)
+            [base / 2, 0],          // Apex (rotated bottom)
             [base, height],       // Top right
             [0, height]           // Top left
           ];
           break;
         case 'rotate270':
           points = [
-            [height, base/2],     // Apex (rotated right)
+            [height, base / 2],     // Apex (rotated right)
             [0, base],            // Top left
             [0, 0]                // Bottom left
           ];
@@ -80,13 +80,13 @@ const IsoscelesTriangle = (props) => {
         case 'default':
         default:
           points = [
-            [base/2, height],     // Apex (top center)
+            [base / 2, height],     // Apex (top center)
             [0, 0],               // Bottom left
             [base, 0]             // Bottom right
           ];
           break;
       }
-      
+
       // Create the triangle points
       const trianglePoints = points.map(p =>
         board.create('point', p, {
@@ -97,7 +97,7 @@ const IsoscelesTriangle = (props) => {
           withLabel: false
         })
       );
-      
+
       // Create the triangle
       board.create('polygon', trianglePoints, {
         fillColor,
@@ -111,37 +111,37 @@ const IsoscelesTriangle = (props) => {
         withLabel: false,
         name: ''
       });
-      
+
       // Mark equal sides if requested
       if (config.showEqualSides) {
         // Add hash marks to indicate equal sides
         const markLength = Math.min(props.base, props.height) * 0.1; // Scale with triangle size
-        
+
         // Function to add hash marks on a line
         const addEqualSideMarks = (p1, p2, count = 1) => {
           // Calculate vector along the line
           const dx = p2.X() - p1.X();
           const dy = p2.Y() - p1.Y();
-          const length = Math.sqrt(dx*dx + dy*dy);
-          
+          const length = Math.sqrt(dx * dx + dy * dy);
+
           // Calculate unit perpendicular vector
           const perpX = -dy / length;
           const perpY = dx / length;
-          
+
           // Position the mark in the middle of the line
           const midX = (p1.X() + p2.X()) / 2;
           const midY = (p1.Y() + p2.Y()) / 2;
-          
+
           // Create the hash marks
           for (let i = 0; i < count; i++) {
             // Position marks slightly apart
-            const offset = (i - (count-1)/2) * markLength * 0.7;
+            const offset = (i - (count - 1) / 2) * markLength * 0.7;
             const markX = midX + offset * dx / length;
             const markY = midY + offset * dy / length;
-            
+
             board.create('segment', [
-              [markX + perpX * markLength/2, markY + perpY * markLength/2],
-              [markX - perpX * markLength/2, markY - perpY * markLength/2]
+              [markX + perpX * markLength / 2, markY + perpY * markLength / 2],
+              [markX - perpX * markLength / 2, markY - perpY * markLength / 2]
             ], {
               strokeWidth: 2,
               strokeColor: strokeColor,
@@ -149,7 +149,7 @@ const IsoscelesTriangle = (props) => {
             });
           }
         };
-        
+
         // Add marks to the two equal sides
         if (orientation === 'default') {
           addEqualSideMarks(trianglePoints[0], trianglePoints[1], 1); // Left leg
@@ -165,7 +165,7 @@ const IsoscelesTriangle = (props) => {
           addEqualSideMarks(trianglePoints[0], trianglePoints[2], 1); // Bottom leg
         }
       }
-      
+
       // Add height line if requested
       if (config.showHeight) {
         // Height line depends on orientation
@@ -216,7 +216,7 @@ const IsoscelesTriangle = (props) => {
           });
         }
       }
-      
+
       // Create labels if enabled
       if (config.showLabels) {
         // Determine side labels based on labelStyle
@@ -235,143 +235,144 @@ const IsoscelesTriangle = (props) => {
         } else {
           sideLabels = ['', '', ''];
         }
-        
+
         // Helper function to get midpoint of a line
-        const getMidpoint = (p1, p2) => [(p1[0] + p2[0])/2, (p1[1] + p2[1])/2];
-        
+        const getMidpoint = (p1, p2) => [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+
         // Label offsets based on orientation
+        const offsetMultiplier = config.style.labelOffsetMultiplier || 1.0;
         const LABEL_OFFSETS = {
-          base: 0.8,
-          left: 0.8,
-          right: 0.8,
+          base: 0.8 * offsetMultiplier,
+          left: 0.8 * offsetMultiplier,
+          right: 0.8 * offsetMultiplier,
         };
-        
+
         // Define label positions based on orientation
         let basePosition, leftLegPosition, rightLegPosition;
-        
+
         switch (orientation) {
           case 'rotate90':
             // Base is vertical on right
-            basePosition = [trianglePoints[1].X() + LABEL_OFFSETS.base, (trianglePoints[1].Y() + trianglePoints[2].Y())/2];
+            basePosition = [trianglePoints[1].X() + LABEL_OFFSETS.base, (trianglePoints[1].Y() + trianglePoints[2].Y()) / 2];
             // Legs from apex to top/bottom right
-            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X())/2, (trianglePoints[0].Y() + trianglePoints[1].Y())/2 - LABEL_OFFSETS.left];
-            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X())/2, (trianglePoints[0].Y() + trianglePoints[2].Y())/2 + LABEL_OFFSETS.right];
+            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X()) / 2, (trianglePoints[0].Y() + trianglePoints[1].Y()) / 2 - LABEL_OFFSETS.left];
+            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X()) / 2, (trianglePoints[0].Y() + trianglePoints[2].Y()) / 2 + LABEL_OFFSETS.right];
             break;
           case 'rotate180':
             // Base is horizontal at top
-            basePosition = [(trianglePoints[1].X() + trianglePoints[2].X())/2, trianglePoints[1].Y() + LABEL_OFFSETS.base];
+            basePosition = [(trianglePoints[1].X() + trianglePoints[2].X()) / 2, trianglePoints[1].Y() + LABEL_OFFSETS.base];
             // Legs from apex to top left/right
-            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X())/2 + LABEL_OFFSETS.left, (trianglePoints[0].Y() + trianglePoints[1].Y())/2];
-            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X())/2 - LABEL_OFFSETS.right, (trianglePoints[0].Y() + trianglePoints[2].Y())/2];
+            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X()) / 2 + LABEL_OFFSETS.left, (trianglePoints[0].Y() + trianglePoints[1].Y()) / 2];
+            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X()) / 2 - LABEL_OFFSETS.right, (trianglePoints[0].Y() + trianglePoints[2].Y()) / 2];
             break;
           case 'rotate270':
             // Base is vertical on left
-            basePosition = [trianglePoints[1].X() - LABEL_OFFSETS.base, (trianglePoints[1].Y() + trianglePoints[2].Y())/2];
+            basePosition = [trianglePoints[1].X() - LABEL_OFFSETS.base, (trianglePoints[1].Y() + trianglePoints[2].Y()) / 2];
             // Legs from apex to top/bottom left
-            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X())/2, (trianglePoints[0].Y() + trianglePoints[1].Y())/2 + LABEL_OFFSETS.left];
-            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X())/2, (trianglePoints[0].Y() + trianglePoints[2].Y())/2 - LABEL_OFFSETS.right];
+            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X()) / 2, (trianglePoints[0].Y() + trianglePoints[1].Y()) / 2 + LABEL_OFFSETS.left];
+            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X()) / 2, (trianglePoints[0].Y() + trianglePoints[2].Y()) / 2 - LABEL_OFFSETS.right];
             break;
           case 'default':
           default:
             // Base is horizontal at bottom
-            basePosition = [(trianglePoints[1].X() + trianglePoints[2].X())/2, trianglePoints[1].Y() - LABEL_OFFSETS.base];
+            basePosition = [(trianglePoints[1].X() + trianglePoints[2].X()) / 2, trianglePoints[1].Y() - LABEL_OFFSETS.base];
             // Legs from apex to bottom left/right
-            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X())/2 - LABEL_OFFSETS.left, (trianglePoints[0].Y() + trianglePoints[1].Y())/2];
-            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X())/2 + LABEL_OFFSETS.right, (trianglePoints[0].Y() + trianglePoints[2].Y())/2];
+            leftLegPosition = [(trianglePoints[0].X() + trianglePoints[1].X()) / 2 - LABEL_OFFSETS.left, (trianglePoints[0].Y() + trianglePoints[1].Y()) / 2];
+            rightLegPosition = [(trianglePoints[0].X() + trianglePoints[2].X()) / 2 + LABEL_OFFSETS.right, (trianglePoints[0].Y() + trianglePoints[2].Y()) / 2];
             break;
         }
-        
+
         // Create the labels
         if (sideLabels[0]) {
           board.create('text', [...basePosition, sideLabels[0]], {
             fontSize: config.labelSize || 14,
-            fixed: true, 
+            fixed: true,
             anchorX: 'middle',
             anchorY: 'middle',
             color: '#000000'
           });
         }
-        
+
         if (sideLabels[1]) {
           board.create('text', [...leftLegPosition, sideLabels[1]], {
             fontSize: config.labelSize || 14,
-            fixed: true, 
+            fixed: true,
             anchorX: 'middle',
             anchorY: 'middle',
             color: '#000000'
           });
         }
-        
+
         if (sideLabels[2]) {
           board.create('text', [...rightLegPosition, sideLabels[2]], {
             fontSize: config.labelSize || 14,
-            fixed: true, 
+            fixed: true,
             anchorX: 'middle',
             anchorY: 'middle',
             color: '#000000'
           });
         }
-        
+
         // Add height label if needed
         if (config.showHeight) {
           let heightPosition;
           const heightValue = `${props.height} ${config.units}`;
-          
+
           if (orientation === 'default') {
-            heightPosition = [trianglePoints[0].X() - 0.8, trianglePoints[1].Y() + props.height/2];
+            heightPosition = [trianglePoints[0].X() - 0.8, trianglePoints[1].Y() + props.height / 2];
           } else if (orientation === 'rotate90') {
-            heightPosition = [trianglePoints[1].X() - props.height/2, trianglePoints[0].Y() - 0.8];
+            heightPosition = [trianglePoints[1].X() - props.height / 2, trianglePoints[0].Y() - 0.8];
           } else if (orientation === 'rotate180') {
-            heightPosition = [trianglePoints[0].X() + 0.8, trianglePoints[1].Y() - props.height/2];
+            heightPosition = [trianglePoints[0].X() + 0.8, trianglePoints[1].Y() - props.height / 2];
           } else if (orientation === 'rotate270') {
-            heightPosition = [trianglePoints[1].X() + props.height/2, trianglePoints[0].Y() + 0.8];
+            heightPosition = [trianglePoints[1].X() + props.height / 2, trianglePoints[0].Y() + 0.8];
           }
-          
+
           board.create('text', [...heightPosition, heightValue], {
             fontSize: config.labelSize || 14,
-            fixed: true, 
+            fixed: true,
             anchorX: 'middle',
             anchorY: 'middle',
             color: '#000000'
           });
         }
       }
-      
+
       // Add area label if requested
       if (config.showArea && config.areaLabel) {
         // Position area label in the center of the triangle
         const centerX = (trianglePoints[0].X() + trianglePoints[1].X() + trianglePoints[2].X()) / 3;
         const centerY = (trianglePoints[0].Y() + trianglePoints[1].Y() + trianglePoints[2].Y()) / 3;
-        
+
         board.create('text', [centerX, centerY, config.areaLabel], {
           fontSize: config.labelSize || 14,
-          fixed: true, 
+          fixed: true,
           anchorX: 'middle',
           anchorY: 'middle',
           color: '#000000'
         });
       }
-      
+
       // Add angle markers for equal angles if requested
       if (config.showEqualAngles) {
         const radius = Math.min(props.base, props.height) * 0.15;
-        
+
         // Create angles at the base (these are equal in an isosceles triangle)
         if (orientation === 'default') {
           // Bottom left angle
           board.create('angle', [trianglePoints[0], trianglePoints[1], trianglePoints[2]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
             name: '°'
           });
-          
+
           // Bottom right angle
           board.create('angle', [trianglePoints[0], trianglePoints[2], trianglePoints[1]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
@@ -381,16 +382,16 @@ const IsoscelesTriangle = (props) => {
           // Similar logic for rotated triangle
           board.create('angle', [trianglePoints[0], trianglePoints[1], trianglePoints[2]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
             name: '°'
           });
-          
+
           board.create('angle', [trianglePoints[0], trianglePoints[2], trianglePoints[1]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
@@ -400,16 +401,16 @@ const IsoscelesTriangle = (props) => {
           // Similar logic for 180° rotated triangle 
           board.create('angle', [trianglePoints[0], trianglePoints[1], trianglePoints[2]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
             name: '°'
           });
-          
+
           board.create('angle', [trianglePoints[0], trianglePoints[2], trianglePoints[1]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
@@ -419,16 +420,16 @@ const IsoscelesTriangle = (props) => {
           // Similar logic for 270° rotated triangle
           board.create('angle', [trianglePoints[0], trianglePoints[1], trianglePoints[2]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
             name: '°'
           });
-          
+
           board.create('angle', [trianglePoints[0], trianglePoints[2], trianglePoints[1]], {
             radius: radius,
-            fillColor: 'rgba(255, 255, 0, 0.2)', 
+            fillColor: 'rgba(255, 255, 0, 0.2)',
             strokeColor: strokeColor,
             strokeWidth: 1.5,
             fixed: true,
@@ -436,11 +437,11 @@ const IsoscelesTriangle = (props) => {
           });
         }
       }
-      
+
     } catch (error) {
       console.error("Error creating isosceles triangle:", error);
     }
-    
+
     board.unsuspendUpdate();
   };
 
@@ -449,7 +450,7 @@ const IsoscelesTriangle = (props) => {
     const base = props.base;
     const height = props.height;
     const padding = 2;
-    
+
     // Handle different orientations
     switch (orientation) {
       case 'rotate90':
