@@ -253,6 +253,70 @@ export const createSpecialAngleTriangle = ({
   );
 };
 
+/**
+ * Creates an isosceles triangle with appropriate styling and labels
+ * 
+ * @param {Object} config - Configuration for the triangle
+ * @param {number} config.base - Base length (the unequal side)
+ * @param {number} config.height - Height of the triangle
+ * @param {boolean} config.showArea - Whether to show the area
+ * @param {string} config.areaLabel - Custom area label text
+ * @param {string} config.unknownSide - Which side to mark as unknown ('base', 'leg', or 'height')
+ * @param {string} config.orientation - Triangle orientation
+ * @param {string} config.units - Units to display
+ * @param {string} config.sectionType - Section type for styling
+ * @returns {JSX.Element} IsoscelesTriangle component with appropriate configuration
+ */
+export const createIsoscelesTriangle = ({
+  base = 6,
+  height = 4,
+  showArea = false,
+  areaLabel = null,
+  unknownSide = null,
+  orientation = 'default',
+  units = 'cm',
+  sectionType = 'examples'
+}) => {
+  // Calculate legs (the equal sides)
+  const legLength = Math.sqrt((base/2) * (base/2) + height * height);
+  const roundedLegLength = Math.round(legLength * 100) / 100;
+  
+  // Calculate area
+  const area = (base * height) / 2;
+  const roundedArea = Math.round(area * 100) / 100;
+  
+  // Create custom labels based on which side is unknown
+  let labels;
+  if (unknownSide === 'base') {
+    labels = [`? ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
+  } else if (unknownSide === 'leg') {
+    labels = [`${base} ${units}`, `? ${units}`, `? ${units}`];
+  } else if (unknownSide === 'height') {
+    labels = [`${base} ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
+    // Height is not directly a side, so we'll handle it in the component
+  } else {
+    // No unknown side, show all values
+    labels = [`${base} ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
+  }
+  
+  // Return configured triangle with section-appropriate styling
+  return (
+    <IsoscelesTriangle
+      base={base}
+      height={height}
+      labelStyle="custom"
+      labels={labels}
+      orientation={orientation}
+      showArea={showArea}
+      areaLabel={areaLabel || (showArea ? `Area = ${roundedArea} ${units}²` : null)}
+      showEqualSides={true}
+      showHeight={unknownSide === 'height' ? false : true}
+      units={units}
+      sectionType={sectionType}
+    />
+  );
+};
+
 // Export a list of common Pythagorean triples for convenience
 export const PYTHAGOREAN_TRIPLES = [
   [3, 4, 5],

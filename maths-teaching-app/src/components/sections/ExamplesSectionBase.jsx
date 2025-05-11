@@ -109,8 +109,8 @@ const ExamplesSectionBase = ({
                         <button
                             key={index}
                             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${index === currentExampleIndex
-                                    ? `bg-${theme.primary} text-white`
-                                    : `bg-${theme.pastelBg} text-${theme.secondaryText} hover:bg-${theme.secondary}`
+                                ? `bg-${theme.primary} text-white`
+                                : `bg-${theme.pastelBg} text-${theme.secondaryText} hover:bg-${theme.secondary}`
                                 }`}
                             onClick={() => {
                                 setCurrentExampleIndex(index);
@@ -142,8 +142,8 @@ const ExamplesSectionBase = ({
                                     <div
                                         key={stepIndex}
                                         className={`step cursor-pointer p-3 rounded-lg transition-colors ${visibleStepIndex === stepIndex
-                                                ? `bg-${theme.secondary} border border-${theme.borderColor}`
-                                                : `hover:bg-${theme.secondary} hover:bg-opacity-50`
+                                            ? `bg-${theme.secondary} border border-${theme.borderColor}`
+                                            : `hover:bg-${theme.secondary} hover:bg-opacity-50`
                                             }`}
                                         onClick={() => handleStepClick(stepIndex, step)}
                                     >
