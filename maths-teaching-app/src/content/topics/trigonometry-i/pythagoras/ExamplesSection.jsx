@@ -16,16 +16,46 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   const [examples, setExamples] = useState([]);
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [showHeight, setShowHeight] = useState(false);
+  // Add a key counter to force re-renders
+  const [visualizationKey, setVisualizationKey] = useState(1);
 
   // Generate all examples when the component mounts
   useEffect(() => {
     generateExamples();
   }, []);
 
-  // Regenerate all examples using our new generator
+  // Regenerate all examples with key increment to force remounting
   const generateExamples = () => {
-    // Use our new generator function
-    setExamples(pythagoras.generateExampleQuestions());
+    // Generate new examples
+    const newExamples = pythagoras.generateExampleQuestions();
+    
+    // Process examples to add keys to visualizations
+    const processedExamples = newExamples.map((example, index) => {
+      // Format the example data for stable but unique key
+      const fingerprint = `${example.triple?.join('-') || ''}-${example.orientation || 'default'}-${example.missingValue || 'none'}-${visualizationKey}-${index}`;
+      
+      // Clone the visualization with key if it's a React element
+      const processedVisualization = React.isValidElement(example.visualization) 
+        ? React.cloneElement(example.visualization, { 
+            key: fingerprint,
+            id: `triangle-ex-${fingerprint}`
+          })
+        : example.visualization;
+      
+      // Return example with processed visualization
+      return {
+        ...example,
+        visualization: processedVisualization,
+        // Add the key to the example itself for easier tracking
+        _key: fingerprint
+      };
+    });
+    
+    setExamples(processedExamples);
+    
+    // Increment key for next generation to ensure fresh components
+    setVisualizationKey(prev => prev + 1);
+    
     // Reset height toggle when generating new examples
     setShowHeight(false);
   };
@@ -42,15 +72,14 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     }
   };
 
-  // Render function for example content
+  // Render function for example content - simplified without hooks inside
   const renderExampleContent = (example) => {
     if (!example) return null;
 
     return (
       <div className="flex flex-col-reverse md:flex-row gap-6 items-center pt-4">
-        {/* Triangle visualization on the left - moved down and left */}
+        {/* Triangle visualization with the already prepared visualization */}
         <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0">
-          {/* Render the triangle visualization from our example data */}
           {example.visualization}
         </div>
 

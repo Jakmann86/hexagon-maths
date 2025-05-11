@@ -1,5 +1,5 @@
 // maths-teaching-app/src/components/math/shapes/base/BaseShape.jsx
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import JSXGraphBoard from '../../JSXGraphBoard';
 import { BOARD_DEFAULTS } from '../../../../utils/shapeConfig';
 
@@ -22,7 +22,7 @@ import { BOARD_DEFAULTS } from '../../../../utils/shapeConfig';
  * @param {string} props.className - Additional CSS classes
  */
 const BaseShape = ({
-  id = `shape-${Math.random().toString(36).substr(2, 9)}`,
+  id,
   boundingBox = BOARD_DEFAULTS.boundingBox,
   containerHeight = 250,
   backgroundColor = 'transparent',
@@ -35,6 +35,11 @@ const BaseShape = ({
   className = '',
   children
 }) => {
+  // Create a stable, memoized ID if none provided
+  const boardId = useMemo(() => {
+    return id || `shape-${Math.random().toString(36).substr(2, 9)}`;
+  }, [id]);
+  
   // Reference to the JSXGraph board instance
   const boardRef = useRef(null);
   
@@ -44,14 +49,20 @@ const BaseShape = ({
     return () => {
       if (boardRef.current) {
         try {
-          JXG.JSXGraph.freeBoard(boardRef.current);
+          // Only free the board if it exists in the registry
+          if (typeof JXG !== 'undefined' && 
+              JXG.JSXGraph && 
+              JXG.JSXGraph.boards && 
+              JXG.JSXGraph.boards[boardId]) {
+            JXG.JSXGraph.freeBoard(boardRef.current);
+          }
           boardRef.current = null;
         } catch (error) {
           console.error("Error cleaning up JSXGraph board:", error);
         }
       }
     };
-  }, []);
+  }, [boardId]);
 
   // Handle board update when dependencies change
   useEffect(() => {
@@ -62,7 +73,7 @@ const BaseShape = ({
         console.error("Error updating shape:", error);
       }
     }
-  }, [onUpdate, ...dependencies]);
+  }, [onUpdate, ...(Array.isArray(dependencies) ? dependencies : [])]);
 
   // JSXGraph initialization callback
   const handleBoardMount = (board) => {
@@ -97,7 +108,7 @@ const BaseShape = ({
   return (
     <div className={`base-shape ${className}`} style={containerStyle}>
       <JSXGraphBoard
-        id={id}
+        id={boardId}
         boundingBox={boundingBox}
         height={containerHeight}
         backgroundColor={backgroundColor}
@@ -105,6 +116,7 @@ const BaseShape = ({
         grid={grid}
         onMount={handleBoardMount}
         dependencies={dependencies}
+        skipCleanup={true} // Let BaseShape handle cleanup, not JSXGraphBoard
       />
       {children}
     </div>

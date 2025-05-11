@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
 import { useSectionTheme } from '../../hooks/useSectionTheme';
+import MathDisplay from '../common/MathDisplay';
 
 /**
  * ExamplesSectionBase template for displaying worked examples with step-by-step solutions
@@ -38,11 +39,11 @@ const ExamplesSectionBase = ({
     // Use internal state only if external state is not provided
     const [internalIndex, setInternalIndex] = useState(0);
     const [visibleStepIndex, setVisibleStepIndex] = useState(null);
-    
+
     // Use external index if provided, otherwise use internal
     const currentExampleIndex = externalIndex !== undefined ? externalIndex : internalIndex;
     const setCurrentExampleIndex = setExternalIndex || setInternalIndex;
-    
+
     // Initialize examples if needed
     useEffect(() => {
         if (examples.length === 0 && generateExamples) {
@@ -92,7 +93,7 @@ const ExamplesSectionBase = ({
                 <h3 className="text-xl font-semibold text-gray-800">
                     {currentExample?.title || title}
                 </h3>
-                
+
                 {/* New Question Button */}
                 <button
                     onClick={handleGenerateNew}
@@ -101,17 +102,16 @@ const ExamplesSectionBase = ({
                     <RefreshCw size={18} />
                     <span>New Question</span>
                 </button>
-                
+
                 {/* Navigation Buttons */}
                 <div className="flex gap-2">
                     {examples.map((_, index) => (
                         <button
                             key={index}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                                index === currentExampleIndex
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${index === currentExampleIndex
                                     ? `bg-${theme.primary} text-white`
                                     : `bg-${theme.pastelBg} text-${theme.secondaryText} hover:bg-${theme.secondary}`
-                            }`}
+                                }`}
                             onClick={() => {
                                 setCurrentExampleIndex(index);
                                 setVisibleStepIndex(null);
@@ -133,24 +133,24 @@ const ExamplesSectionBase = ({
                     <div className="space-y-4">
                         {/* Render the example content (visualization, etc.) */}
                         {renderExampleContent(currentExample)}
-                        
+
                         {/* Solution steps - visible only when showAnswers is true */}
                         {showAnswers && currentExample.steps && (
                             <div className={`mt-6 space-y-3 p-4 bg-${theme.pastelBg} rounded-lg`}>
                                 <h4 className={`font-semibold text-${theme.secondaryText} mb-4`}>Solution:</h4>
                                 {currentExample.steps.map((step, stepIndex) => (
-                                    <div 
-                                        key={stepIndex} 
-                                        className={`step cursor-pointer p-3 rounded-lg transition-colors ${
-                                            visibleStepIndex === stepIndex 
-                                                ? `bg-${theme.secondary} border border-${theme.borderColor}` 
+                                    <div
+                                        key={stepIndex}
+                                        className={`step cursor-pointer p-3 rounded-lg transition-colors ${visibleStepIndex === stepIndex
+                                                ? `bg-${theme.secondary} border border-${theme.borderColor}`
                                                 : `hover:bg-${theme.secondary} hover:bg-opacity-50`
-                                        }`}
+                                            }`}
                                         onClick={() => handleStepClick(stepIndex, step)}
                                     >
                                         <p className="text-gray-700">{step.explanation}</p>
                                         <div className="flex justify-center my-2">
-                                            {step.math}
+                                            {/* Render either step.math or step.formula using MathDisplay */}
+                                            {step.math || (step.formula && <MathDisplay math={step.formula} displayMode={true} />)}
                                         </div>
                                     </div>
                                 ))}

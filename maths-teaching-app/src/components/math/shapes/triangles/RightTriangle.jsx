@@ -1,49 +1,44 @@
 // maths-teaching-app/src/components/math/shapes/triangles/RightTriangle.jsx
-import React, { useRef, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import BaseShape from '../base/BaseShape';
 import useShapeConfiguration from '../base/useShapeConfiguration';
 import { getAngleLabelPosition } from '../../../../utils/labelPositioning';
 
-/**
- * RightTriangle - An improved component for rendering right triangles
- * Compatible with the existing RightTriangle API but using the new component system
- * 
- * @param {Object} props
- * @param {number} props.base - Length of base
- * @param {number} props.height - Length of height 
- * @param {boolean} props.showRightAngle - Whether to show the right angle marker
- * @param {Array|boolean} props.showAngles - Which angles to show [origin, third]
- * @param {Array} props.angleLabels - Labels for the angles ['θ', 'φ']
- * @param {string} props.labelStyle - Style of labels ('numeric', 'algebraic', 'custom')
- * @param {Array} props.labels - Custom labels if labelStyle is 'custom'
- * @param {string} props.units - Units to display ('cm', 'm', etc.)
- * @param {Object} props.style - Custom styling
- * @param {string} props.orientation - Orientation ('default', 'rotate90', etc.)
- * @param {number} props.containerHeight - Height of container
- */
 const RightTriangle = (props) => {
   // Process and standardize configuration
   const config = useShapeConfiguration(props, 'rightTriangle');
   
-  // Create stable orientation reference
-  const orientationRef = useRef(
-    config.orientation === 'random' 
+  // Use useMemo for orientation with stable reference
+  const orientation = useMemo(() => {
+    return config.orientation === 'random' 
       ? ['default', 'rotate90', 'rotate180', 'rotate270'][Math.floor(Math.random() * 4)]
-      : config.orientation
-  );
+      : config.orientation;
+  }, [config.orientation]);
   
   // Calculate hypotenuse for labels
   const hypotenuse = Math.sqrt(props.base * props.base + props.height * props.height);
   const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
   
+  // Generate a deterministic ID based on props
+  const triangleId = useMemo(() => {
+    // Include a fingerprint of the key props
+    return `rt-${props.base}-${props.height}-${orientation}-${Math.random().toString(36).substr(2, 5)}`;
+  }, [props.base, props.height, orientation]);
+  
   // JSXGraph board update function
   const updateBoard = (board) => {
+    if (!board) return;
+    
     // Clear existing objects for clean redraw
     board.suspendUpdate();
+    
     try {
-      Object.keys(board.objects).forEach(id => {
-        board.removeObject(id, false);
-      });
+      // Clear all existing objects first
+      for (const id in board.objects) {
+        if (board.objects[id] && typeof board.objects[id].remove === 'function') {
+          board.removeObject(board.objects[id], false);
+        }
+      }
       
       // Extract styling options
       const {
@@ -54,8 +49,6 @@ const RightTriangle = (props) => {
       } = config.style;
       
       // Define the triangle points based on orientation
-      // We'll preserve the exact points structure from your existing component
-      const orientation = orientationRef.current;
       const scaledBase = props.base;
       const scaledHeight = props.height;
       
@@ -139,7 +132,7 @@ const RightTriangle = (props) => {
         // Helper function to get midpoint of a line
         const getMidpoint = (p1, p2) => [(p1[0] + p2[0])/2, (p1[1] + p2[1])/2];
         
-        // Label offsets based on orientation - using your exact placement values
+        // Label offsets based on orientation
         const LABEL_OFFSETS = {
           base: 0.8,
           height: 0.8,
@@ -246,6 +239,14 @@ const RightTriangle = (props) => {
       // Add other angle markers if requested
       const angleVisibility = Array.isArray(config.showAngles) ? config.showAngles : [config.showAngles, config.showAngles];
       
+      // Make sure JXG is defined before using it
+      const createAngleLabel = (angle, pos) => {
+        if (angle.label && typeof JXG !== 'undefined' && JXG.COORDS_BY_USER) {
+          angle.label.coords.setCoordinates(JXG.COORDS_BY_USER, pos);
+          angle.label.fixed = true;
+        }
+      };
+      
       if (angleVisibility[0]) {
         // Create first angle (at origin)
         const angle1 = board.create('angle', [
@@ -259,14 +260,22 @@ const RightTriangle = (props) => {
           fixed: true
         });
         
-        // Position the angle label
+        // Position the angle label - simpler approach
         if (angle1.label) {
-          const pos = getAngleLabelPosition(
-            [trianglePoints[0].X(), trianglePoints[0].Y()],
-            [trianglePoints[1].X(), trianglePoints[1].Y()],
-            [trianglePoints[2].X(), trianglePoints[2].Y()]
-          );
-          angle1.label.coords.setCoordinates(JXG.COORDS_BY_USER, pos);
+          const p0 = [trianglePoints[0].X(), trianglePoints[0].Y()];
+          const p1 = [trianglePoints[1].X(), trianglePoints[1].Y()];
+          const p2 = [trianglePoints[2].X(), trianglePoints[2].Y()];
+          
+          // Simple midpoint calculation for angle bisector
+          const bisectorX = (p1[0] - p0[0] + p2[0] - p0[0]) / 2 + p0[0];
+          const bisectorY = (p1[1] - p0[1] + p2[1] - p0[1]) / 2 + p0[1];
+          
+          // Scale to get label position
+          const scale = 0.3;
+          const labelX = p0[0] + (bisectorX - p0[0]) * scale;
+          const labelY = p0[1] + (bisectorY - p0[1]) * scale;
+          
+          angle1.label.setPosition(JXG.COORDS_BY_USER, [labelX, labelY]);
           angle1.label.fixed = true;
         }
       }
@@ -284,14 +293,22 @@ const RightTriangle = (props) => {
           fixed: true
         });
         
-        // Position the angle label
+        // Position the angle label - simpler approach
         if (angle2.label) {
-          const pos = getAngleLabelPosition(
-            [trianglePoints[2].X(), trianglePoints[2].Y()],
-            [trianglePoints[0].X(), trianglePoints[0].Y()],
-            [trianglePoints[1].X(), trianglePoints[1].Y()]
-          );
-          angle2.label.coords.setCoordinates(JXG.COORDS_BY_USER, pos);
+          const p0 = [trianglePoints[2].X(), trianglePoints[2].Y()];
+          const p1 = [trianglePoints[0].X(), trianglePoints[0].Y()];
+          const p2 = [trianglePoints[1].X(), trianglePoints[1].Y()];
+          
+          // Simple midpoint calculation for angle bisector
+          const bisectorX = (p1[0] - p0[0] + p2[0] - p0[0]) / 2 + p0[0];
+          const bisectorY = (p1[1] - p0[1] + p2[1] - p0[1]) / 2 + p0[1];
+          
+          // Scale to get label position
+          const scale = 0.3;
+          const labelX = p0[0] + (bisectorX - p0[0]) * scale;
+          const labelY = p0[1] + (bisectorY - p0[1]) * scale;
+          
+          angle2.label.setPosition(JXG.COORDS_BY_USER, [labelX, labelY]);
           angle2.label.fixed = true;
         }
       }
@@ -310,7 +327,7 @@ const RightTriangle = (props) => {
     const padding = 2;
     
     // Handle different orientations
-    switch (orientationRef.current) {
+    switch (orientation) {
       case 'rotate90':
         return [-padding, base + padding, height + padding, -padding];
       case 'rotate180':
@@ -325,7 +342,7 @@ const RightTriangle = (props) => {
 
   return (
     <BaseShape
-      id={`right-triangle-${Math.random().toString(36).substr(2, 9)}`}
+      id={triangleId}
       boundingBox={calculateBoundingBox()}
       containerHeight={config.containerHeight}
       onUpdate={updateBoard}
@@ -337,8 +354,8 @@ const RightTriangle = (props) => {
         config.showRightAngle,
         Array.isArray(config.showAngles) ? config.showAngles.join(',') : config.showAngles,
         config.angleLabels.join(','),
-        JSON.stringify(config.labels),
-        orientationRef.current
+        JSON.stringify(config.labels || []),
+        orientation
       ]}
     />
   );

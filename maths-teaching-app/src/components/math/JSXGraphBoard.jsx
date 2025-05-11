@@ -12,7 +12,8 @@ const JSXGraphBoard = ({
   backgroundColor = 'transparent',
   onMount = null,
   onUpdate = null,
-  dependencies = []
+  dependencies = [],
+  skipCleanup = false // New prop to control cleanup behavior
 }) => {
   const containerRef = useRef(null);
   const boardRef = useRef(null);
@@ -48,18 +49,27 @@ const JSXGraphBoard = ({
       console.error("Error initializing JSXGraph board:", error);
     }
     
-    // Cleanup function
+    // Cleanup function - only execute if skipCleanup is false
     return () => {
+      // Skip cleanup if requested (when used by BaseShape)
+      if (skipCleanup) return;
+      
       try {
         if (boardRef.current) {
-          JXG.JSXGraph.freeBoard(boardRef.current);
+          // Check if board exists in global registry before trying to free it
+          if (typeof JXG !== 'undefined' && 
+              JXG.JSXGraph && 
+              JXG.JSXGraph.boards && 
+              JXG.JSXGraph.boards[id]) {
+            JXG.JSXGraph.freeBoard(boardRef.current);
+          }
           boardRef.current = null;
         }
       } catch (error) {
         console.error("Error cleaning up JSXGraph board:", error);
       }
     };
-  }, [id, boundingBox, axis, grid, onMount]); 
+  }, [id, boundingBox, axis, grid, onMount, skipCleanup]); 
 
   // Handle updates when dependencies change
   useEffect(() => {
@@ -70,7 +80,7 @@ const JSXGraphBoard = ({
     } catch (error) {
       console.error("Error updating JSXGraph board:", error);
     }
-  }, [onUpdate, ...dependencies]);
+  }, [onUpdate, ...(Array.isArray(dependencies) ? dependencies : [])]);
 
   return (
     <div 

@@ -1,4 +1,4 @@
-// maths-teaching-app/src/factories/triangleFactories.js
+// maths-teaching-app/src/factories/triangleFactories.jsx
 import React from 'react';
 import RightTriangle from '../components/math/shapes/triangles/RightTriangle';
 import _ from 'lodash';

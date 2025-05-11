@@ -122,7 +122,13 @@ function generateSolution(triple, missingValue) {
 
         steps.push({
             explanation: "Take the square root of both sides",
-            formula: `c = √${a * a + b * b} = ${c}`
+            formula: `c = \\sqrt{${a * a + b * b}} = ${c}`
+        });
+        
+        // Add calculator method
+        steps.push({
+            explanation: "Quick calculator method:",
+            formula: `c = \\sqrt{${a}^2 + ${b}^2} = \\sqrt{${a*a + b*b}} = ${c}`
         });
     } else if (missingValue === 'base') {
         steps.push({
@@ -147,7 +153,13 @@ function generateSolution(triple, missingValue) {
 
         steps.push({
             explanation: "Take the square root of both sides",
-            formula: `a = √${c * c - b * b} = ${a}`
+            formula: `a = \\sqrt{${c * c - b * b}} = ${a}`
+        });
+        
+        // Add calculator method
+        steps.push({
+            explanation: "Quick calculator method:",
+            formula: `a = \\sqrt{${c}^2 - ${b}^2} = \\sqrt{${c*c} - ${b*b}} = ${a}`
         });
     } else if (missingValue === 'height') {
         steps.push({
@@ -172,7 +184,13 @@ function generateSolution(triple, missingValue) {
 
         steps.push({
             explanation: "Take the square root of both sides",
-            formula: `b = √${c * c - a * a} = ${b}`
+            formula: `b = \\sqrt{${c * c - a * a}} = ${b}`
+        });
+        
+        // Add calculator method
+        steps.push({
+            explanation: "Quick calculator method:",
+            formula: `b = \\sqrt{${c}^2 - ${a}^2} = \\sqrt{${c*c} - ${a*a}} = ${b}`
         });
     }
 
@@ -370,59 +388,84 @@ export const pythagoras = {
     },
 
     /**
-     * Generate example questions with specific triple values for worked examples
-     */
+ * Generate example questions with random properties for worked examples
+ * Creates new random examples each time it's called
+ */
     generateExampleQuestions: () => {
-        // Create examples with specific triples and orientations
-        return [
-            // Example 1: Find hypotenuse of a 3-4-5 triangle
-            {
-                title: "Find the Hypotenuse",
-                question: "Find the length of the hypotenuse in this right-angled triangle.",
-                triple: [3, 4, 5],
-                missingValue: 'hypotenuse',
-                orientation: 'default',
-                steps: generateSolution([3, 4, 5], 'hypotenuse'),
-                visualization: createPythagoreanTripleTriangle({
-                    triple: [3, 4, 5],
-                    unknownSide: 'hypotenuse',
-                    orientation: 'default',
-                    sectionType: 'examples'
-                })
-            },
+        // We'll always generate 3 examples, but with randomized properties
 
-            // Example 2: Find the leg of a 5-12-13 triangle
-            {
-                title: "Find the Missing Side",
-                question: "Find the length of the missing side in this right-angled triangle.",
-                triple: [5, 12, 13],
-                missingValue: 'base',
-                orientation: 'rotate90',
-                steps: generateSolution([5, 12, 13], 'base'),
-                visualization: createPythagoreanTripleTriangle({
-                    triple: [5, 12, 13],
-                    unknownSide: 'base',
-                    orientation: 'rotate90',
-                    sectionType: 'examples'
-                })
-            },
+        // Get all possible orientations
+        const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
 
-            // Example 3: Find the leg with decimal answer
-            {
-                title: "Find the Missing Side",
-                question: "Find the length of the missing side to 1 decimal place.",
-                triple: [6, 8, 10],
-                missingValue: 'height',
-                orientation: 'rotate180',
-                steps: generateSolution([6, 8, 10], 'height'),
-                visualization: createPythagoreanTripleTriangle({
-                    triple: [6, 8, 10],
-                    unknownSide: 'height',
-                    orientation: 'rotate180',
-                    sectionType: 'examples'
-                })
+        // Get all possible missing sides
+        const missingSides = ['base', 'height', 'hypotenuse'];
+
+        // Make a copy of triples to work with
+        const availableTriples = [...PYTHAGOREAN_TRIPLES];
+
+        // Titles for each type of problem
+        const titles = {
+            'base': "Find the Base",
+            'height': "Find the Height",
+            'hypotenuse': "Find the Hypotenuse"
+        };
+
+        // Question text templates
+        const questionTemplates = {
+            'base': "Find the length of the base in this right-angled triangle.",
+            'height': "Find the length of the height in this right-angled triangle.",
+            'hypotenuse': "Find the length of the hypotenuse in this right-angled triangle."
+        };
+
+        // Create 3 random but distinct examples
+        const examples = [];
+
+        for (let i = 0; i < 3; i++) {
+            // Pick a random triple
+            const tripleIndex = _.random(0, availableTriples.length - 1);
+            const triple = availableTriples[tripleIndex];
+
+            // Remove this triple to avoid duplicates
+            availableTriples.splice(tripleIndex, 1);
+
+            // If we run out of triples, reset the array
+            if (availableTriples.length === 0) {
+                availableTriples.push(...PYTHAGOREAN_TRIPLES);
             }
-        ];
+
+            // Pick a random missing side
+            const missingSide = _.sample(missingSides);
+
+            // Pick a random orientation
+            const orientation = _.sample(orientations);
+
+            // Generate solution steps
+            const solution = generateSolution(triple, missingSide);
+
+            // Create the example
+            examples.push({
+                title: titles[missingSide] || "Find the Missing Side",
+                question: questionTemplates[missingSide] || "Find the length of the missing side in this right-angled triangle.",
+                triple: triple,
+                missingValue: missingSide,
+                orientation: orientation,
+                steps: solution,
+                visualization: createPythagoreanTripleTriangle({
+                    triple,
+                    unknownSide: missingSide,
+                    orientation,
+                    units: 'cm',
+                    sectionType: 'examples'
+                })
+            });
+        }
+
+        // Add a bit more variety to the 3rd example if it exists
+        if (examples.length >= 3) {
+            examples[2].question = "Find the length of the missing side to 1 decimal place.";
+        }
+
+        return examples;
     },
 
     /**
