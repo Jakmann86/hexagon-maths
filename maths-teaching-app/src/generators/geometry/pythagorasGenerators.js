@@ -1,364 +1,281 @@
-// maths-teaching-app/src/generators/geometry/pythagorasGenerators.js
-
-
-import BaseGenerator from '../core/baseGenerators';
+// src/generators/geometry/pythagorasGenerators.js
+import React from 'react';
+import _ from 'lodash';
 import { 
-  createPythagoreanTriangle,
-  createPythagoreanTripleTriangle,
-  createIsoscelesTriangle,
-  PYTHAGOREAN_TRIPLES
+  createPythagoreanTriangle, 
+  createPythagoreanTripleTriangle, 
+  createIsoscelesTriangle,  // Import directly
+  PYTHAGOREAN_TRIPLES 
 } from '../../factories/triangleFactories';
 
 /**
- * Common Pythagorean triple management
- */
-const pythagoreanTriplesUtil = {
-  // Filter triples based on difficulty
-  getTriplesByDifficulty: (difficulty) => {
-    switch (difficulty) {
-      case 'easy':
-        // Simple triples with small numbers
-        return PYTHAGOREAN_TRIPLES.slice(0, 3); // e.g., [3,4,5], [5,12,13], etc.
-      case 'hard':
-        // More complex triples with larger numbers
-        return PYTHAGOREAN_TRIPLES.slice(3);
-      case 'medium':
-      default:
-        return PYTHAGOREAN_TRIPLES;
-    }
-  },
-
-  // Select a random triple based on difficulty
-  selectTriple: (difficulty = 'medium') => {
-    const triples = pythagoreanTriplesUtil.getTriplesByDifficulty(difficulty);
-    return BaseGenerator.random.choice(triples);
-  }
-};
-
-/**
- * Generate solution steps for Pythagoras questions
- */
-const generatePythagorasSolution = (triple, missingValue) => {
-  const [a, b, c] = triple;
-  const steps = [];
-
-  steps.push(BaseGenerator.solution.createStep(
-    "Use Pythagoras' theorem: a² + b² = c²",
-    "a^2 + b^2 = c^2"
-  ));
-
-  if (missingValue === 'hypotenuse') {
-    steps.push(BaseGenerator.solution.createStep(
-      "Substitute the known values",
-      `${a}^2 + ${b}^2 = c^2`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Calculate the squares",
-      `${a * a} + ${b * b} = c^2`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Add the values",
-      `${a * a + b * b} = c^2`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Take the square root of both sides",
-      `c = \\sqrt{${a * a + b * b}} = ${c}`
-    ));
-
-    // Add calculator method
-    steps.push(BaseGenerator.solution.createStep(
-      "Quick calculator method:",
-      `c = \\sqrt{${a}^2 + ${b}^2} = \\sqrt{${a * a + b * b}} = ${c}`
-    ));
-  } else if (missingValue === 'base') {
-    steps.push(BaseGenerator.solution.createStep(
-      "Substitute the known values",
-      `a^2 + ${b}^2 = ${c}^2`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Rearrange to find a²",
-      `a^2 = ${c}^2 - ${b}^2`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Calculate the squares",
-      `a^2 = ${c * c} - ${b * b}`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Subtract the values",
-      `a^2 = ${c * c - b * b}`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Take the square root of both sides",
-      `a = \\sqrt{${c * c - b * b}} = ${a}`
-    ));
-  } else if (missingValue === 'height') {
-    steps.push(BaseGenerator.solution.createStep(
-      "Substitute the known values",
-      `${a}^2 + b^2 = ${c}^2`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Rearrange to find b²",
-      `b^2 = ${c}^2 - ${a}^2`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Calculate the squares",
-      `b^2 = ${c * c} - ${a * a}`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Subtract the values",
-      `b^2 = ${c * c - a * a}`
-    ));
-
-    steps.push(BaseGenerator.solution.createStep(
-      "Take the square root of both sides",
-      `b = \\sqrt{${c * c - a * a}} = ${b}`
-    ));
-  }
-
-  return steps;
-};
-
-/**
- * Generate distractors (wrong answers) for Pythagoras problems
- */
-const generatePythagorasDistractors = (correctAnswer, triple) => {
-  const [a, b, c] = triple;
-  const distractors = new Set();
-
-  // Common mistake: adding instead of using Pythagoras
-  distractors.add(a + b);
-
-  // Common mistake: subtracting squares instead of adding
-  distractors.add(Math.round(Math.sqrt(Math.abs(a * a - b * b))));
-
-  // Close but incorrect values
-  distractors.add(correctAnswer + BaseGenerator.random.integer(1, 2));
-  distractors.add(Math.max(1, correctAnswer - BaseGenerator.random.integer(1, 2)));
-
-  // Return array of unique distractors
-  return Array.from(distractors).slice(0, 3);
-};
-
-/**
- * Core Pythagoras question generator function
- */
-const generatePythagorasQuestion = (config = {}) => {
-  const {
-    type = 'findHypotenuse',
-    difficulty = 'medium',
-    units = 'cm',
-    orientation = BaseGenerator.random.choice(['default', 'rotate90', 'rotate180', 'rotate270']),
-    sectionType = 'examples'
-  } = config;
-
-  // Select appropriate triple based on difficulty
-  const triple = config.triple || pythagoreanTriplesUtil.selectTriple(difficulty);
-  const [a, b, c] = triple;
-
-  // Determine what to ask for
-  let missingValue, correctAnswer, questionText;
-
-  if (type === 'findHypotenuse') {
-    missingValue = 'hypotenuse';
-    correctAnswer = c;
-    questionText = `Find the length of the hypotenuse in this right-angled triangle.`;
-  } else {
-    // For findLeg, randomly choose which leg to find
-    const legToFind = config.legToFind || BaseGenerator.random.choice(['base', 'height']);
-    missingValue = legToFind;
-    correctAnswer = legToFind === 'base' ? a : b;
-    questionText = `Find the length of the missing side in this right-angled triangle.`;
-  }
-
-  // Generate solution steps
-  const solution = generatePythagorasSolution(triple, missingValue);
-
-  // Generate visualization using triangle factory
-  const visualization = createPythagoreanTripleTriangle({
-    triple,
-    unknownSide: missingValue,
-    orientation,
-    units,
-    sectionType
-  });
-
-  // Generate multiple choice options if needed
-  let options = [];
-  if (config.multipleChoice) {
-    const distractors = generatePythagorasDistractors(correctAnswer, triple);
-    options = _.shuffle([correctAnswer, ...distractors]);
-  }
-
-  // Create complete question object
-  return BaseGenerator.createQuestion({
-    type,
-    difficulty,
-    conceptKey: 'pythagoras',
-    questionText,
-    correctAnswer,
-    options,
-    visualization,
-    solution,
-    explanation: `Using the Pythagorean theorem: ${a}² + ${b}² = ${c}²`,
-    tags: ['pythagoras', 'right-triangle', missingValue],
-    curriculum: { topic: 'Trigonometry I', lesson: 'Pythagoras' }
-  });
-};
-
-/**
- * Generate solution steps for triangle area problems
- */
-const generateTriangleAreaSolution = (base, height, isIsosceles = true) => {
-  const area = BaseGenerator.math.triangleArea(base, height);
-  
-  const steps = [];
-  
-  if (isIsosceles) {
-    steps.push(BaseGenerator.solution.createStep(
-      "For an isosceles triangle, we can use the formula: Area = ½ × base × height",
-      "\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}"
-    ));
-  } else {
-    steps.push(BaseGenerator.solution.createStep(
-      "For a triangle, we can use the formula: Area = ½ × base × height",
-      "\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}"
-    ));
-  }
-  
-  steps.push(BaseGenerator.solution.createStep(
-    "Substitute the values",
-    `\\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height}`
-  ));
-  
-  steps.push(BaseGenerator.solution.createStep(
-    "Calculate",
-    `\\text{Area} = \\frac{1}{2} \\times ${base * height} = ${area} \\text{ units}^2`
-  ));
-  
-  return steps;
-};
-
-/**
- * Generate an isosceles triangle area question
- */
-const generateIsoscelesAreaQuestion = (config = {}) => {
-  const {
-    difficulty = 'medium',
-    units = 'cm',
-    sectionType = 'examples'
-  } = config;
-  
-  // Define ranges based on difficulty
-  const diffConfig = BaseGenerator.difficulty[difficulty];
-  
-  // Generate appropriate dimensions
-  const base = BaseGenerator.random.integer(
-    diffConfig.numberRange.min,
-    diffConfig.numberRange.max
-  );
-  
-  const height = BaseGenerator.random.integer(
-    diffConfig.numberRange.min,
-    diffConfig.numberRange.max
-  );
-  
-  // Calculate area
-  const area = BaseGenerator.math.triangleArea(base, height);
-  
-  // Question text
-  const questionText = `Find the area of this isosceles triangle with base ${base} ${units} and height ${height} ${units}.`;
-  
-  // Generate solution steps
-  const solution = generateTriangleAreaSolution(base, height, true);
-  
-  // Create visualization using triangle factory
-  // Note: You'll need to create an isosceles triangle factory similar to your other factories
-  const visualization = createIsoscelesTriangle({
-    base,
-    height,
-    units,
-    sectionType
-  });
-  
-  // Create complete question object
-  return BaseGenerator.createQuestion({
-    type: 'isoscelesArea',
-    difficulty,
-    conceptKey: 'triangleArea',
-    questionText,
-    correctAnswer: `${area} ${units}²`,
-    visualization,
-    solution,
-    explanation: `Area of a triangle = ½ × base × height = ½ × ${base} × ${height} = ${area} ${units}²`,
-    tags: ['area', 'isosceles', 'triangle'],
-    curriculum: { topic: 'Geometry', lesson: 'Triangle Area' }
-  });
-};
-
-/**
- * Export the Pythagoras question generators
+ * PythagorasGenerators - Specialized question generators for Pythagoras' theorem
+ * Provides different types of questions with appropriate visualizations and solutions
  */
 export const PythagorasGenerators = {
-  // Core generator function
-  generate: generatePythagorasQuestion,
-  
-  // Specialized question generators
-  findHypotenuse: (config = {}) => {
-    return generatePythagorasQuestion({
-      type: 'findHypotenuse',
-      ...config
-    });
-  },
-  
-  findMissingSide: (config = {}) => {
-    return generatePythagorasQuestion({
-      type: 'findLeg',
-      ...config
-    });
-  },
-  
-  // Triangle area calculations
-  isoscelesArea: (config = {}) => {
-    return generateIsoscelesAreaQuestion(config);
-  },
-  
-  // Utility functions
-  selectTriple: pythagoreanTriplesUtil.selectTriple,
-  
-  // Generate a set of examples (useful for Examples section)
-  generateExamples: (count = 3, config = {}) => {
-    const examples = [];
-    
-    // Add one of each type to ensure variety
-    examples.push(PythagorasGenerators.findHypotenuse({ sectionType: 'examples', ...config }));
-    examples.push(PythagorasGenerators.findMissingSide({ sectionType: 'examples', ...config }));
-    
-    if (count > 2) {
-      examples.push(PythagorasGenerators.isoscelesArea({ sectionType: 'examples', ...config }));
+  /**
+   * Generate a question asking for the hypotenuse
+   * 
+   * @param {Object} options - Configuration options
+   * @returns {Object} Question object with visualization and solution
+   */
+  findHypotenuse: (options = {}) => {
+    const {
+      difficulty = 'medium',
+      sectionType = 'examples',
+      seed = Date.now()
+    } = options;
+
+    console.log(`Generating findHypotenuse example with seed: ${seed}`);
+
+    // Choose appropriate triples based on difficulty
+    let triples = [...PYTHAGOREAN_TRIPLES];
+    if (difficulty === 'easy') {
+      triples = triples.slice(0, 2); // Easier triples (3,4,5 and 5,12,13)
+    } else if (difficulty === 'hard') {
+      triples = triples.slice(3); // Harder triples
     }
-    
-    // Fill any remaining slots with random examples
-    for (let i = examples.length; i < count; i++) {
-      const type = BaseGenerator.random.choice(['findHypotenuse', 'findMissingSide']);
-      if (type === 'findHypotenuse') {
-        examples.push(PythagorasGenerators.findHypotenuse({ sectionType: 'examples', ...config }));
-      } else {
-        examples.push(PythagorasGenerators.findMissingSide({ sectionType: 'examples', ...config }));
+
+    // Use the seed to deterministically select a triple
+    const tripleIndex = Math.floor((seed % 100) / 12.5) % triples.length;
+    console.log(`Selected triple index ${tripleIndex}`);
+    const triple = triples[tripleIndex];
+    const [a, b, c] = triple;
+
+    // Create solution steps
+    const solution = [
+      {
+        explanation: "Use Pythagoras' theorem: a² + b² = c²",
+        formula: "a^2 + b^2 = c^2"
+      },
+      {
+        explanation: "Substitute the known values",
+        formula: `${a}^2 + ${b}^2 = c^2`
+      },
+      {
+        explanation: "Calculate the squares",
+        formula: `${a * a} + ${b * b} = c^2`
+      },
+      {
+        explanation: "Add the values",
+        formula: `${a * a + b * b} = c^2`
+      },
+      {
+        explanation: "Take the square root of both sides",
+        formula: `c = \\sqrt{${a * a + b * b}} = ${c}`
       }
+    ];
+
+    // Select a deterministic orientation
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    const orientation = orientations[orientationIndex];
+
+    return {
+      title: "Finding the Hypotenuse",
+      questionText: `Find the length of the hypotenuse in this right-angled triangle with base ${a} cm and height ${b} cm.`,
+      visualization: createPythagoreanTripleTriangle({
+        triple,
+        unknownSide: 'hypotenuse',
+        orientation,
+        units: 'cm',
+        sectionType
+      }),
+      solution
+    };
+  },
+
+  /**
+   * Generate a question asking for a missing side (leg)
+   * 
+   * @param {Object} options - Configuration options
+   * @returns {Object} Question object with visualization and solution
+   */
+  findMissingSide: (options = {}) => {
+    const {
+      difficulty = 'medium',
+      sectionType = 'examples',
+      seed = Date.now()
+    } = options;
+
+    console.log(`Generating findMissingSide example with seed: ${seed}`);
+
+    // Choose appropriate triples based on difficulty
+    let triples = [...PYTHAGOREAN_TRIPLES];
+    if (difficulty === 'easy') {
+      triples = triples.slice(0, 2); // Easier triples (3,4,5 and 5,12,13)
+    } else if (difficulty === 'hard') {
+      triples = triples.slice(3); // Harder triples
     }
+
+    // Use a deterministic approach to select the triple
+    const tripleIndex = Math.floor((seed % 100) / 12.5) % triples.length;
+    console.log(`Selected triple index ${tripleIndex}`);
+    const triple = triples[tripleIndex];
+    const [a, b, c] = triple;
+
+    // Deterministically choose which leg to find based on the seed
+    const legToFind = (seed % 2 === 0) ? 'base' : 'height';
+    const missingValue = legToFind;
+    const correctAnswer = legToFind === 'base' ? a : b;
+
+    // Create solution steps for finding a leg
+    const solution = [
+      {
+        explanation: "Use Pythagoras' theorem: a² + b² = c²",
+        formula: "a^2 + b^2 = c^2"
+      },
+      {
+        explanation: "Rearrange to find the missing side",
+        formula: legToFind === 'base' 
+          ? `a^2 = c^2 - b^2` 
+          : `b^2 = c^2 - a^2`
+      },
+      {
+        explanation: "Substitute the known values",
+        formula: legToFind === 'base' 
+          ? `a^2 = ${c}^2 - ${b}^2` 
+          : `b^2 = ${c}^2 - ${a}^2`
+      },
+      {
+        explanation: "Calculate the squares",
+        formula: legToFind === 'base'
+          ? `a^2 = ${c * c} - ${b * b}`
+          : `b^2 = ${c * c} - ${a * a}`
+      },
+      {
+        explanation: "Subtract the values",
+        formula: legToFind === 'base'
+          ? `a^2 = ${c * c - b * b}`
+          : `b^2 = ${c * c - a * a}`
+      },
+      {
+        explanation: "Take the square root of both sides",
+        formula: legToFind === 'base'
+          ? `a = \\sqrt{${c * c - b * b}} = ${a}`
+          : `b = \\sqrt{${c * c - a * a}} = ${b}`
+      }
+    ];
+
+    // Create question text with known side values
+    let questionText;
+    if (legToFind === 'base') {
+      questionText = `Find the length of the base in this right-angled triangle with hypotenuse ${c} cm and height ${b} cm.`;
+    } else {
+      questionText = `Find the length of the height in this right-angled triangle with hypotenuse ${c} cm and base ${a} cm.`;
+    }
+
+    // Select a deterministic orientation
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    const orientation = orientations[orientationIndex];
+
+    return {
+      title: `Finding the ${legToFind === 'base' ? 'Base' : 'Height'}`,
+      questionText: questionText,
+      visualization: createPythagoreanTripleTriangle({
+        triple,
+        unknownSide: missingValue,
+        orientation,
+        units: 'cm',
+        sectionType
+      }),
+      solution
+    };
+  },
+
+  /**
+   * Generate a question about finding the area of an isosceles triangle
+   * 
+   * @param {Object} options - Configuration options
+   * @returns {Object} Question object with visualization and solution
+   */
+  isoscelesArea: (options = {}) => {
+    const {
+      difficulty = 'medium',
+      sectionType = 'examples',
+      seed = Date.now()
+    } = options;
+
+    console.log(`Generating isosceles triangle area example with seed: ${seed}`);
+
+    // Generate dimensions based on difficulty and seed
+    let base, height;
+    if (difficulty === 'easy') {
+      base = 4 + (seed % 4); // 4-7
+      height = 3 + (seed % 3); // 3-5
+    } else if (difficulty === 'medium') {
+      base = 6 + (seed % 4); // 6-9
+      height = 5 + (seed % 3); // 5-7
+    } else {
+      base = 8 + (seed % 6); // 8-13
+      height = 6 + (seed % 6); // 6-11
+    }
+
+    // Calculate area
+    const area = (base * height) / 2;
+
+    // Create solution steps
+    const solution = [
+      {
+        explanation: "Use the formula for the area of a triangle",
+        formula: "\\text{Area} = \\frac{1}{2} × \\text{base} × \\text{height}"
+      },
+      {
+        explanation: "Substitute the known values",
+        formula: `\\text{Area} = \\frac{1}{2} × ${base} × ${height}`
+      },
+      {
+        explanation: "Calculate the result",
+        formula: `\\text{Area} = \\frac{${base * height}}{2} = ${area}\\text{ cm}^2`
+      }
+    ];
+
+    // Calculate the equal legs of the isosceles triangle
+    const halfBase = base / 2;
+    const legLength = Math.sqrt(halfBase * halfBase + height * height);
+    const roundedLegLength = Math.round(legLength * 100) / 100;
+
+    // Create an isosceles triangle with proper dimensions
+    // Note: We're using both createIsoscelesTriangle and createPythagoreanTriangle based on availability
+    let triangleVisualization;
     
-    return examples;
+    try {
+      // First, try to use createIsoscelesTriangle if it exists
+      triangleVisualization = createIsoscelesTriangle({
+        base,
+        height,
+        showArea: false,
+        showHeight: true,
+        showEqualSides: true,
+        units: 'cm',
+        sectionType,
+        // Custom labels with proper measurements
+        labelStyle: "custom",
+        labels: [`${base} cm`, `${roundedLegLength} cm`, `${roundedLegLength} cm`]
+      });
+      console.log("Created isosceles triangle visualization");
+    } catch (error) {
+      console.warn("Could not create isosceles triangle, falling back to right triangle:", error);
+      // Fallback to regular triangle without right angle marking
+      triangleVisualization = createPythagoreanTriangle({
+        base,
+        height,
+        showRightAngle: false, // Don't show right angle
+        labelStyle: "custom",
+        labels: [`${base} cm`, `${height} cm`, null],
+        units: 'cm',
+        sectionType
+      });
+    }
+
+    return {
+      title: "Finding the Area of an Isosceles Triangle",
+      questionText: `Find the area of this isosceles triangle with base ${base} cm and height ${height} cm.`,
+      visualization: triangleVisualization,
+      solution
+    };
   }
 };
-// Export the Pythagorean generators for use in other modules
+
 export default PythagorasGenerators;

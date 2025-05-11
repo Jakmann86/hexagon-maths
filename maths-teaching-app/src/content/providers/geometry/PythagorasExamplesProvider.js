@@ -1,5 +1,4 @@
-// maths-teaching-app/src/content/providers/geometry/PythagorasExamplesProvider.js
-
+// src/content/providers/geometry/PythagorasExamplesProvider.js
 import { PythagorasGenerators } from '../../../generators/geometry/pythagorasGenerators';
 import { ExamplesAdapter } from '../../../generators/adapters/examplesAdapter';
 
@@ -41,27 +40,40 @@ const PythagorasExamplesProvider = {
       }
     ];
 
-    // Generate one of each example type
-    const examples = exampleTypes.map(exampleType => {
-      // Generate the raw question using the appropriate generator
-      const question = exampleType.generator({
-        difficulty: options.difficulty || 'medium',
-        sectionType: 'examples'
+    try {
+      // Generate one of each example type
+      const examples = exampleTypes.map(exampleType => {
+        // Generate the raw question using the appropriate generator
+        const question = exampleType.generator({
+          difficulty: options.difficulty || 'medium',
+          sectionType: 'examples'
+        });
+
+        // Adapt the question for the Examples section
+        return ExamplesAdapter.adaptQuestion(question, {
+          customTitle: exampleType.title,
+          ...exampleType.adapterOptions
+        });
       });
 
-      // Adapt the question for the Examples section
-      return ExamplesAdapter.adaptQuestion(question, {
-        customTitle: exampleType.title,
-        ...exampleType.adapterOptions
-      });
-    });
-
-    return examples;
+      return examples;
+    } catch (error) {
+      console.error("Error in generateExamples:", error);
+      // Return a fallback example if generation fails
+      return [{
+        title: "Pythagoras' Theorem",
+        question: "Calculate the hypotenuse of a right-angled triangle with sides 3 cm and 4 cm.",
+        steps: [
+          { explanation: "Use Pythagoras' theorem: a² + b² = c²", formula: "3^2 + 4^2 = c^2" },
+          { explanation: "Calculate: 9 + 16 = c²", formula: "25 = c^2" },
+          { explanation: "Take the square root: c = 5", formula: "c = 5\\text{ cm}" }
+        ]
+      }];
+    }
   },
 
   /**
    * Get configuration for rendering example content
-   * Instead of returning JSX directly, return a configuration object
    * 
    * @param {Object} example - The adapted example object
    * @returns {Object} Configuration for rendering the example
@@ -69,7 +81,7 @@ const PythagorasExamplesProvider = {
   getExampleContentConfig: (example) => {
     if (!example) return null;
 
-    // Return configuration rather than JSX
+    // Return configuration for rendering
     return {
       question: example.question,
       visualization: example.visualization,
@@ -115,28 +127,33 @@ const PythagorasExamplesProvider = {
    * @returns {Object} An adapted example ready for ExamplesSectionBase
    */
   generateSpecificExample: (type, options = {}) => {
-    // Map type strings to generator functions
-    const generatorMap = {
-      'findHypotenuse': PythagorasGenerators.findHypotenuse,
-      'findMissingSide': PythagorasGenerators.findMissingSide,
-      'isoscelesArea': PythagorasGenerators.isoscelesArea
-    };
+    try {
+      // Map type strings to generator functions
+      const generatorMap = {
+        'findHypotenuse': PythagorasGenerators.findHypotenuse,
+        'findMissingSide': PythagorasGenerators.findMissingSide,
+        'isoscelesArea': PythagorasGenerators.isoscelesArea
+      };
 
-    // Get the appropriate generator
-    const generator = generatorMap[type];
-    if (!generator) {
-      console.warn(`Unknown example type: ${type}`);
+      // Get the appropriate generator
+      const generator = generatorMap[type];
+      if (!generator) {
+        console.warn(`Unknown example type: ${type}`);
+        return null;
+      }
+
+      // Generate the raw question
+      const question = generator({
+        difficulty: options.difficulty || 'medium',
+        sectionType: 'examples'
+      });
+
+      // Adapt it for the Examples section
+      return ExamplesAdapter.adaptQuestion(question, options);
+    } catch (error) {
+      console.error("Error in generateSpecificExample:", error);
       return null;
     }
-
-    // Generate the raw question
-    const question = generator({
-      difficulty: options.difficulty || 'medium',
-      sectionType: 'examples'
-    });
-
-    // Adapt it for the Examples section
-    return ExamplesAdapter.adaptQuestion(question, options);
   }
 };
 

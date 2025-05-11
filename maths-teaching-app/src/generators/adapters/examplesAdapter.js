@@ -1,208 +1,119 @@
-// maths-teaching-app/src/generators/adapters/examplesAdapter.js
+// src/generators/adapters/examplesAdapter.js
+import React from 'react'; // This was missing - critical import!
 
 /**
- * Examples Adapter
- * 
- * This adapter transforms question objects from concept generators
- * into formats optimized for the Examples section UI. It enhances
- * question objects with section-specific properties and formatting.
- */
-
-/**
- * Adapt a question for the Examples section display
- * 
- * @param {Object} question - The question object from a concept generator
- * @param {Object} options - Additional configuration options
- * @returns {Object} A question object formatted for the Examples section
- */
-export const adaptForExamples = (question, options = {}) => {
-  // Extract core properties from the question
-  const {
-    type,
-    conceptKey,
-    questionText,
-    correctAnswer,
-    visualization,
-    solution = [],
-    difficulty = 'medium',
-    curriculum = {}
-  } = question;
-  
-  // Set defaults for configurations
-  const {
-    containerHeight = 300,       // Larger visualization for examples
-    stepDelay = 500,             // Millisecond delay between steps (if animated)
-    includeHints = true,         // Whether to include hints in steps
-    customTitle = null,          // Optional custom title
-    autoShowSteps = false        // Whether to automatically advance through steps
-  } = options;
-  
-  // Generate a title based on question type if not provided
-  const title = customTitle || generateTitleFromType(type, conceptKey);
-  
-  // Process solution steps for stepped navigation
-  const processedSteps = processSolutionSteps(solution, includeHints);
-  
-  // Configure visualization with example-specific styling
-  const enhancedVisualization = enhanceVisualization(visualization, {
-    containerHeight,
-    sectionType: 'examples'
-  });
-  
-  // Return the adapted example object
-  return {
-    title,
-    question: questionText,
-    visualization: enhancedVisualization,
-    steps: processedSteps,
-    correctAnswer,
-    type,
-    difficulty,
-    conceptKey,
-    curriculum,
-    stepDelay,
-    autoShowSteps
-  };
-};
-
-/**
- * Generate a human-readable title based on question type
- */
-const generateTitleFromType = (type, conceptKey) => {
-  // Default titles based on common types
-  const typeTitles = {
-    findHypotenuse: "Finding the Hypotenuse",
-    findLeg: "Finding a Missing Side",
-    findMissingSide: "Finding a Missing Side",
-    isoscelesArea: "Finding the Area of an Isosceles Triangle",
-    triangleArea: "Finding Triangle Area",
-    squareArea: "Finding Square Area",
-    squarePerimeter: "Finding Square Perimeter"
-  };
-  
-  // Concept-specific title mapping for more specific titles
-  const conceptTitles = {
-    pythagoras: {
-      findHypotenuse: "Using Pythagoras' Theorem to Find the Hypotenuse",
-      findLeg: "Using Pythagoras' Theorem to Find a Missing Side"
-    },
-    triangleArea: {
-      isoscelesArea: "Finding the Area of an Isosceles Triangle",
-      rightTriangleArea: "Finding the Area of a Right Triangle"
-    }
-  };
-  
-  // Try to get the most specific title possible
-  if (conceptKey && conceptTitles[conceptKey] && conceptTitles[conceptKey][type]) {
-    return conceptTitles[conceptKey][type];
-  }
-  
-  return typeTitles[type] || "Worked Example";
-};
-
-/**
- * Process solution steps to ensure they have consistent structure
- * and appropriate properties for the Examples section UI
- */
-const processSolutionSteps = (steps, includeHints) => {
-  if (!steps || !Array.isArray(steps)) {
-    return [];
-  }
-  
-  return steps.map((step, index) => {
-    // Handle string steps or steps with minimal properties
-    if (typeof step === 'string') {
-      return { explanation: step };
-    }
-    
-    // Extract step properties
-    const { explanation, formula, toggleHeight, toggleAngle, reset, hint } = step;
-    
-    // Create a processed step with consistent structure
-    const processedStep = {
-      explanation,
-      formula,
-      toggleHeight,
-      toggleAngle,
-      reset,
-      // Only include hints if explicitly requested
-      hint: includeHints ? hint : undefined
-    };
-    
-    // Add step number for reference
-    processedStep.stepNumber = index + 1;
-    
-    // Add "final step" flag for UI treatment
-    if (index === steps.length - 1) {
-      processedStep.isFinalStep = true;
-    }
-    
-    return processedStep;
-  });
-};
-
-/**
- * Enhance the visualization for the Examples section
- */
-const enhanceVisualization = (visualization, options = {}) => {
-  if (!visualization) return null;
-
-  // For JSX Elements, clone with new props
-  if (React.isValidElement(visualization)) {
-    // Extract existing props
-    const existingProps = visualization.props || {};
-    
-    // Create new props by merging existing with section-specific ones
-    const newProps = {
-      ...existingProps,
-      containerHeight: options.containerHeight || existingProps.containerHeight || 300,
-      sectionType: options.sectionType || existingProps.sectionType || 'examples'
-    };
-    
-    // Clone the element with the new props
-    return React.cloneElement(visualization, newProps);
-  }
-  
-  // For non-JSX visualizations (like configuration objects)
-  return {
-    ...visualization,
-    containerHeight: options.containerHeight || visualization.containerHeight || 300,
-    sectionType: options.sectionType || visualization.sectionType || 'examples'
-  };
-};
-
-/**
- * Generate a set of examples for a specific concept
- * 
- * @param {Function} generatorFunction - Function that generates question objects
- * @param {number} count - Number of examples to generate
- * @param {Object} options - Options for both generator and adapter
- * @returns {Array} Array of adapted examples
- */
-export const generateExamplesSet = (generatorFunction, count = 3, options = {}) => {
-  // Extract options for generator and adapter
-  const { generatorOptions = {}, adapterOptions = {} } = options;
-  
-  // Generate the raw questions using the provided generator function
-  const questions = Array(count).fill().map(() => 
-    generatorFunction({
-      ...generatorOptions,
-      sectionType: 'examples'
-    })
-  );
-  
-  // Adapt each question for the Examples section
-  return questions.map(question => 
-    adaptForExamples(question, adapterOptions)
-  );
-};
-
-/**
- * Export a unified interface for the Examples adapter
+ * ExamplesAdapter - Converts raw questions into the format expected by ExamplesSectionBase
+ * This adapter standardizes questions from different generators to work with the Examples UI
  */
 export const ExamplesAdapter = {
-  adaptQuestion: adaptForExamples,
-  generateSet: generateExamplesSet
+  /**
+   * Adapts a question for use in the Examples section
+   * 
+   * @param {Object} question - Raw question object from a generator
+   * @param {Object} options - Adaptation options
+   * @returns {Object} Adapted question compatible with ExamplesSectionBase
+   */
+  adaptQuestion: (question, options = {}) => {
+    if (!question) {
+      console.warn('Attempted to adapt a null or undefined question');
+      return null;
+    }
+
+    // Merge options with defaults
+    const adaptOptions = {
+      customTitle: null,
+      containerHeight: 300,
+      enhanceVisualization: true,
+      ...options
+    };
+
+    // Create standardized steps from question's solution or steps property
+    const standardizedSteps = question.solution || question.steps || [];
+
+    // Enhance visualization if requested
+    const enhancedVisualization = adaptOptions.enhanceVisualization 
+      ? enhanceVisualization(question.visualization, adaptOptions) 
+      : question.visualization;
+
+    // Build the adapted example
+    return {
+      title: adaptOptions.customTitle || question.title || 'Worked Example',
+      question: question.questionText || question.problemText || question.question || '',
+      visualization: enhancedVisualization,
+      steps: standardizedSteps.map(step => {
+        // Standardize step format
+        return {
+          explanation: step.explanation || step.text || '',
+          formula: step.formula || step.math || '',
+          // Pass through any special properties for interactive examples
+          ...step
+        };
+      })
+    };
+  },
+
+  /**
+   * Batch adapt multiple questions
+   * 
+   * @param {Array} questions - Array of raw questions
+   * @param {Object} options - Adaptation options
+   * @returns {Array} Array of adapted questions
+   */
+  adaptQuestions: (questions, options = {}) => {
+    if (!Array.isArray(questions)) {
+      console.warn('Expected an array of questions to adapt');
+      return [];
+    }
+
+    return questions.map(question => 
+      ExamplesAdapter.adaptQuestion(question, options)
+    );
+  }
+};
+
+/**
+ * Enhances a visualization component with standard properties and wrapper
+ * 
+ * @param {React.ReactNode} visualization - Original visualization component
+ * @param {Object} options - Enhancement options
+ * @returns {React.ReactNode} Enhanced visualization
+ */
+const enhanceVisualization = (visualization, options = {}) => {
+  // If no visualization, return null
+  if (!visualization) return null;
+
+  // If visualization is already a React element, enhance it
+  if (React.isValidElement(visualization)) {
+    // Extract component props
+    const componentProps = visualization.props || {};
+    
+    // Set standard height if it's a shape component
+    if (
+      typeof visualization.type === 'function' && 
+      (
+        visualization.type.name?.includes('Triangle') || 
+        visualization.type.name?.includes('Square') ||
+        visualization.type.name?.includes('Shape')
+      )
+    ) {
+      // Clone with consistent container height
+      return React.cloneElement(visualization, {
+        ...componentProps,
+        containerHeight: options.containerHeight || 300,
+        // Preserve any specific styling from original
+        style: {
+          ...(componentProps.style || {}),
+          maxWidth: '100%'
+        }
+      });
+    }
+    
+    // For other React elements, just return as is
+    return visualization;
+  }
+  
+  // Return the visualization as is if it's not a React element
+  return visualization;
 };
 
 export default ExamplesAdapter;

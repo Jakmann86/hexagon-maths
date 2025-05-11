@@ -1,6 +1,5 @@
-// maths-teaching-app/src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
-
-import React, { useState, useEffect } from 'react';
+// src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
 import PythagorasExamplesProvider from '../../../providers/geometry/PythagorasExamplesProvider';
 
@@ -12,47 +11,111 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     showHeight: false,
     showAngles: false
   });
-
-  // Generate examples when the component mounts
-  useEffect(() => {
-    generateExamples();
+  
+  // Use a ref to track initialization status - prevents double initialization
+  const initializedRef = useRef(false);
+  
+  // Add a ref for the regeneration counter to avoid state update issues
+  const regenerateCountRef = useRef(0);
+  
+  // Use stable keys for visualizations - make it tab-specific
+  const getVisualizationKey = useCallback((exampleIndex) => {
+    return `viz-${regenerateCountRef.current}-tab-${exampleIndex}`;
   }, []);
+  
+  // Memoize the generateExamples function to avoid recreating it
+  const generateExamples = useCallback(() => {
+    console.log("Generating new examples");
+    try {
+      // Increment regeneration counter
+      regenerateCountRef.current += 1;
+      
+      // Get the current tab before updating
+      const currentTab = currentExampleIndex;
+      
+      // Generate new examples with current timestamp as seed
+      const seed = Date.now();
+      console.log(`Using seed: ${seed}`);
+      
+      // Generate separate examples for each tab to ensure they're all different
+      const exampleTypes = ['findHypotenuse', 'findMissingSide', 'isoscelesArea'];
+      
+      // Generate example set with consistent ordering but different seeds
+      const newExamples = exampleTypes.map((type, index) => {
+        // Use different seeds for each example type
+        const typeSeed = seed + (index * 1000);
+        
+        // Get the generator for this type
+        const generator = PythagorasExamplesProvider.generateSpecificExample(
+          type, 
+          { seed: typeSeed }
+        );
+        
+        return generator;
+      });
+      
+      console.log(`Generated ${newExamples.length} examples`);
+      
+      // Update examples state
+      setExamples(newExamples);
+      
+      // Important: Don't reset the tab selection
+      // This ensures we stay on the current tab when clicking "New Question"
+      
+      // Reset interactive state
+      setInteractiveState({
+        showHeight: false,
+        showAngles: false
+      });
+    } catch (error) {
+      console.error("Error generating examples:", error);
+      setExamples([{
+        title: "Example Question",
+        question: "This is a placeholder example. There was an error generating questions.",
+        steps: [{ explanation: "Error: " + error.message }]
+      }]);
+    }
+  }, [currentExampleIndex]);
 
-  // Function to generate new examples
-  const generateExamples = () => {
-    // Get examples from the provider
-    const newExamples = PythagorasExamplesProvider.generateExamples();
-    setExamples(newExamples);
-    
-    // Reset interactive state
-    setInteractiveState({
-      showHeight: false,
-      showAngles: false
-    });
-  };
+  // Generate examples only on first mount
+  useEffect(() => {
+    if (!initializedRef.current) {
+      console.log("Initial examples generation");
+      initializedRef.current = true;
+      generateExamples();
+    }
+  }, [generateExamples]);
 
   // Handle step actions for interactive elements
-  const handleStepAction = (step) => {
+  const handleStepAction = useCallback((step) => {
     if (!step) return;
     
     // Let the provider handle the step action logic
-    const newState = PythagorasExamplesProvider.handleStepAction(step, interactiveState);
-    setInteractiveState(newState);
-  };
+    setInteractiveState(prevState => {
+      const newState = PythagorasExamplesProvider.handleStepAction(step, prevState);
+      return newState;
+    });
+  }, []);
 
-  // Render example content - now defined in the component
-  const renderExampleContent = (example) => {
+  // Render example content
+  const renderExampleContent = useCallback((example) => {
     if (!example) return null;
 
     // Get configuration from provider
     const config = PythagorasExamplesProvider.getExampleContentConfig(example);
     if (!config) return null;
+    
+    // Get unique key for current example
+    const vizKey = getVisualizationKey(currentExampleIndex);
 
     return (
       <div className="flex flex-col-reverse md:flex-row gap-6 items-center pt-4">
         {/* Visualization on the left for medium+ screens */}
         <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0">
-          {config.visualization}
+          {/* Add key to force remounting */}
+          <div key={vizKey} className="w-full h-full border border-gray-100 rounded">
+            {config.visualization}
+          </div>
         </div>
 
         {/* Question with workspace on the right */}
@@ -68,7 +131,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
         </div>
       </div>
     );
-  };
+  }, [currentExampleIndex, getVisualizationKey]);
 
   return (
     <div className="space-y-6 mb-8">
