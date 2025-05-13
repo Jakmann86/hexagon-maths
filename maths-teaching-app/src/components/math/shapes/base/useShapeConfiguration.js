@@ -4,7 +4,9 @@ import {
   SHAPE_THEMES, 
   SHAPE_SIZES, 
   STANDARD_DIMENSIONS,
-  BOARD_DEFAULTS
+  BOARD_DEFAULTS,
+  STANDARD_PROPORTIONS,
+  STANDARD_VIEWBOXES
 } from '../../../../utils/shapeConfig';
 
 /**
@@ -33,6 +35,23 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
       ...restProps
     } = props;
 
+    // Process proportion type
+    const proportionType = (() => {
+      // If explicitly provided, use it
+      if (props.proportionType && STANDARD_PROPORTIONS[shapeType]?.[props.proportionType]) {
+        return props.proportionType;
+      }
+      
+      // Otherwise, use 'balanced' as default
+      return 'balanced';
+    })();
+
+    // Get proportion configuration
+    const proportionConfig = 
+      STANDARD_PROPORTIONS[shapeType]?.[proportionType] || 
+      STANDARD_PROPORTIONS[shapeType]?.balanced || 
+      { baseRatio: 1, heightRatio: 1, scaleFactor: 1 };
+
     // Get standard dimensions for the shape type
     const standardDims = STANDARD_DIMENSIONS[shapeType] || STANDARD_DIMENSIONS.rightTriangle;
     
@@ -55,8 +74,14 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
       ...style
     };
     
-    // Process bounding box - either use provided one or compute from standard dimensions
-    const boundingBox = props.boundingBox || standardDims.boundingBox;
+    // Get viewBox based on proportion type and shape type
+    const viewBox = 
+      STANDARD_VIEWBOXES[shapeType]?.[proportionType] || 
+      STANDARD_VIEWBOXES[shapeType]?.default || 
+      standardDims.boundingBox;
+    
+    // Process bounding box - either use provided one or compute based on proportion
+    const boundingBox = props.boundingBox || viewBox;
     
     // Process labels based on labelStyle
     const processedLabels = (() => {
@@ -84,11 +109,16 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
       orientation,
       units,
       
+      // Proportion-related
+      proportionType,
+      proportionConfig,
+      
       // Styling
       style: themeConfig,
       
       // Dimensions
       boundingBox,
+      viewBox,
       containerHeight: sizeConfig.containerHeight,
       labelSize: sizeConfig.labelSize,
       scale: sizeConfig.scale,

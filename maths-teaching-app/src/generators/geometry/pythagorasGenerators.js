@@ -185,11 +185,11 @@ export const PythagorasGenerators = {
   },
 
   /**
-   * Generate a question about finding the area of an isosceles triangle
-   * 
-   * @param {Object} options - Configuration options
-   * @returns {Object} Question object with visualization and solution
-   */
+  * Generate a question about finding the area of an isosceles triangle
+  * 
+  * @param {Object} options - Configuration options
+  * @returns {Object} Question object with visualization and solution
+  */
   isoscelesArea: (options = {}) => {
     const {
       difficulty = 'medium',
@@ -199,13 +199,23 @@ export const PythagorasGenerators = {
 
     console.log(`Generating isosceles triangle area example with seed: ${seed}`);
 
-    // Use predefined triangles with integer leg lengths
+    // Start with integer leg lengths and calculate appropriate heights
+    // Using formula: height = √(leg² - (base/2)²)
     const triangleSets = [
-      { base: 6, height: 4, leg: 5 },     // 3-4-5 triangle folded
-      { base: 8, height: 6, leg: 7 },     // Clean integer values
-      { base: 10, height: 8, leg: 9 },    // Clean integer values
-      { base: 12, height: 5, leg: 13 }    // 5-12-13 Pythagorean triple
+      { base: 6, leg: 5 },      // 3-4-5 triangle folded
+      { base: 8, leg: 7 },      // Clean integer values
+      { base: 10, leg: 13 },    // Clean integer values 
+      { base: 12, leg: 13 },    // Clean integer values
+      { base: 16, leg: 17 }     // Clean integer values
     ];
+
+    // Calculate the corresponding heights for each set
+    triangleSets.forEach(set => {
+      // Calculate height that will produce this exact leg length
+      set.height = Math.sqrt(set.leg * set.leg - (set.base / 2) * (set.base / 2));
+      // Round to 2 decimal places for display
+      set.displayHeight = Math.round(set.height * 100) / 100;
+    });
 
     // Select one of the predefined sets based on seed
     const setIndex = seed % triangleSets.length;
@@ -213,18 +223,21 @@ export const PythagorasGenerators = {
 
     // Extract values from the selected set
     const base = selectedSet.base;
+    const leg = selectedSet.leg;
     const height = selectedSet.height;
-    const leg = selectedSet.leg;  // Already an integer, no need to round
+    const displayHeight = selectedSet.displayHeight;
 
-    // Calculate other values needed for solution
-    const halfBase = base / 2;
+    // Calculate area
     const area = (base * height) / 2;
+    const displayArea = Math.round(area * 100) / 100;
+    const halfBase = base / 2;
 
     // Create solution steps with steps to find height using Pythagoras
     const solution = [
       {
-        explanation: "For an isosceles triangle, we need to find the height first using Pythagoras' theorem",
-        formula: "\\text{leg}^2 = \\text{height}^2 + (\\frac{\\text{base}}{2})^2"
+        explanation: "For an isosceles triangle, we need to find the height using Pythagoras' theorem",
+        formula: "\\text{leg}^2 = \\text{height}^2 + (\\frac{\\text{base}}{2})^2",
+        toggleHeight: true // Signal to show height line when this step is clicked
       },
       {
         explanation: "Substitute the known values",
@@ -236,11 +249,11 @@ export const PythagorasGenerators = {
       },
       {
         explanation: "Rearrange to find height²",
-        formula: `\\text{height}^2 = ${leg * leg} - ${halfBase * halfBase}`
+        formula: `\\text{height}^2 = ${leg * leg} - ${halfBase * halfBase} = ${Math.round(height * height * 100) / 100}`
       },
       {
         explanation: "Calculate height",
-        formula: `\\text{height} = \\sqrt{${leg * leg - halfBase * halfBase}} = ${height}\\text{ cm}`
+        formula: `\\text{height} = \\sqrt{${Math.round(height * height * 100) / 100}} = ${displayHeight}\\text{ cm}`
       },
       {
         explanation: "Now we can find the area using the formula",
@@ -248,49 +261,31 @@ export const PythagorasGenerators = {
       },
       {
         explanation: "Substitute the values",
-        formula: `\\text{Area} = \\frac{1}{2} × ${base} × ${height}`
+        formula: `\\text{Area} = \\frac{1}{2} × ${base} × ${displayHeight}`
       },
       {
         explanation: "Calculate the result",
-        formula: `\\text{Area} = \\frac{${base * height}}{2} = ${area}\\text{ cm}^2`
+        formula: `\\text{Area} = \\frac{${base * displayHeight}}{2} = ${displayArea}\\text{ cm}^2`
       }
     ];
 
-    // Create an isosceles triangle with proper dimensions
-    let triangleVisualization;
-
-    try {
-      // Create with explicit properties to avoid factory overrides
-      triangleVisualization = createIsoscelesTriangle({
-        base,
-        height,
-        showArea: false,
-        showHeight: false,
-        showEqualSides: true,
-        units: 'cm',
-        sectionType,
-        // Use custom labels with exact integer values 
-        labelStyle: "custom",
-        labels: [`${base} cm`, `${leg} cm`, `${leg} cm`],
-        // Add style with label offset multiplier for better spacing
-        style: {
-          labelOffsetMultiplier: 2.0 // Increase offset to move labels away from sides
-        }
-      });
-      console.log("Created isosceles triangle visualization");
-    } catch (error) {
-      console.warn("Could not create isosceles triangle, falling back to right triangle:", error);
-      // Fallback to regular triangle without right angle marking
-      triangleVisualization = createPythagoreanTriangle({
-        base,
-        height,
-        showRightAngle: false, // Don't show right angle
-        labelStyle: "custom",
-        labels: [`${base} cm`, `${height} cm`, null],
-        units: 'cm',
-        sectionType
-      });
-    }
+    // Create isosceles triangle with precise measurements to match our calculations
+    const triangleVisualization = createIsoscelesTriangle({
+      base,
+      height,
+      showArea: false,
+      showHeight: false,
+      showEqualSides: true,
+      units: 'cm',
+      sectionType,
+      // Use custom labels with integer leg values
+      labelStyle: "custom",
+      labels: [`${base} cm`, `${leg} cm`, `${leg} cm`],
+      // Add more reasonable label offset styling
+      style: {
+        labelOffsetMultiplier: 1.2 // Reduced for better positioning
+      }
+    });
 
     return {
       title: "Finding the Area of an Isosceles Triangle",
