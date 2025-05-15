@@ -2,22 +2,16 @@
 import { PythagorasGenerators } from '../../../generators/geometry/pythagorasGenerators';
 import { ExamplesAdapter } from '../../../generators/adapters/examplesAdapter';
 
+const STANDARD_CONTAINER_HEIGHT = 250;
+
 /**
- * Pythagoras Examples Content Provider
- * Updated to ensure consistent triangle sizing and accurate labels
+ * Generate a standard set of examples for the Pythagoras lesson
+ * Ensures one of each required type: hypotenuse, missing side, isosceles area
  * 
- * This module connects the Pythagoras generators and the Examples UI,
- * providing curriculum-appropriate examples and rendering logic for
- * the Pythagoras topic in the Examples section.
+ * @param {Object} options - Configuration options
+ * @returns {Array} Array of examples ready for the ExamplesSectionBase
  */
 const PythagorasExamplesProvider = {
-  /**
-   * Generate a standard set of examples for the Pythagoras lesson
-   * Ensures one of each required type: hypotenuse, missing side, isosceles area
-   * 
-   * @param {Object} options - Configuration options
-   * @returns {Array} Array of examples ready for the ExamplesSectionBase
-   */
   generateExamples: (options = {}) => {
     // Define the required example types with consistent configuration
     const exampleTypes = [
@@ -25,8 +19,8 @@ const PythagorasExamplesProvider = {
         type: 'findHypotenuse',
         generator: PythagorasGenerators.findHypotenuse,
         title: "Finding the Hypotenuse",
-        adapterOptions: { 
-          containerHeight: 250, // Use consistent height
+        adapterOptions: {
+          containerHeight: STANDARD_CONTAINER_HEIGHT, // Use standard height
           enhanceVisualization: false // Let factory control visualization
         }
       },
@@ -34,8 +28,8 @@ const PythagorasExamplesProvider = {
         type: 'findMissingSide',
         generator: PythagorasGenerators.findMissingSide,
         title: "Finding a Missing Side",
-        adapterOptions: { 
-          containerHeight: 250, // Use consistent height
+        adapterOptions: {
+          containerHeight: STANDARD_CONTAINER_HEIGHT, // Use standard height
           enhanceVisualization: false // Let factory control visualization
         }
       },
@@ -43,8 +37,8 @@ const PythagorasExamplesProvider = {
         type: 'isoscelesArea',
         generator: PythagorasGenerators.isoscelesArea,
         title: "Finding the Area of an Isosceles Triangle",
-        adapterOptions: { 
-          containerHeight: 250, // Use consistent height
+        adapterOptions: {
+          containerHeight: STANDARD_CONTAINER_HEIGHT, // Use standard height
           enhanceVisualization: false // Let factory control visualization
         }
       }
@@ -99,81 +93,81 @@ const PythagorasExamplesProvider = {
     };
   },
 
-  /**
-   * Handle special step actions for interactive elements
-   * 
-   * @param {Object} step - The step object that was clicked
-   * @param {Object} state - Current UI state
-   * @returns {Object} Updated state for UI interactivity
-   */
-  handleStepAction: (step, state = {}) => {
-    // Clone the current state
-    const newState = { ...state };
+    /**
+     * Handle special step actions for interactive elements
+     * 
+     * @param {Object} step - The step object that was clicked
+     * @param {Object} state - Current UI state
+     * @returns {Object} Updated state for UI interactivity
+     */
+    handleStepAction: (step, state = {}) => {
+      // Clone the current state
+      const newState = { ...state };
 
-    // Process special step actions
-    if (step.toggleHeight) {
-      newState.showHeight = true;
-    }
-
-    if (step.toggleAngle) {
-      newState.showAngles = true;
-    }
-
-    if (step.reset) {
-      // Reset all toggleable states
-      newState.showHeight = false;
-      newState.showAngles = false;
-    }
-
-    return newState;
-  },
-
-  /**
-   * Generate a specific example type
-   * Useful when you need a particular kind of example
-   * 
-   * @param {string} type - The type of example to generate
-   * @param {Object} options - Configuration options
-   * @returns {Object} An adapted example ready for ExamplesSectionBase
-   */
-  generateSpecificExample: (type, options = {}) => {
-    try {
-      // Map type strings to generator functions
-      const generatorMap = {
-        'findHypotenuse': PythagorasGenerators.findHypotenuse,
-        'findMissingSide': PythagorasGenerators.findMissingSide,
-        'isoscelesArea': PythagorasGenerators.isoscelesArea
-      };
-
-      // Get the appropriate generator
-      const generator = generatorMap[type];
-      if (!generator) {
-        console.warn(`Unknown example type: ${type}`);
-        return null;
+      // Process special step actions
+      if (step.toggleHeight) {
+        newState.showHeight = true;
       }
 
-      // Ensure seed is used to get consistent results
-      const seed = options.seed || Date.now();
-      console.log(`Generating specific example of type ${type} with seed: ${seed}`);
+      if (step.toggleAngle) {
+        newState.showAngles = true;
+      }
 
-      // Generate the raw question
-      const question = generator({
-        difficulty: options.difficulty || 'medium',
-        sectionType: 'examples', // Explicitly set section type
-        seed: seed
-      });
+      if (step.reset) {
+        // Reset all toggleable states
+        newState.showHeight = false;
+        newState.showAngles = false;
+      }
 
-      // Adapt it for the Examples section with controlled visualization size
-      return ExamplesAdapter.adaptQuestion(question, {
-        ...options,
-        containerHeight: 250, // Consistent height
-        enhanceVisualization: false // Let factory control visualization
-      });
-    } catch (error) {
-      console.error("Error in generateSpecificExample:", error);
-      return null;
-    }
-  }
+      return newState;
+    },
+
+      /**
+     * Generate a specific example type
+     * Useful when you need a particular kind of example
+     * 
+     * @param {string} type - The type of example to generate
+     * @param {Object} options - Configuration options
+     * @returns {Object} An adapted example ready for ExamplesSectionBase
+     */
+      generateSpecificExample: (type, options = {}) => {
+        try {
+          // Map type strings to generator functions
+          const generatorMap = {
+            'findHypotenuse': PythagorasGenerators.findHypotenuse,
+            'findMissingSide': PythagorasGenerators.findMissingSide,
+            'isoscelesArea': PythagorasGenerators.isoscelesArea
+          };
+
+          // Get the appropriate generator
+          const generator = generatorMap[type];
+          if (!generator) {
+            console.warn(`Unknown example type: ${type}`);
+            return null;
+          }
+
+          // Ensure seed is used to get consistent results
+          const seed = options.seed || Date.now() + Math.random();
+          console.log(`Generating specific example of type ${type} with seed: ${seed}`);
+
+          // Generate the raw question
+          const question = generator({
+            difficulty: options.difficulty || 'medium',
+            sectionType: 'examples', // Explicitly set section type
+            seed: seed
+          });
+
+          // Adapt it for the Examples section with controlled visualization size
+          return ExamplesAdapter.adaptQuestion(question, {
+            ...options,
+            containerHeight: STANDARD_CONTAINER_HEIGHT, // Use the standard height
+            enhanceVisualization: false // Let factory control visualization
+          });
+        } catch (error) {
+          console.error("Error in generateSpecificExample:", error);
+          return null;
+        }
+      }
 };
 
 export default PythagorasExamplesProvider;

@@ -1,8 +1,8 @@
 // maths-teaching-app/src/components/math/shapes/base/useShapeConfiguration.js
 import { useMemo } from 'react';
-import { 
-  SHAPE_THEMES, 
-  SHAPE_SIZES, 
+import {
+  SHAPE_THEMES,
+  SHAPE_SIZES,
   STANDARD_DIMENSIONS,
   BOARD_DEFAULTS,
   STANDARD_PROPORTIONS,
@@ -36,69 +36,57 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
     } = props;
 
     // Process proportion type
-    const proportionType = (() => {
-      // If explicitly provided, use it
-      if (props.proportionType && STANDARD_PROPORTIONS[shapeType]?.[props.proportionType]) {
-        return props.proportionType;
-      }
-      
-      // Otherwise, use 'balanced' as default
-      return 'balanced';
-    })();
-
+    const proportionType = 'balanced';
+    
     // Get proportion configuration
     const proportionConfig = 
-      STANDARD_PROPORTIONS[shapeType]?.[proportionType] || 
-      STANDARD_PROPORTIONS[shapeType]?.balanced || 
-      { baseRatio: 1, heightRatio: 1, scaleFactor: 1 };
+  STANDARD_PROPORTIONS[shapeType]?.balanced || 
+  { baseRatio: 1, heightRatio: 1, scaleFactor: 1 };
 
     // Get standard dimensions for the shape type
     const standardDims = STANDARD_DIMENSIONS[shapeType] || STANDARD_DIMENSIONS.rightTriangle;
-    
+
     // Get size configuration based on containerHeight or section type
     const sizeConfig = (() => {
       if (containerHeight) {
         // If explicit containerHeight is provided, use it
-        return { 
-          ...SHAPE_SIZES.diagnostic, 
-          containerHeight 
+        return {
+          ...SHAPE_SIZES.diagnostic,
+          containerHeight
         };
       }
       // Otherwise use section-based sizing
       return SHAPE_SIZES[sectionType] || SHAPE_SIZES.diagnostic;
     })();
-    
+
     // Get theme configuration based on section type, but prioritize custom styles
     const themeConfig = {
       ...SHAPE_THEMES[sectionType] || SHAPE_THEMES.learn,
       ...style
     };
-    
+
     // Get viewBox based on proportion type and shape type
-    const viewBox = 
-      STANDARD_VIEWBOXES[shapeType]?.[proportionType] || 
-      STANDARD_VIEWBOXES[shapeType]?.default || 
+    const viewBox =
+      STANDARD_VIEWBOXES[shapeType]?.[proportionType] ||
+      STANDARD_VIEWBOXES[shapeType]?.default ||
       standardDims.boundingBox;
-    
+
     // Process bounding box - either use provided one or compute based on proportion
     const boundingBox = props.boundingBox || viewBox;
-    
+
     // Process labels based on labelStyle
     const processedLabels = (() => {
       if (labels && labels.length > 0) {
-        // Use provided labels if available
+        // Use provided labels if available (ensure we clone the array)
         return [...labels];
       }
-      
+
       // Otherwise generate default labels based on labelStyle
       if (labelStyle === 'algebraic') {
         return ['a', 'b', 'c']; // Standard algebraic labels
-      } else if (labelStyle === 'numeric') {
-        // Will be handled by the specific shape component
-        return null;
       }
-      
-      return [];
+
+      return []; // Return empty array for numeric or other styles
     })();
 
     // Combine all processed configurations
@@ -108,31 +96,31 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
       sectionType,
       orientation,
       units,
-      
+
       // Proportion-related
       proportionType,
       proportionConfig,
-      
+
       // Styling
       style: themeConfig,
-      
+
       // Dimensions
       boundingBox,
       viewBox,
       containerHeight: sizeConfig.containerHeight,
       labelSize: sizeConfig.labelSize,
       scale: sizeConfig.scale,
-      
+
       // Labels
       showLabels,
       labelStyle,
       labels: processedLabels,
-      
+
       // Angles
       showAngles,
       angleLabels,
       showRightAngle,
-      
+
       // Pass through any other props
       ...restProps
     };

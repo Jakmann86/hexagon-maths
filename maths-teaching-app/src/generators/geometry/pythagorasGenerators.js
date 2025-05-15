@@ -186,11 +186,11 @@ export const PythagorasGenerators = {
   },
 
   /**
-  * Generate a question about finding the area of an isosceles triangle
-  * 
-  * @param {Object} options - Configuration options
-  * @returns {Object} Question object with visualization and solution
-  */
+   * Generate a question about finding the area of an isosceles triangle
+   * 
+   * @param {Object} options - Configuration options
+   * @returns {Object} Question object with visualization and solution
+   */
   isoscelesArea: (options = {}) => {
     const {
       difficulty = 'medium',
@@ -200,18 +200,25 @@ export const PythagorasGenerators = {
 
     console.log(`Generating isosceles triangle area example with seed: ${seed}`);
 
-    // Use standardized triangle dimensions
-    const base = STANDARD_SHAPES.isoscelesTriangle.base;
-    const height = STANDARD_SHAPES.isoscelesTriangle.height;
+    // Pre-calculated triangles with integer-valued legs
+    const triangleConfigs = [
+      { base: 8, height: 6, leg: 10 },    // 8-6-10 triangle 
+      { base: 6, height: 8, leg: 10 },    // 6-8-10 triangle
+      { base: 12, height: 5, leg: 13 },   // 12-5-13 triangle
+      { base: 10, height: 12, leg: 16 },  // 10-12-16 triangle
+    ];
 
-    // Calculate leg length based on Pythagoras theorem
-    const halfBase = base / 2;
-    const legLength = Math.sqrt(halfBase * halfBase + height * height);
-    
-    // Round for display
-    const roundedLegLength = Math.round(legLength * 100) / 100;
-    const roundedHeight = Math.round(height * 100) / 100;
-    
+    // Select variation based on seed
+    const variationIndex = Math.floor((seed % 100) / 25) % triangleConfigs.length;
+    const config = triangleConfigs[variationIndex];
+
+    // Use the pre-calculated values instead of computing them
+    const base = config.base;
+    const height = config.height;
+    const integerLegLength = config.leg;  // Using a different variable name
+
+    console.log(`Selected integer triangle: base=${base}, height=${height}, leg=${integerLegLength}`);
+
     // Calculate area
     const area = (base * height) / 2;
     const roundedArea = Math.round(area * 100) / 100;
@@ -221,23 +228,23 @@ export const PythagorasGenerators = {
       {
         explanation: "For an isosceles triangle, we need to find the height using Pythagoras' theorem",
         formula: "\\text{leg}^2 = \\text{height}^2 + (\\frac{\\text{base}}{2})^2",
-        toggleHeight: true // Signal to show height line when this step is clicked
+        toggleHeight: true
       },
       {
         explanation: "Substitute the known values",
-        formula: `${roundedLegLength}^2 = \\text{height}^2 + (\\frac{${base}}{2})^2`
+        formula: `${integerLegLength}^2 = \\text{height}^2 + (\\frac{${base}}{2})^2`
       },
       {
         explanation: "Calculate the squared terms",
-        formula: `${roundedLegLength * roundedLegLength} = \\text{height}^2 + ${halfBase * halfBase}`
+        formula: `${integerLegLength * integerLegLength} = \\text{height}^2 + ${(base / 2) * (base / 2)}`
       },
       {
         explanation: "Rearrange to find height²",
-        formula: `\\text{height}^2 = ${roundedLegLength * roundedLegLength} - ${halfBase * halfBase} = ${Math.round(height * height * 100) / 100}`
+        formula: `\\text{height}^2 = ${integerLegLength * integerLegLength} - ${(base / 2) * (base / 2)} = ${height * height}`
       },
       {
         explanation: "Calculate height",
-        formula: `\\text{height} = \\sqrt{${Math.round(height * height * 100) / 100}} = ${roundedHeight}\\text{ cm}`
+        formula: `\\text{height} = \\sqrt{${height * height}} = ${height}\\text{ cm}`
       },
       {
         explanation: "Now we can find the area using the formula",
@@ -245,29 +252,49 @@ export const PythagorasGenerators = {
       },
       {
         explanation: "Substitute the values",
-        formula: `\\text{Area} = \\frac{1}{2} × ${base} × ${roundedHeight}`
+        formula: `\\text{Area} = \\frac{1}{2} × ${base} × ${height}`
       },
       {
         explanation: "Calculate the result",
-        formula: `\\text{Area} = \\frac{${base * roundedHeight}}{2} = ${roundedArea}\\text{ cm}^2`
+        formula: `\\text{Area} = \\frac{${base * height}}{2} = ${roundedArea}\\text{ cm}^2`
       }
     ];
 
-    // Create isosceles triangle with consistent measurements
+    // Create custom labels with exact integer leg length
+    const customLabels = [`${base} cm`, `${integerLegLength} cm`, `${integerLegLength} cm`];
+
+    // Create isosceles triangle with the integer-sided configuration
     const triangleVisualization = createIsoscelesTriangle({
+      base: base,
+      height: height,
       showArea: false,
       showHeight: false,
       showEqualSides: true,
+      orientation: 'default',
       units: 'cm',
       sectionType,
       labelStyle: "custom",
-      labels: [`${base} cm`, `${roundedLegLength} cm`, `${roundedLegLength} cm`]
+      labels: customLabels
     });
 
     return {
       title: "Finding the Area of an Isosceles Triangle",
-      questionText: `Find the area of this isosceles triangle with base ${base} cm and equal sides of length ${roundedLegLength} cm. (First find the height using Pythagoras' theorem, then calculate the area.)`,
-      visualization: triangleVisualization,
+      questionText: `Find the area of this isosceles triangle with base ${base} cm and equal sides of length ${integerLegLength} cm. (First find the height using Pythagoras' theorem, then calculate the area.)`,
+      visualization: createIsoscelesTriangle({
+        base: base,                 // Pass the generated base dimension
+        height: height,             // Pass the generated height dimension
+        labelStyle: "custom",       // Use custom labels
+        labels: [                   // Explicitly provide the labels
+          `${base} cm`,
+          `${integerLegLength} cm`,
+          `${integerLegLength} cm`
+        ],
+        showArea: false,
+        showHeight: false,
+        showEqualSides: true,
+        units: 'cm',
+        sectionType
+      }),
       solution
     };
   }

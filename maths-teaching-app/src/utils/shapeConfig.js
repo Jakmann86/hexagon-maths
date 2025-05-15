@@ -214,75 +214,40 @@ export const BOARD_DEFAULTS = {
 
 /**
  * Standard proportion configurations for geometric shapes
- * These define different aspect ratios and proportions for visual variety
- * while maintaining consistent viewBoxes and mathematical correctness
+ * Using only balanced proportions for consistent visualization
  */
 export const STANDARD_PROPORTIONS = {
-  // Right triangle proportions
+  // Right triangle proportions - only balanced option
   rightTriangle: {
-    // Balanced - approximately equal base and height
+    // Balanced - consistent appearance for educational purposes
     balanced: {
       baseRatio: 1,
       heightRatio: 1,
       scaleFactor: 1.0
-    },
-    
-    // Tall - height significantly larger than base
-    tall: {
-      baseRatio: 1,
-      heightRatio: 1.8,
-      scaleFactor: 0.9
-    },
-    
-    // Wide - base significantly larger than height
-    wide: {
-      baseRatio: 1.8,
-      heightRatio: 1,
-      scaleFactor: 0.9
     }
   },
   
-  // Isosceles triangle proportions
+  // Isosceles triangle proportions - only balanced option
   isoscelesTriangle: {
-    // Balanced - moderate base-to-height ratio
+    // Balanced - consistent appearance for educational purposes
     balanced: {
       baseRatio: 1.4,
       heightRatio: 1,
       scaleFactor: 1.0
-    },
-    
-    // Tall - narrow base with extended height
-    tall: {
-      baseRatio: 1,
-      heightRatio: 1.6,
-      scaleFactor: 0.9
-    },
-    
-    // Wide - wide base with short height
-    wide: {
-      baseRatio: 2,
-      heightRatio: 0.8,
-      scaleFactor: 0.85
     }
   }
 };
 
 /**
  * Standard viewBox configurations for different shape types
- * These ensure consistent visual presentation regardless of shape dimensions
+ * Simplified to provide consistent presentation
  */
 export const STANDARD_VIEWBOXES = {
   rightTriangle: {
-    default: [-1, 6, 6, -1],     // [xMin, yMax, xMax, yMin]
-    balanced: [-1, 6, 6, -1],
-    tall: [-1, 9, 6, -1],
-    wide: [-1, 6, 9, -1]
+    default: [-1, 6, 6, -1]     // [xMin, yMax, xMax, yMin]
   },
   
   isoscelesTriangle: {
-    default: [-1, 6, 6, -1],
-    balanced: [-2, 7, 7, -2],
-    tall: [-2, 8, 8, -2],
-    wide: [-2, 6, 9, -2]
+    default: [-2, 7, 7, -2]
   }
 };

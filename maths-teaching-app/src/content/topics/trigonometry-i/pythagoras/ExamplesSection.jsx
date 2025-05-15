@@ -25,7 +25,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   
   // Memoize the generateExamples function to avoid recreating it
   const generateExamples = useCallback(() => {
-    console.log("Generating new examples");
+  console.log("Regenerating examples with new seed:", Date.now());
     try {
       // Increment regeneration counter
       regenerateCountRef.current += 1;
@@ -33,17 +33,18 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       // Get the current tab before updating
       const currentTab = currentExampleIndex;
       
-      // Generate new examples with current timestamp as seed
-      const seed = Date.now();
-      console.log(`Using seed: ${seed}`);
+      // Generate a truly unique base seed that changes every time
+      const baseSeed = Date.now() + regenerateCountRef.current * 1000;
+      console.log(`Using base seed: ${baseSeed}`);
       
       // Generate separate examples for each tab to ensure they're all different
       const exampleTypes = ['findHypotenuse', 'findMissingSide', 'isoscelesArea'];
       
       // Generate example set with consistent ordering but different seeds
       const newExamples = exampleTypes.map((type, index) => {
-        // Use different seeds for each example type
-        const typeSeed = seed + (index * 1000);
+        // Each example gets unique seed, even from same base
+        const typeSeed = baseSeed + (index * 1000);
+        console.log(`Generating ${type} with seed: ${typeSeed}`);
         
         // Get the generator for this type
         const generator = PythagorasExamplesProvider.generateSpecificExample(

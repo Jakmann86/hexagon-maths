@@ -33,7 +33,7 @@ export const createPythagoreanTriangle = ({
   // Use standard dimensions for consistent sizing
   const base = STANDARD_RIGHT_TRIANGLE.base;
   const height = STANDARD_RIGHT_TRIANGLE.height;
-  
+
   // Calculate hypotenuse
   const hypotenuse = Math.sqrt(base * base + height * height);
   const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
@@ -87,17 +87,17 @@ export const createPythagoreanTripleTriangle = ({
 }) => {
   // Extract the triple values
   const [a, b, c] = triple;
-  
+
   // Scale the triple to fit within standard dimensions
   // Find the largest value in the triple and calculate scale factor
   const maxTripleValue = Math.max(a, b);
   const maxStandardDim = Math.max(STANDARD_RIGHT_TRIANGLE.base, STANDARD_RIGHT_TRIANGLE.height);
   const scaleFactor = maxStandardDim / maxTripleValue;
-  
+
   // Used scaled dimensions to maintain the triple's proportions
   // but keep overall size consistent with other triangles
-  const scaledBase = a;
-  const scaledHeight = b;
+  const scaledBase = a * scaleFactor;
+  const scaledHeight = b * scaleFactor;
 
   // Create labels based on which side is unknown
   let labels;
@@ -151,7 +151,7 @@ export const createSOHCAHTOATriangle = ({
   // Use standard dimensions as a reference, but maintain the angle
   const standardBase = STANDARD_RIGHT_TRIANGLE.base;
   const standardHeight = STANDARD_RIGHT_TRIANGLE.height;
-  
+
   // Calculate all side lengths based on angle
   const sinAngle = Math.sin(angle * Math.PI / 180);
   const cosAngle = Math.cos(angle * Math.PI / 180);
@@ -159,12 +159,12 @@ export const createSOHCAHTOATriangle = ({
 
   // Start with standard dimensions for the known side
   let base, height, hypotenuse;
-  
+
   if (knownSide === 'hypotenuse') {
-    hypotenuse = standardBase > standardHeight 
+    hypotenuse = standardBase > standardHeight
       ? standardBase / cosAngle  // Use base dimension for sizing
       : standardHeight / sinAngle; // Use height dimension for sizing
-      
+
     base = hypotenuse * cosAngle;
     height = hypotenuse * sinAngle;
   } else if (knownSide === 'adjacent') {
@@ -231,7 +231,7 @@ export const createSpecialAngleTriangle = ({
 }) => {
   // Use standard dimension as a reference scale
   const standardBase = STANDARD_RIGHT_TRIANGLE.base;
-  
+
   let base, height, hypotenuse;
   let angles = [30, 60]; // Default for 30-60-90 triangle
 
@@ -294,6 +294,10 @@ export const createSpecialAngleTriangle = ({
  * @returns {JSX.Element} IsoscelesTriangle component with appropriate configuration
  */
 export const createIsoscelesTriangle = ({
+  // Use parameters but with defaults from STANDARD_ISOSCELES_TRIANGLE
+  base = STANDARD_ISOSCELES_TRIANGLE.base,
+  height = STANDARD_ISOSCELES_TRIANGLE.height,
+  legLength = null,  // Add parameter for leg length (slant height)
   showArea = false,
   areaLabel = null,
   showHeight = false,
@@ -301,18 +305,20 @@ export const createIsoscelesTriangle = ({
   orientation = 'default',
   units = 'cm',
   sectionType = 'examples',
-  labelOffsetMultiplier = 1.2
+  labelOffsetMultiplier = 1.2,
+  useStandardShape = false  // Add flag to override with standard shape
 }) => {
-  // Use standard dimensions for consistent sizing
-  const base = STANDARD_ISOSCELES_TRIANGLE.base;
-  const height = STANDARD_ISOSCELES_TRIANGLE.height;
-  
+  // If useStandardShape is true, override dimensions with standard ones
+  const effectiveBase = useStandardShape ? STANDARD_ISOSCELES_TRIANGLE.base : base;
+  const effectiveHeight = useStandardShape ? STANDARD_ISOSCELES_TRIANGLE.height : height;
+
   // Calculate legs (the equal sides)
-  const legLength = Math.sqrt((base / 2) * (base / 2) + height * height);
-  const roundedLegLength = Math.round(legLength * 100) / 100;
+  const effectiveLegLength = legLength ||
+    Math.sqrt((effectiveBase / 2) * (effectiveBase / 2) + effectiveHeight * effectiveHeight);
+  const roundedLegLength = Math.round(effectiveLegLength * 100) / 100;
 
   // Calculate area
-  const area = (base * height) / 2;
+  const area = (effectiveBase * effectiveHeight) / 2;
   const roundedArea = Math.round(area * 100) / 100;
 
   // Create custom labels based on which side is unknown
@@ -320,19 +326,28 @@ export const createIsoscelesTriangle = ({
   if (unknownSide === 'base') {
     labels = [`? ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
   } else if (unknownSide === 'leg') {
-    labels = [`${base} ${units}`, `? ${units}`, `? ${units}`];
+    labels = [`${effectiveBase} ${units}`, `? ${units}`, `? ${units}`];
   } else if (unknownSide === 'height') {
-    labels = [`${base} ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
+    labels = [`${effectiveBase} ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
   } else {
-    // No unknown side, show all values
-    labels = [`${base} ${units}`, `${roundedLegLength} ${units}`, `${roundedLegLength} ${units}`];
+    // No unknown side, use the dimensions from the question
+    labels = [`${base} ${units}`, `${legLength || roundedLegLength} ${units}`, `${legLength || roundedLegLength} ${units}`];
   }
 
-  // Return configured triangle with section-appropriate styling
+  console.log("[Factory] Creating isosceles triangle:", {
+    visualBase: effectiveBase,
+    visualHeight: effectiveHeight,
+    questionBase: base,
+    questionLeg: legLength,
+    calculatedLeg: roundedLegLength,
+    labels
+  });
+
+  // Return triangle with standard shape but question-based labels
   return (
     <IsoscelesTriangle
-      base={base}
-      height={height}
+      base={effectiveBase}
+      height={effectiveHeight}
       labelStyle="custom"
       labels={labels}
       orientation={orientation}
