@@ -1,9 +1,9 @@
 // src/generators/adapters/examplesAdapter.js
-import React from 'react'; // This was missing - critical import!
+import React from 'react';
 
 /**
  * ExamplesAdapter - Converts raw questions into the format expected by ExamplesSectionBase
- * This adapter standardizes questions from different generators to work with the Examples UI
+ * Updated to preserve triangle sizes and avoid unwanted enhancements
  */
 export const ExamplesAdapter = {
   /**
@@ -22,16 +22,17 @@ export const ExamplesAdapter = {
     // Merge options with defaults
     const adaptOptions = {
       customTitle: null,
-      containerHeight: 300,
-      enhanceVisualization: true,
+      containerHeight: 250,
+      enhanceVisualization: false, // Default changed to FALSE to preserve sizes
       ...options
     };
 
     // Create standardized steps from question's solution or steps property
     const standardizedSteps = question.solution || question.steps || [];
 
-    // Enhance visualization if requested
-    const enhancedVisualization = adaptOptions.enhanceVisualization 
+    // Enhance visualization ONLY if explicitly requested
+    // This prevents unwanted modification of the visualization
+    const visualization = adaptOptions.enhanceVisualization 
       ? enhanceVisualization(question.visualization, adaptOptions) 
       : question.visualization;
 
@@ -39,7 +40,7 @@ export const ExamplesAdapter = {
     return {
       title: adaptOptions.customTitle || question.title || 'Worked Example',
       question: question.questionText || question.problemText || question.question || '',
-      visualization: enhancedVisualization,
+      visualization: visualization,
       steps: standardizedSteps.map(step => {
         // Standardize step format
         return {
@@ -73,6 +74,7 @@ export const ExamplesAdapter = {
 
 /**
  * Enhances a visualization component with standard properties and wrapper
+ * Only used when enhanceVisualization option is true
  * 
  * @param {React.ReactNode} visualization - Original visualization component
  * @param {Object} options - Enhancement options
@@ -82,29 +84,28 @@ const enhanceVisualization = (visualization, options = {}) => {
   // If no visualization, return null
   if (!visualization) return null;
 
-  // If visualization is already a React element, enhance it
+  // If visualization is already a React element, consider enhancing it
   if (React.isValidElement(visualization)) {
     // Extract component props
     const componentProps = visualization.props || {};
     
-    // Set standard height if it's a shape component
+    // Set standard height if it's a shape component and a height is specified
     if (
       typeof visualization.type === 'function' && 
       (
         visualization.type.name?.includes('Triangle') || 
         visualization.type.name?.includes('Square') ||
         visualization.type.name?.includes('Shape')
-      )
+      ) &&
+      options.containerHeight
     ) {
-      // Clone with consistent container height
+      // Clone with container height but preserve all other props
+      // This ensures dimensions and other educational parameters are kept
       return React.cloneElement(visualization, {
         ...componentProps,
-        containerHeight: options.containerHeight || 300,
-        // Preserve any specific styling from original
-        style: {
-          ...(componentProps.style || {}),
-          maxWidth: '100%'
-        }
+        containerHeight: options.containerHeight,
+        // Don't override any specific styling from original
+        style: componentProps.style || {}
       });
     }
     

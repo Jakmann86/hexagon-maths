@@ -4,6 +4,7 @@ import { ExamplesAdapter } from '../../../generators/adapters/examplesAdapter';
 
 /**
  * Pythagoras Examples Content Provider
+ * Updated to ensure consistent triangle sizing and accurate labels
  * 
  * This module connects the Pythagoras generators and the Examples UI,
  * providing curriculum-appropriate examples and rendering logic for
@@ -18,25 +19,34 @@ const PythagorasExamplesProvider = {
    * @returns {Array} Array of examples ready for the ExamplesSectionBase
    */
   generateExamples: (options = {}) => {
-    // Define the required example types
+    // Define the required example types with consistent configuration
     const exampleTypes = [
       {
         type: 'findHypotenuse',
         generator: PythagorasGenerators.findHypotenuse,
         title: "Finding the Hypotenuse",
-        adapterOptions: { containerHeight: 300 }
+        adapterOptions: { 
+          containerHeight: 250, // Use consistent height
+          enhanceVisualization: false // Let factory control visualization
+        }
       },
       {
         type: 'findMissingSide',
         generator: PythagorasGenerators.findMissingSide,
         title: "Finding a Missing Side",
-        adapterOptions: { containerHeight: 300 }
+        adapterOptions: { 
+          containerHeight: 250, // Use consistent height
+          enhanceVisualization: false // Let factory control visualization
+        }
       },
       {
         type: 'isoscelesArea',
         generator: PythagorasGenerators.isoscelesArea,
         title: "Finding the Area of an Isosceles Triangle",
-        adapterOptions: { containerHeight: 300 }
+        adapterOptions: { 
+          containerHeight: 250, // Use consistent height
+          enhanceVisualization: false // Let factory control visualization
+        }
       }
     ];
 
@@ -46,7 +56,8 @@ const PythagorasExamplesProvider = {
         // Generate the raw question using the appropriate generator
         const question = exampleType.generator({
           difficulty: options.difficulty || 'medium',
-          sectionType: 'examples'
+          sectionType: 'examples', // Explicitly set section type
+          seed: options.seed || Date.now() // Use provided seed or generate new one
         });
 
         // Adapt the question for the Examples section
@@ -81,11 +92,10 @@ const PythagorasExamplesProvider = {
   getExampleContentConfig: (example) => {
     if (!example) return null;
 
-    // Return configuration for rendering
+    // Return configuration for rendering without modification
     return {
       question: example.question,
-      visualization: example.visualization,
-      // Any other data needed for rendering
+      visualization: example.visualization
     };
   },
 
@@ -142,14 +152,23 @@ const PythagorasExamplesProvider = {
         return null;
       }
 
+      // Ensure seed is used to get consistent results
+      const seed = options.seed || Date.now();
+      console.log(`Generating specific example of type ${type} with seed: ${seed}`);
+
       // Generate the raw question
       const question = generator({
         difficulty: options.difficulty || 'medium',
-        sectionType: 'examples'
+        sectionType: 'examples', // Explicitly set section type
+        seed: seed
       });
 
-      // Adapt it for the Examples section
-      return ExamplesAdapter.adaptQuestion(question, options);
+      // Adapt it for the Examples section with controlled visualization size
+      return ExamplesAdapter.adaptQuestion(question, {
+        ...options,
+        containerHeight: 250, // Consistent height
+        enhanceVisualization: false // Let factory control visualization
+      });
     } catch (error) {
       console.error("Error in generateSpecificExample:", error);
       return null;
