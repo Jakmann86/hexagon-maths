@@ -1,11 +1,8 @@
 // src/components/math/shapes/triangles/RightTriangle.jsx
 
-import React, { useId, useCallback, useEffect, useRef } from 'react';
+import React, { useId, useCallback } from 'react';
 import { useShapeConfig } from '../../../../hooks/useShapeConfig';
 import JSXGraphBoard from '../../JSXGraphBoard';
-
-// Import JSXGraph directly if not globally available
-// import JXG from 'jsxgraph';
 
 function RightTriangle({
   // Allow direct dimension specification
@@ -24,16 +21,6 @@ function RightTriangle({
   // Other props
   ...otherProps
 }) {
-  // Reference to track if board was initialized
-  const isInitializedRef = useRef(false);
-
-  // Debug logging for props
-  useEffect(() => {
-    console.log("RightTriangle Props:", {
-      base, height, orientation, sectionType, labelStyle, labels
-    });
-  }, [base, height, orientation, sectionType, labelStyle, labels]);
-
   // Generate stable ID
   const uniqueId = useId().replace(/:/g, '-');
   const boardId = `triangle-${uniqueId}`;
@@ -51,17 +38,11 @@ function RightTriangle({
     ...otherProps
   });
 
-  // Log config for debugging
-  useEffect(() => {
-    console.log("Shape Config:", config);
-  }, [config]);
-
   // Use final values from config
   const {
     dimensions,
     theme,
-    size,
-    board: boardConfig
+    size
   } = config;
 
   // Use provided dimensions or defaults
@@ -74,77 +55,42 @@ function RightTriangle({
 
   // Initialize board function
   const initializeBoard = useCallback((board) => {
-    if (!board) {
-      console.error("No board provided to initializeBoard");
-      return;
-    }
+    if (!board) return;
 
-    console.log(`Triangle board ${boardId} initialized`);
-    isInitializedRef.current = true;
+    board.suspendUpdate();
 
     try {
-      // Clear existing objects
-      board.suspendUpdate();
-
       // Clear any existing objects
-      try {
-        // First approach - try to use objectsList if available
-        if (board.objectsList && Array.isArray(board.objectsList)) {
-          // Create a copy of the array to avoid modification during iteration
-          const objects = [...board.objectsList];
-          for (let i = objects.length - 1; i >= 0; i--) {
-            const obj = objects[i];
-            if (obj && typeof obj.remove === 'function') {
-              board.removeObject(obj, false);
-            }
-          }
-        }
-        // Alternative - if no direct access to objects list, just clear the board
-        else {
-          board.removeObject(board.select(function () {
-            return true;
-          }));
-        }
-      } catch (err) {
-        console.log("Could not clear board objects:", err);
-        // If all else fails, just create a new board
-        board.suspendUpdate();
-      }
-      // Standardize triangle size to match 3-4-5 triangle
-      const standardBase = 3;
-      const standardHeight = 4;
-      const scaleBase = standardBase / finalBase;
-      const scaleHeight = standardHeight / finalHeight;
-      const scale = Math.min(scaleBase, scaleHeight);
+      board.removeObject(board.select(() => true));
+      
+      // FIXED DIMENSIONS FOR ALL TRIANGLES - regardless of actual measurements
+      const fixedBase = 3;
+      const fixedHeight = 4;
 
-      // Scaled dimensions - fit within 3-4-5 proportions
-      const scaledBase = finalBase * scale;
-      const scaledHeight = finalHeight * scale;
-      // Define the triangle points based on orientation
+      // Define the triangle points based on orientation with FIXED dimensions
       let points;
-
       switch (orientation) {
         case 'rotate90': // Right angle at origin, vertical base, horizontal height
           points = [
             [0, 0],           // Right angle at origin
-            [0, scaledBase],   // Vertical base (up from origin)
-            [scaledHeight, 0]  // Horizontal height (right from origin)
+            [0, fixedBase],   // Vertical base (up from origin)
+            [fixedHeight, 0]  // Horizontal height (right from origin)
           ];
           break;
 
         case 'rotate180': // Right angle at top-right
           points = [
-            [scaledBase, scaledHeight], // Right angle at top-right
-            [0, scaledHeight],         // Horizontal base (left from right angle)
-            [scaledBase, 0]            // Vertical height (down from right angle)
+            [fixedBase, fixedHeight], // Right angle at top-right
+            [0, fixedHeight],         // Horizontal base (left from right angle)
+            [fixedBase, 0]            // Vertical height (down from right angle)
           ];
           break;
 
         case 'rotate270': // Right angle at bottom-right
           points = [
-            [scaledHeight, scaledBase], // Right angle at bottom-right
-            [scaledHeight, 0],         // Vertical base (up from right angle)
-            [0, scaledBase]            // Horizontal height (left from right angle)
+            [fixedHeight, fixedBase], // Right angle at bottom-right
+            [fixedHeight, 0],         // Vertical base (up from right angle)
+            [0, fixedBase]            // Horizontal height (left from right angle)
           ];
           break;
 
@@ -152,8 +98,8 @@ function RightTriangle({
         default:
           points = [
             [0, 0],            // Right angle at origin
-            [scaledBase, 0],    // Horizontal base (right from origin)
-            [0, scaledHeight]   // Vertical height (up from origin)
+            [fixedBase, 0],    // Horizontal base (right from origin)
+            [0, fixedHeight]   // Vertical height (up from origin)
           ];
           break;
       }
@@ -303,10 +249,10 @@ function RightTriangle({
         }
       }
 
-      // Add right angle marker if requested
+      // Add right angle marker if requested - with FIXED size
       if (showRightAngle) {
-        // Size based on triangle dimensions
-        const rightAngleSize = Math.min(finalBase, finalHeight) * 0.15;
+        // Fixed size for right angle marker
+        const rightAngleSize = 0.5;
 
         // Create right angle marker
         board.create('angle', [
@@ -331,20 +277,14 @@ function RightTriangle({
   }, [boardId, finalBase, finalHeight, orientation, labelStyle, labels, showRightAngle, theme, size, units]);
 
   return (
-    <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '1px' }}>
-      <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>
-        RightTriangle: {finalBase}x{finalHeight}, {orientation}
-      </div>
-
-      <JSXGraphBoard
-        id={boardId}
-        boundingBox={[-1, 5, 5, -1]} // Fixed standard bounding box for all triangles
-        containerHeight={size.containerHeight || 250}
-        onMount={initializeBoard}
-        axis={false}
-        grid={false}
-      />
-    </div>
+    <JSXGraphBoard
+      id={boardId}
+      boundingBox={[-1, 5, 5, -1]} // Fixed standard bounding box for all triangles
+      containerHeight={size.containerHeight || 250}
+      onMount={initializeBoard}
+      axis={false}
+      grid={false}
+    />
   );
 }
 

@@ -6,18 +6,20 @@ import {
   createPythagoreanTripleTriangle,
   createIsoscelesTriangle,
   PYTHAGOREAN_TRIPLES
-} from '../../factories/triangleFactories';
-import { STANDARD_SHAPES } from '../../config/standardShapes';
+} from '../../factories/triangleFactory';
 
 /**
  * PythagorasGenerators - Specialized question generators for Pythagoras' theorem
- * Updated to provide consistent sizing and accurate labels
+ * Provides consistent question generation with deterministic behavior based on seeds
  */
-export const PythagorasGenerators = {
+const PythagorasGenerators = {
   /**
    * Generate a question asking for the hypotenuse
    * 
    * @param {Object} options - Configuration options
+   * @param {string} options.difficulty - Difficulty level ('easy', 'medium', 'hard')
+   * @param {string} options.sectionType - Section type for styling
+   * @param {number} options.seed - Seed for deterministic generation
    * @returns {Object} Question object with visualization and solution
    */
   findHypotenuse: (options = {}) => {
@@ -27,8 +29,6 @@ export const PythagorasGenerators = {
       seed = Date.now()
     } = options;
 
-    console.log(`Generating findHypotenuse example with seed: ${seed}`);
-
     // Choose appropriate triples based on difficulty
     let triples = [...PYTHAGOREAN_TRIPLES];
     if (difficulty === 'easy') {
@@ -37,11 +37,14 @@ export const PythagorasGenerators = {
       triples = triples.slice(3); // Harder triples
     }
 
-    // Use the seed to deterministically select a triple
+    // Deterministically select triple and orientation based on seed
     const tripleIndex = Math.floor((seed % 100) / 12.5) % triples.length;
-    console.log(`Selected triple index ${tripleIndex}`);
     const triple = triples[tripleIndex];
     const [a, b, c] = triple;
+
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    const orientation = orientations[orientationIndex];
 
     // Create solution steps
     const solution = [
@@ -67,11 +70,6 @@ export const PythagorasGenerators = {
       }
     ];
 
-    // Select a deterministic orientation
-    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
-    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
-    const orientation = orientations[orientationIndex];
-
     return {
       title: "Finding the Hypotenuse",
       questionText: `Find the length of the hypotenuse in this right-angled triangle with base ${a} cm and height ${b} cm.`,
@@ -90,6 +88,9 @@ export const PythagorasGenerators = {
    * Generate a question asking for a missing side (leg)
    * 
    * @param {Object} options - Configuration options
+   * @param {string} options.difficulty - Difficulty level ('easy', 'medium', 'hard')
+   * @param {string} options.sectionType - Section type for styling
+   * @param {number} options.seed - Seed for deterministic generation
    * @returns {Object} Question object with visualization and solution
    */
   findMissingSide: (options = {}) => {
@@ -99,8 +100,6 @@ export const PythagorasGenerators = {
       seed = Date.now()
     } = options;
 
-    console.log(`Generating findMissingSide example with seed: ${seed}`);
-
     // Choose appropriate triples based on difficulty
     let triples = [...PYTHAGOREAN_TRIPLES];
     if (difficulty === 'easy') {
@@ -109,16 +108,18 @@ export const PythagorasGenerators = {
       triples = triples.slice(3); // Harder triples
     }
 
-    // Use a deterministic approach to select the triple
+    // Deterministically select triple and orientation based on seed
     const tripleIndex = Math.floor((seed % 100) / 12.5) % triples.length;
-    console.log(`Selected triple index ${tripleIndex}`);
     const triple = triples[tripleIndex];
     const [a, b, c] = triple;
+
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    const orientation = orientations[orientationIndex];
 
     // Deterministically choose which leg to find based on the seed
     const legToFind = (seed % 2 === 0) ? 'base' : 'height';
     const missingValue = legToFind;
-    const correctAnswer = legToFind === 'base' ? a : b;
 
     // Create solution steps for finding a leg
     const solution = [
@@ -159,21 +160,13 @@ export const PythagorasGenerators = {
     ];
 
     // Create question text with known side values
-    let questionText;
-    if (legToFind === 'base') {
-      questionText = `Find the length of the base in this right-angled triangle with hypotenuse ${c} cm and height ${b} cm.`;
-    } else {
-      questionText = `Find the length of the height in this right-angled triangle with hypotenuse ${c} cm and base ${a} cm.`;
-    }
-
-    // Select a deterministic orientation
-    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
-    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
-    const orientation = orientations[orientationIndex];
+    const questionText = legToFind === 'base'
+      ? `Find the length of the base in this right-angled triangle with hypotenuse ${c} cm and height ${b} cm.`
+      : `Find the length of the height in this right-angled triangle with hypotenuse ${c} cm and base ${a} cm.`;
 
     return {
       title: `Finding the ${legToFind === 'base' ? 'Base' : 'Height'}`,
-      questionText: questionText,
+      questionText,
       visualization: createPythagoreanTripleTriangle({
         triple,
         unknownSide: missingValue,
@@ -189,6 +182,9 @@ export const PythagorasGenerators = {
    * Generate a question about finding the area of an isosceles triangle
    * 
    * @param {Object} options - Configuration options
+   * @param {string} options.difficulty - Difficulty level ('easy', 'medium', 'hard')
+   * @param {string} options.sectionType - Section type for styling
+   * @param {number} options.seed - Seed for deterministic generation
    * @returns {Object} Question object with visualization and solution
    */
   isoscelesArea: (options = {}) => {
@@ -197,8 +193,6 @@ export const PythagorasGenerators = {
       sectionType = 'examples',
       seed = Date.now()
     } = options;
-
-    console.log(`Generating isosceles triangle area example with seed: ${seed}`);
 
     // Pre-calculated triangles with integer-valued legs
     const triangleConfigs = [
@@ -212,12 +206,8 @@ export const PythagorasGenerators = {
     const variationIndex = Math.floor((seed % 100) / 25) % triangleConfigs.length;
     const config = triangleConfigs[variationIndex];
 
-    // Use the pre-calculated values instead of computing them
-    const base = config.base;
-    const height = config.height;
-    const integerLegLength = config.leg;  // Using a different variable name
-
-    console.log(`Selected integer triangle: base=${base}, height=${height}, leg=${integerLegLength}`);
+    // Use the pre-calculated values
+    const { base, height, leg: integerLegLength } = config;
 
     // Calculate area
     const area = (base * height) / 2;
@@ -260,35 +250,17 @@ export const PythagorasGenerators = {
       }
     ];
 
-    // Create custom labels with exact integer leg length
+    // Create custom labels for the sides
     const customLabels = [`${base} cm`, `${integerLegLength} cm`, `${integerLegLength} cm`];
-
-    // Create isosceles triangle with the integer-sided configuration
-    const triangleVisualization = createIsoscelesTriangle({
-      base: base,
-      height: height,
-      showArea: false,
-      showHeight: false,
-      showEqualSides: true,
-      orientation: 'default',
-      units: 'cm',
-      sectionType,
-      labelStyle: "custom",
-      labels: customLabels
-    });
 
     return {
       title: "Finding the Area of an Isosceles Triangle",
       questionText: `Find the area of this isosceles triangle with base ${base} cm and equal sides of length ${integerLegLength} cm. (First find the height using Pythagoras' theorem, then calculate the area.)`,
       visualization: createIsoscelesTriangle({
-        base: base,                 // Pass the generated base dimension
-        height: height,             // Pass the generated height dimension
-        labelStyle: "custom",       // Use custom labels
-        labels: [                   // Explicitly provide the labels
-          `${base} cm`,
-          `${integerLegLength} cm`,
-          `${integerLegLength} cm`
-        ],
+        base,
+        height,
+        labelStyle: "custom",
+        labels: customLabels,
         showArea: false,
         showHeight: false,
         showEqualSides: true,

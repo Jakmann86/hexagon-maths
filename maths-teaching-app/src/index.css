@@ -1,4 +1,4 @@
-@import './styles/mafs-overrides.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

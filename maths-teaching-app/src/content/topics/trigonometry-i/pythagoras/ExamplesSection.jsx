@@ -2,30 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
-import PythagorasExamplesProvider from '../../../providers/geometry/PythagorasExamplesProvider';
 import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
-
-// Debug helper component
-const DebugOutput = ({ data, title }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  return (
-    <div className="my-2 border border-gray-300 rounded p-2 bg-gray-100">
-      <div
-        className="font-mono text-sm flex justify-between cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <span className="font-semibold">{title || 'Debug'}</span>
-        <span>{isExpanded ? '▼' : '►'}</span>
-      </div>
-      {isExpanded && (
-        <pre className="mt-2 text-xs overflow-auto">
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      )}
-    </div>
-  );
-};
+import PythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
 
 const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   // State setup
@@ -39,39 +17,46 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   const initializedRef = useRef(false);
   const regenerateCountRef = useRef(0);
 
-  // Visual key generation
-  const getVisualizationKey = useCallback((exampleIndex) => {
-    return `viz-${regenerateCountRef.current}-tab-${exampleIndex}`;
-  }, []);
+  // Simple inline adapter function to prepare generator output for display
+  const adaptForExamples = (generatedQuestion) => {
+    return {
+      title: generatedQuestion.title,
+      question: generatedQuestion.questionText,
+      visualization: generatedQuestion.visualization,
+      steps: generatedQuestion.solution
+    };
+  };
 
-  // Generate examples function
+  // Generate examples using generators directly
   const generateExamples = useCallback(() => {
-    console.log("Generating examples");
-
+    // Increment counter for key generation
+    regenerateCountRef.current += 1;
+    const seed = Date.now() + regenerateCountRef.current * 1000;
+    
     try {
-      // Increment regeneration counter
-      regenerateCountRef.current += 1;
-
-      // Generate examples with debugging
-      console.log("Calling PythagorasExamplesProvider.generateExamples");
-      const generatedExamples = PythagorasExamplesProvider.generateExamples({
-        seed: Date.now() + regenerateCountRef.current * 1000
+      // Call generators with the same seed for deterministic results
+      const hypotenuse = PythagorasGenerators.findHypotenuse({ 
+        seed, 
+        sectionType: 'examples' 
       });
-
-      console.log("Generated examples:", generatedExamples);
-
-      // Set examples if we got any
-      if (generatedExamples && generatedExamples.length > 0) {
-        setExamples(generatedExamples);
-      } else {
-        console.warn("No examples were generated");
-        setExamples([{
-          title: "Default Example",
-          question: "This is a default example because no examples were generated.",
-          steps: [{ explanation: "No steps were generated" }]
-        }]);
-      }
-
+      
+      const missingSide = PythagorasGenerators.findMissingSide({ 
+        seed: seed + 1000, // Offset to ensure different questions 
+        sectionType: 'examples'
+      });
+      
+      const isoscelesArea = PythagorasGenerators.isoscelesArea({ 
+        seed: seed + 2000, 
+        sectionType: 'examples'
+      });
+      
+      // Adapt and set examples
+      setExamples([
+        adaptForExamples(hypotenuse),
+        adaptForExamples(missingSide),
+        adaptForExamples(isoscelesArea)
+      ]);
+      
       // Reset interactive state
       setInteractiveState({
         showHeight: false,
@@ -79,8 +64,9 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
       });
     } catch (error) {
       console.error("Error generating examples:", error);
+      // Fallback to default examples if generators fail
       setExamples([{
-        title: "Error Example",
+        title: "Example Question",
         question: "There was an error generating examples.",
         steps: [{ explanation: "Error: " + error.message }]
       }]);
@@ -90,7 +76,6 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   // Initialize examples on first mount
   useEffect(() => {
     if (!initializedRef.current) {
-      console.log("Initial examples generation");
       initializedRef.current = true;
       generateExamples();
     }
@@ -99,88 +84,70 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   // Handle step actions for interactive elements
   const handleStepAction = useCallback((step) => {
     if (!step) return;
-
-    console.log("Step action:", step);
-
+    
+    // Update interactive state based on step actions
     setInteractiveState(prevState => {
-      return PythagorasExamplesProvider.handleStepAction(step, prevState);
+      const newState = { ...prevState };
+      
+      if (step.toggleHeight) {
+        newState.showHeight = true;
+      }
+      
+      if (step.toggleAngle) {
+        newState.showAngles = true;
+      }
+      
+      if (step.reset) {
+        newState.showHeight = false;
+        newState.showAngles = false;
+      }
+      
+      return newState;
     });
   }, []);
 
-  // Render example content with debugging
+  // Content configuration for rendering
+  const getExampleContentConfig = useCallback((example) => {
+    if (!example) return null;
+    
+    return {
+      question: example.question,
+      visualization: example.visualization
+    };
+  }, []);
+
+  // Render example content
   const renderExampleContent = useCallback((example) => {
-    if (!example) {
-      console.warn("No example provided to renderExampleContent");
-      return (
-        <div className="p-4 border border-red-300 bg-red-50 rounded">
-          <p className="text-red-700">No example data available</p>
-        </div>
-      );
-    }
-
-    console.log("Rendering example:", example);
-
-    // Get configuration with debugging
-    console.log("Calling getExampleContentConfig");
-    const config = PythagorasExamplesProvider.getExampleContentConfig(example);
-    console.log("Example config:", config);
-
-    if (!config) {
-      console.warn("No config returned from getExampleContentConfig");
-      return (
-        <div className="p-4 border border-red-300 bg-red-50 rounded">
-          <p className="text-red-700">No visualization configuration available</p>
-        </div>
-      );
-    }
-
-    // Get unique key for current example
-    const vizKey = getVisualizationKey(currentExampleIndex);
-
+    if (!example) return null;
+    
+    const config = getExampleContentConfig(example);
+    
+    // Generate a key that changes whenever regeneration happens
+    const visualizationKey = `triangle-${regenerateCountRef.current}-${currentExampleIndex}`;
+    
     return (
       <div className="flex flex-col-reverse md:flex-row gap-6 items-center pt-4">
         {/* Visualization section */}
-        <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0 flex-col">
-          {/* Visualization container */}
-          <div key={vizKey} className="w-full h-full border border-gray-100 rounded mb-4">
-            {/* Add debugging for visualization */}
-            {config.visualization ? (
-              <DebugOutput
-                data={config.visualization}
-                title="Visualization Props"
-              />
-            ) : (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded">
-                <p className="text-amber-800">No visualization data available</p>
-              </div>
-            )}
-
-            {/* Uncomment this when RightTriangle is working */}
+        <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0">
+          <div key={visualizationKey} className="w-full">
             {config.visualization && <RightTriangle {...config.visualization} />}
           </div>
         </div>
-
-        {/* Question side */}
+        
+        {/* Question section with working area */}
         <div className="md:w-3/5">
           <div className="p-5 bg-orange-50 rounded-lg mb-6">
             <p className="text-gray-700 font-medium">{config.question}</p>
           </div>
 
-          {/* Debug info area */}
-          <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300 mb-4">
-            <h4 className="font-medium text-gray-700 mb-2">Debug Information:</h4>
-            <DebugOutput data={example} title="Example Object" />
-            <DebugOutput data={interactiveState} title="Interactive State" />
-          </div>
-
-          {/* Workspace area */}
-          <div className="bg-gray-50 p-6 rounded-lg h-32 border border-dashed border-gray-300">
-            <p className="text-gray-500 italic">Workspace area for teacher</p>
+          {/* Working area for teacher */}
+          <div className="bg-gray-50 p-6 rounded-lg min-h-40 h-48 border border-dashed border-gray-300">
+            {/* Empty space for teacher's working */}
           </div>
         </div>
       </div>
     );
-  }, [currentExampleIndex, getVisualizationKey, interactiveState]);
+  }, [regenerateCountRef, currentExampleIndex, getExampleContentConfig]);
 
   return (
     <div className="space-y-6 mb-8">
