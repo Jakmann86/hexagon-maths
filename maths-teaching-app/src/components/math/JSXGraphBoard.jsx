@@ -1,66 +1,84 @@
-// maths-teaching-app/src/components/math/JSXGraphBoard.jsx
+// src/components/math/JSXGraphBoard.jsx
+
 import React, { useRef, useEffect } from 'react';
 import JXG from 'jsxgraph';
 
-const JSXGraphBoard = ({
+/**
+ * JSXGraphBoard - A clean React wrapper for JSXGraph
+ * 
+ * @param {Object} props
+ * @param {string} props.id - Unique identifier for the board
+ * @param {Array} props.boundingBox - Bounding box [xMin, yMax, xMax, yMin]
+ * @param {number} props.containerHeight - Height of the container in pixels
+ * @param {number} props.containerWidth - Width of the container (default: 100%)
+ * @param {boolean} props.axis - Whether to show axes
+ * @param {boolean} props.grid - Whether to show grid
+ * @param {Function} props.onMount - Callback when the board is mounted with the board instance
+ * @param {Array} props.dependencies - Dependencies that trigger board updates
+ * @param {Object} props.style - Additional styles for the container
+ * @param {string} props.className - Additional CSS classes
+ */
+function JSXGraphBoard({
   id,
   boundingBox = [-5, 5, 5, -5],
-  axis = true,
+  containerHeight = 300,
+  containerWidth = '100%',
+  axis = false,
   grid = false,
-  width = '100%',
-  height = '400px',
-  backgroundColor = 'transparent',
+  showNavigation = false,
+  showCopyright = false,
+  keepAspectRatio = true,
+  pan = { enabled: false },
+  zoom = { enabled: false },
   onMount = null,
-  onUpdate = null,
   dependencies = [],
-  skipCleanup = false // New prop to control cleanup behavior
-}) => {
+  style = {},
+  className = ''
+}) {
+  // Reference to the container element
   const containerRef = useRef(null);
+  
+  // Reference to the board instance
   const boardRef = useRef(null);
-
-  // Create the board on mount
+  
+  // Create board on mount and handle cleanup
   useEffect(() => {
-    if (!containerRef.current || boardRef.current) return;
-
+    if (!containerRef.current) return;
+    
     try {
-      // Simple fix: Just disable automatic labeling globally
-      JXG.Options.point.withLabel = false;
-      JXG.Options.line.withLabel = false;
-      JXG.Options.polygon.withLabel = false;
-
-      // Create the board with minimal options - let JSXGraph handle most things
+      console.log(`Creating JSXGraph board: ${id}`);
+      
+      // Create the board
       const board = JXG.JSXGraph.initBoard(id, {
         boundingbox: boundingBox,
         axis: axis,
         grid: grid,
-        showCopyright: false,
-        showNavigation: false,
-        keepAspectRatio: true
+        showNavigation: showNavigation,
+        showCopyright: showCopyright,
+        keepAspectRatio: keepAspectRatio,
+        pan: pan,
+        zoom: zoom
       });
-
+      
+      // Store reference to the board
       boardRef.current = board;
-
-      // Call onMount callback
-      if (onMount) onMount(board);
-
-      // Initial update if provided
-      if (onUpdate) onUpdate(board);
+      
+      // Call onMount callback with the board instance
+      if (onMount && typeof onMount === 'function') {
+        console.log(`Calling onMount for board: ${id}`);
+        onMount(board);
+      }
     } catch (error) {
-      console.error("Error initializing JSXGraph board:", error);
+      console.error("Error creating JSXGraph board:", error);
     }
-
-    // Cleanup function - only execute if skipCleanup is false
+    
+    // Clean up on unmount
     return () => {
-      // Skip cleanup if requested (when used by BaseShape)
-      if (skipCleanup) return;
-
       try {
         if (boardRef.current) {
-          // Check if board exists in global registry before trying to free it
-          if (typeof JXG !== 'undefined' &&
-            JXG.JSXGraph &&
-            JXG.JSXGraph.boards &&
-            JXG.JSXGraph.boards[id]) {
+          console.log(`Cleaning up JSXGraph board: ${id}`);
+          // Check if the board exists in the global JSXGraph registry
+          if (JXG.JSXGraph.boards && JXG.JSXGraph.boards[id]) {
             JXG.JSXGraph.freeBoard(boardRef.current);
           }
           boardRef.current = null;
@@ -69,29 +87,23 @@ const JSXGraphBoard = ({
         console.error("Error cleaning up JSXGraph board:", error);
       }
     };
-  }, [id, boundingBox, axis, grid, onMount, skipCleanup]);
-
-  // Handle updates when dependencies change
-  useEffect(() => {
-    if (!boardRef.current || !onUpdate) return;
-
-    try {
-      onUpdate(boardRef.current);
-    } catch (error) {
-      console.error("Error updating JSXGraph board:", error);
-    }
-  }, [onUpdate].concat(
-    // Ensure dependencies is always an array and its elements are properly handled
-    Array.isArray(dependencies) ? dependencies : []
-  ));
+  }, [id]); // Only create/destroy on id change
+  
+  // Container style with specified dimensions
+  const containerStyle = {
+    width: containerWidth,
+    height: `${containerHeight}px`,
+    ...style
+  };
+  
   return (
-    <div
-      id={id}
-      className="jxgbox"
+    <div 
       ref={containerRef}
-      style={{ width, height }}
+      id={id}
+      className={`jxgbox ${className}`}
+      style={containerStyle}
     />
   );
-};
+}
 
 export default JSXGraphBoard;

@@ -5,7 +5,7 @@ import {
     createPythagoreanTriangle,
     createPythagoreanTripleTriangle,
     PYTHAGOREAN_TRIPLES
-} from '../../../../factories/triangleFactories';
+} from '../../../../factories/triangleFactory';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import { createSquare } from '../../../../factories/quadrilateralFactories';
 import Square from '../../../../components/math/shapes/quadrilaterals/Square';

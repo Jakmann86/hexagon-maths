@@ -10,48 +10,60 @@ import * as ExpandingBracketsComponents from './topics/algebra-i/expanding-brack
 
 /**
  * Component that renders the appropriate lesson section based on topic, lesson ID, and section
- * This centralizes all the lesson rendering logic outside of MainLayout
+ * TEMPORARILY MODIFIED FOR ARCHITECTURE MIGRATION
  */
 const LessonContentProvider = ({ 
   currentTopic, 
   currentLessonId, 
   currentSection 
 }) => {
+  // ====================================================
+  // MIGRATION MODE: Only enable specific sections during architecture migration
+  // ====================================================
+  const isMigrationTopic = currentTopic === 'Trigonometry I' && currentLessonId === 1;
+  
+  // Only the Examples section of Pythagoras is migrated to the new architecture
+  const isExamplesSectionMigrated = isMigrationTopic && currentSection === 'examples';
+  
+  // If we're in migration mode but not in the migrated section, show placeholder
+  if (isMigrationTopic && !isExamplesSectionMigrated) {
+    return (
+      <div className="p-6 bg-white border-2 border-amber-500 rounded-lg shadow-sm">
+        <h2 className="text-xl font-semibold mb-4 text-amber-700">
+          Migration in Progress
+        </h2>
+        <p className="mb-4">
+          This section is currently being migrated to the new architecture.
+        </p>
+        <p className="font-medium">
+          Try the "Examples" section which has been migrated.
+        </p>
+      </div>
+    );
+  }
+  
   // Function to render Trigonometry I lessons
   const renderTrigonometryI = () => {
     // Lesson 1: Pythagoras' Theorem
     if (currentLessonId === 1) {
       switch (currentSection) {
-        case 'starter':
-          return <PythagorasComponents.StarterSection 
-            currentTopic={currentTopic} 
-            currentLessonId={currentLessonId} 
-          />;
-        case 'diagnostic':
-          return <PythagorasComponents.DiagnosticSection 
-            currentTopic={currentTopic} 
-            currentLessonId={currentLessonId}
-          />;
-        case 'learn':
-          return <PythagorasComponents.LearnSection 
-            currentTopic={currentTopic} 
-            currentLessonId={currentLessonId}
-          />;
+        // KEEP ONLY THE EXAMPLES SECTION ACTIVE DURING MIGRATION
         case 'examples':
           return <PythagorasComponents.ExamplesSection 
             currentTopic={currentTopic} 
             currentLessonId={currentLessonId}
           />;
+          
+        // The rest of the sections are disabled during migration
+        case 'starter':
+        case 'diagnostic': 
+        case 'learn':
         case 'challenge':
-          return <PythagorasComponents.ChallengeSection 
-            currentTopic={currentTopic} 
-            currentLessonId={currentLessonId}
-          />;
         default:
           return <div>Select a section</div>;
       }
     }
-    // Lesson 2: SOHCAHTOA - Find Missing Sides
+    // Lesson 2: SOHCAHTOA - Find Missing Sides - KEEP AS IS
     else if (currentLessonId === 2) {
       switch (currentSection) {
         case 'starter':
@@ -94,7 +106,7 @@ const LessonContentProvider = ({
     }
   };
 
-  // Function to render Algebra I lessons
+  // Function to render Algebra I lessons - NO CHANGES HERE
   const renderAlgebraI = () => {
     // Lesson 1: Expanding Double Brackets
     if (currentLessonId === 1) {
@@ -139,7 +151,7 @@ const LessonContentProvider = ({
     }
   };
 
-  // Main renderer based on topic
+  // Main renderer based on topic - NO CHANGES
   switch (currentTopic) {
     case 'Trigonometry I':
       return renderTrigonometryI();
