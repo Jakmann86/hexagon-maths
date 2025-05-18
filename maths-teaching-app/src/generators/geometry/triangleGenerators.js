@@ -1,7 +1,7 @@
 // src/generators/geometry/triangleGenerators.js
 import _ from 'lodash';
 import React from 'react';
-import { createPythagoreanTriangle } from '../../factories/triangleFactories';
+import { createPythagoreanTriangle } from '../../factories/triangleFactory';
 
 /**
  * Generate a triangle area question

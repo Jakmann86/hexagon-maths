@@ -1,43 +1,62 @@
-// maths-teaching-app/src/content/topics/trigonometry-i/pythagoras/StarterSection.jsx
-import React, { useState, useEffect } from 'react';
+// Simplified StarterSection.jsx
+import React from 'react';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
-import { pythagoras } from './generators';
+import Square from '../../../../components/math/shapes/quadrilaterals/Square';
+import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
+import { squareGenerators } from '../../../../generators/geometry/squareGenerators';
+import { triangleGenerators } from '../../../../generators/geometry/triangleGenerators';
+import { numberPuzzleGenerators } from '../../../../generators/puzzles/numberPuzzles';
 
 /**
  * StarterSection component for Pythagoras lesson
- * With state lifted up like in ExamplesSection
  */
 const StarterSection = ({ currentTopic, currentLessonId }) => {
-  // Initialize questions with actual values right away
-  const [questions, setQuestions] = useState(() => {
-    // Generate initial questions immediately
-    return pythagoras.generateStarterQuestions();
-  });
-  
-  // Create stable generator functions that return our stored questions
+  // Create generator functions for each section type
   const questionGenerators = [
-    () => questions.lastLesson,
-    () => questions.lastTopic,
-    () => questions.lastWeek,
-    () => questions.lastYear
+    // Last Lesson: Square area and perimeter
+    () => {
+      const question = squareGenerators.describeSquare({ units: 'cm' });
+      // Convert config object to React element if needed
+      if (question.visualization && !React.isValidElement(question.visualization)) {
+        question.visualization = <Square {...question.visualization} />;
+      }
+      return question;
+    },
+    
+    // Last Week: Triangle area 
+    () => {
+      const question = triangleGenerators.triangleArea({ units: 'cm' });
+      // Convert config object to React element if needed
+      if (question.visualization && !React.isValidElement(question.visualization)) {
+        question.visualization = <RightTriangle {...question.visualization} />;
+      }
+      return question;
+    },
+    
+    // Last Topic: Naming quadrilaterals
+    () => ({
+      question: "Name all the quadrilaterals (4-sided shapes):",
+      answer: `• Square: Equal sides, all 90° angles
+- Rectangle: Opposite sides equal, all angles 90°
+- Rhombus: All sides equal, opposite angles equal
+- Parallelogram: Opposite sides parallel & equal
+- Trapezium/Trapezoid: Exactly one pair of parallel sides
+- Kite: Two pairs of adjacent sides equal`,
+      difficulty: 'text'
+    }),
+    
+    // Last Year: Number puzzle
+    () => numberPuzzleGenerators.numberPuzzle1()
   ];
-  
-  // Handler for regenerating questions
-  const handleRegenerateQuestions = () => {
-    console.log('Regenerating questions...');
-    // Generate new questions and update state
-    const newQuestions = pythagoras.generateStarterQuestions();
-    setQuestions(newQuestions);
-  };
 
   return (
-    <StarterSectionBase
-      questionGenerators={questionGenerators}
-      currentTopic={currentTopic}
-      currentLessonId={currentLessonId}
-      className="mb-8"
-      onRegenerateAllQuestions={handleRegenerateQuestions}
-    />
+    <div className="border-2 border-t-4 border-blue-500 rounded-lg shadow-md bg-white overflow-hidden">
+      <StarterSectionBase
+        questionGenerators={questionGenerators}
+        currentTopic={currentTopic}
+        currentLessonId={currentLessonId}
+      />
+    </div>
   );
 };
 

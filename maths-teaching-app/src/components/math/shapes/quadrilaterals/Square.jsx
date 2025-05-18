@@ -20,31 +20,31 @@ import useShapeConfiguration from '../base/useShapeConfiguration';
 const Square = (props) => {
   // Process and standardize configuration
   const config = useShapeConfiguration(props, 'square', props.sectionType);
-  
+
   // Extract properties
-  const { 
+  const {
     sideLength = 5,
     showDimensions = true,
     showArea = false,
     areaLabel = null,
     units = 'cm'
   } = props;
-  
+
   // Generate deterministic ID
   const squareId = useMemo(() => {
     return `sq-${sideLength}-${Math.random().toString(36).substr(2, 5)}`;
   }, [sideLength]);
-  
+
   // Calculate area if needed
   const area = sideLength * sideLength;
-  
+
   // JSXGraph board update function
   const updateBoard = (board) => {
     if (!board) return;
-    
+
     // Clear existing objects for clean redraw
     board.suspendUpdate();
-    
+
     try {
       // Clear all existing objects first
       for (const id in board.objects) {
@@ -52,7 +52,7 @@ const Square = (props) => {
           board.removeObject(board.objects[id], false);
         }
       }
-      
+
       // Extract styling options
       const {
         fillColor = '#3498db', // Default blue color
@@ -60,7 +60,7 @@ const Square = (props) => {
         strokeColor = '#3498db',
         strokeWidth = 2
       } = config.style;
-      
+
       // Create square points
       const points = [
         [0, 0],                       // Bottom left
@@ -68,7 +68,7 @@ const Square = (props) => {
         [sideLength, sideLength],     // Top right
         [0, sideLength]               // Top left
       ];
-      
+
       // Create the points
       const squarePoints = points.map(p =>
         board.create('point', p, {
@@ -79,7 +79,7 @@ const Square = (props) => {
           withLabel: false
         })
       );
-      
+
       // Create the square
       board.create('polygon', squarePoints, {
         fillColor,
@@ -93,7 +93,7 @@ const Square = (props) => {
         withLabel: false,
         name: ''
       });
-      
+
       // Add dimension labels if enabled
       if (showDimensions) {
         // Side length label - bottom
@@ -109,11 +109,11 @@ const Square = (props) => {
           color: '#000000'
         });
       }
-      
+
       // Add area label if enabled
       if (showArea) {
         const displayLabel = areaLabel || `Area = ${area} ${units}²`;
-        
+
         board.create('text', [
           sideLength / 2,
           sideLength / 2,
@@ -126,18 +126,21 @@ const Square = (props) => {
           color: '#000000'
         });
       }
-      
+
     } catch (error) {
       console.error("Error creating square:", error);
     }
-    
+
     board.unsuspendUpdate();
   };
 
   // Calculate appropriate bounding box
   const calculateBoundingBox = () => {
-    const padding = 2;
-    return [-padding, sideLength + padding, sideLength + padding, -padding];
+    // Increase padding for better label visibility
+    const padding = 3; // Increased from 2
+
+    // Allow more space at the bottom for dimension label
+    return [-padding, sideLength + padding, sideLength + padding, -padding - 1]; // Added extra padding at bottom
   };
 
   return (

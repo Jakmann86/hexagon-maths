@@ -1,9 +1,8 @@
 // src/content/LessonContentProvider.jsx
-
 import React from 'react';
-
-// Import only the components we need - Pythagoras Examples section
+import { StarterSection as PythagorasStarter } from './topics/trigonometry-i/pythagoras';
 import { ExamplesSection as PythagorasExamples } from './topics/trigonometry-i/pythagoras';
+
 
 /**
  * Placeholder component for sections that haven't been migrated yet
@@ -45,7 +44,10 @@ const LessonContentProvider = ({
           
         // Placeholders for other sections
         case 'starter':
-          return <PlaceholderSection sectionName="Starter" />;
+          return <PythagorasStarter 
+            currentTopic={currentTopic} 
+            currentLessonId={currentLessonId}
+          />;
         case 'diagnostic': 
           return <PlaceholderSection sectionName="Diagnostic" />;
         case 'learn':

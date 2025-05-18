@@ -1,20 +1,10 @@
-// maths-teaching-app/src/factories/quadrilateralFactories.js
+// maths-teaching-app/src/factories/quadrilateralFactories.jsx
 import React from 'react';
 import Square from '../components/math/shapes/quadrilaterals/Square';
 import _ from 'lodash';
 
 /**
  * Creates a square with appropriate styling and labels
- * 
- * @param {Object} config - Configuration for the square
- * @param {number} config.sideLength - Length of the square's side
- * @param {boolean} config.showDimensions - Whether to show dimension labels
- * @param {boolean} config.showArea - Whether to show the area
- * @param {string} config.areaLabel - Custom area label text
- * @param {string} config.units - Units to display
- * @param {string} config.sectionType - Section type for styling
- * @param {Object} config.style - Custom styling properties
- * @returns {JSX.Element} Square component with appropriate configuration
  */
 export const createSquare = ({
   sideLength = 5,
@@ -57,17 +47,6 @@ export const createSquare = ({
 
 /**
  * Creates a rectangle with appropriate styling and labels
- * 
- * @param {Object} config - Configuration for the rectangle
- * @param {number} config.width - Width of the rectangle
- * @param {number} config.height - Height of the rectangle
- * @param {boolean} config.showDimensions - Whether to show dimension labels
- * @param {boolean} config.showArea - Whether to show the area
- * @param {string} config.areaLabel - Custom area label text
- * @param {string} config.units - Units to display
- * @param {string} config.sectionType - Section type for styling
- * @param {Object} config.style - Custom styling properties
- * @returns {JSX.Element} Rectangle component with appropriate configuration
  */
 export const createRectangle = ({
   width = 6,

@@ -10,16 +10,16 @@ import { useUI } from '../../context/UIContext';
  */
 const ContentRenderer = memo(({ content, type = 'text' }) => {
     if (!content) return null;
-    
+
     // Handle React elements (like RightTriangle, ShapeDisplay, etc.)
     if (React.isValidElement(content)) {
         // Get component type name for stable key generation
         const componentType = content.type?.displayName || content.type?.name || 'component';
         const elementKey = content.key || `element-${componentType}-${Math.random().toString(36).substr(2, 5)}`;
-        
+
         // Check if this is a shape component (RightTriangle, Square, ShapeDisplay, etc.)
         const isShapeComponent = (
-            componentType === 'RightTriangle' || 
+            componentType === 'RightTriangle' ||
             componentType === 'Square' ||
             componentType === 'Rectangle' ||
             componentType === 'Triangle' ||
@@ -27,41 +27,41 @@ const ContentRenderer = memo(({ content, type = 'text' }) => {
             componentType.includes('Triangle') ||
             componentType.includes('Shape')
         );
-        
+
         // Enforce consistent height for shape components
         if (isShapeComponent) {
             // Standard height for all shapes
             const STANDARD_SHAPE_HEIGHT = 140;
-            
+
             // Get current props
             const currentProps = content.props || {};
-            
+
             // Set consistent props based on component type
             let standardProps = {};
-            
+
             if (componentType === 'ShapeDisplay') {
                 standardProps = { height: STANDARD_SHAPE_HEIGHT };
             } else {
-                standardProps = { 
+                standardProps = {
                     containerHeight: STANDARD_SHAPE_HEIGHT,
                     scale: 0.9  // Slightly smaller scale for better fit
                 };
             }
-            
+
             // Create component with standardized height
             return React.cloneElement(content, {
                 ...standardProps,
                 key: elementKey,
                 // Keep the original orientation if specified
-                orientation: currentProps.orientation || 'default' 
+                orientation: currentProps.orientation || 'default'
             });
         }
-        
+
         // Clone with just a key if not a shape component
         if (!content.key) {
             return React.cloneElement(content, { key: elementKey });
         }
-        
+
         return content;
     }
 
@@ -75,7 +75,10 @@ const ContentRenderer = memo(({ content, type = 'text' }) => {
     switch (type) {
         case 'visualization':
             return (
-                <div className="flex justify-center items-center p-1 h-full mt-2">
+                <div
+                    className="flex justify-center items-start w-full overflow-visible -mt-2"
+                    style={{ height: '160px' }}
+                >
                     {content}
                 </div>
             );
@@ -104,10 +107,10 @@ ContentRenderer.displayName = 'ContentRenderer';
  */
 const formatMathContent = (text) => {
     if (!text || typeof text !== 'string') return text;
-    
+
     // Already has LaTeX commands
     if (text.includes('\\')) return text;
-    
+
     // Replace common mathematical patterns with LaTeX
     return text
         // Format squared and cubed numbers
@@ -139,25 +142,25 @@ const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
     };
 
     const isPuzzle = data?.difficulty === 'puzzle' || type === 'lastYear';
-    
+
     // Use refs to hold stable data and prevent re-renders
     const dataRef = useRef(data);
-    
+
     // Only update the data ref if it's actually a new question
     // This prevents unnecessary updates when toggling answers
     useEffect(() => {
         // Only update if data is a new question (deep check for visualization to be safe)
-        if (data && 
-            (data !== dataRef.current || 
-             data.question !== dataRef.current?.question ||
-             data.visualization !== dataRef.current?.visualization)) {
+        if (data &&
+            (data !== dataRef.current ||
+                data.question !== dataRef.current?.question ||
+                data.visualization !== dataRef.current?.visualization)) {
             dataRef.current = data;
         }
     }, [data]);
-    
+
     // Get data from our stable ref
     const stableData = dataRef.current;
-    
+
     // Early return if no question data
     if (!stableData) {
         return (
@@ -192,14 +195,12 @@ const QuestionDisplay = memo(({ type, title, data, showAnswers }) => {
                     <ContentRenderer content={stableData.question} />
                 </div>
 
-                {/* Visualization with consistent height */}
+                {/* Visualization - ContentRenderer now handles all positioning */}
                 {stableData.visualization && (
-                    <div className="h-32">
-                        <ContentRenderer
-                            content={stableData.visualization}
-                            type="visualization"
-                        />
-                    </div>
+                    <ContentRenderer
+                        content={stableData.visualization}
+                        type="visualization"
+                    />
                 )}
             </div>
 
@@ -259,9 +260,9 @@ const StarterSectionBase = ({
     };
 
     // Section types to use
-    const sectionTypes = sectionConfig.sections || 
+    const sectionTypes = sectionConfig.sections ||
         ['lastLesson', 'lastWeek', 'lastTopic', 'lastYear'];
-    
+
     // Add question cache state to prevent regeneration on toggle
     const [questionCache, setQuestionCache] = useState({});
 
@@ -279,7 +280,7 @@ const StarterSectionBase = ({
 
     // Use useRef to store a stable reference to the generators
     const generatorsRef = useRef(normalizedGenerators);
-    
+
     // Update the ref when generators change, but don't cause re-renders
     useEffect(() => {
         generatorsRef.current = normalizedGenerators;
@@ -288,16 +289,16 @@ const StarterSectionBase = ({
     // Store generated questions in state, only update when explicitly regenerated
     const [questions, setQuestions] = useState(() => {
         initializedRef.current = true;
-        
+
         // Create initial questions object with section types as keys
         const initialQuestions = {};
         sectionTypes.forEach((type, index) => {
             initialQuestions[type] = normalizedGenerators[index]();
         });
-        
+
         // Store these initial questions in our cache
         setQuestionCache(initialQuestions);
-        
+
         return initialQuestions;
     });
 
@@ -311,13 +312,13 @@ const StarterSectionBase = ({
         sectionTypes.forEach((type, index) => {
             newQuestions[type] = generatorsRef.current[index]();
         });
-        
+
         // Update our question cache with these new questions
         setQuestionCache(newQuestions);
-        
+
         // Update the displayed questions
         setQuestions(newQuestions);
-        
+
         // Call the external regenerate function if provided
         if (onRegenerateAllQuestions && typeof onRegenerateAllQuestions === 'function') {
             onRegenerateAllQuestions();
@@ -337,7 +338,7 @@ const StarterSectionBase = ({
                     />
                 ))}
             </div>
-            
+
             <div className="flex justify-center mt-4">
                 <button
                     onClick={regenerateAllQuestions}
