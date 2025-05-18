@@ -1,12 +1,12 @@
-// maths-teaching-app/src/components/math/shapes/base/useShapeConfiguration.js
+// src/components/math/shapes/base/useShapeConfiguration.js
 import { useMemo } from 'react';
 import {
   SHAPE_THEMES,
   SHAPE_SIZES,
   STANDARD_DIMENSIONS,
-  BOARD_DEFAULTS,
   STANDARD_PROPORTIONS,
-  STANDARD_VIEWBOXES
+  STANDARD_VIEWBOXES,
+  BOARD_DEFAULTS
 } from '../../../../utils/shapeConfig';
 
 /**
@@ -40,8 +40,8 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
     
     // Get proportion configuration
     const proportionConfig = 
-  STANDARD_PROPORTIONS[shapeType]?.balanced || 
-  { baseRatio: 1, heightRatio: 1, scaleFactor: 1 };
+      STANDARD_PROPORTIONS[shapeType]?.balanced || 
+      { baseRatio: 1, heightRatio: 1, scaleFactor: 1 };
 
     // Get standard dimensions for the shape type
     const standardDims = STANDARD_DIMENSIONS[shapeType] || STANDARD_DIMENSIONS.rightTriangle;
@@ -73,6 +73,16 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
 
     // Process bounding box - either use provided one or compute based on proportion
     const boundingBox = props.boundingBox || viewBox;
+
+    // Get board configuration
+    const boardConfig = {
+      axis: props.axis !== undefined ? props.axis : BOARD_DEFAULTS.axis,
+      grid: props.grid !== undefined ? props.grid : BOARD_DEFAULTS.grid,
+      showNavigation: props.showNavigation !== undefined ? props.showNavigation : BOARD_DEFAULTS.showNavigation,
+      showCopyright: props.showCopyright !== undefined ? props.showCopyright : BOARD_DEFAULTS.showCopyright,
+      pan: props.pan || BOARD_DEFAULTS.pan,
+      zoom: props.zoom || BOARD_DEFAULTS.zoom
+    };
 
     // Process labels based on labelStyle
     const processedLabels = (() => {
@@ -110,6 +120,9 @@ const useShapeConfiguration = (props, shapeType, sectionType = 'learn') => {
       containerHeight: sizeConfig.containerHeight,
       labelSize: sizeConfig.labelSize,
       scale: sizeConfig.scale,
+
+      // Board configuration
+      board: boardConfig,
 
       // Labels
       showLabels,

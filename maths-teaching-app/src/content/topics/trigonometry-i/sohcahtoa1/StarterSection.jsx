@@ -1,7 +1,7 @@
 // maths-teaching-app/src/content/topics/trigonometry-i/sohcahtoa1/StarterSection.jsx
 import React from 'react';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
-import RightTriangle from '../../../../components/math/shapes/RightTriangle';
+
 
 // Utility to generate random integers within a range
 const randomInt = (min, max) => 

@@ -1,7 +1,6 @@
 // src/generators/geometry/squareGenerators.js
 import _ from 'lodash';
-import React from 'react';
-import { createSquare } from '../../factories/quadrilateralFactories';
+import { createSquare } from '../../factories/quadrilateralFactory';
 
 /**
  * Generate a square with area and perimeter question

@@ -1,6 +1,5 @@
 // src/generators/geometry/triangleGenerators.js
 import _ from 'lodash';
-import React from 'react';
 import { createPythagoreanTriangle } from '../../factories/triangleFactory';
 
 /**

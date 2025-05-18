@@ -2,7 +2,6 @@
 import React from 'react';
 import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSectionBase';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
-import { pythagoras } from './generators';
 
 /**
  * DiagnosticSection component for Pythagoras lesson

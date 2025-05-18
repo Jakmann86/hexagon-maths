@@ -1,14 +1,4 @@
 // src/content/topics/trigonometry-i/pythagoras/generators.js
-import _ from 'lodash';
-import React from 'react';
-import {
-    createPythagoreanTriangle,
-    createPythagoreanTripleTriangle,
-    PYTHAGOREAN_TRIPLES
-} from '../../../../factories/triangleFactory';
-import MathDisplay from '../../../../components/common/MathDisplay';
-import { createSquare } from '../../../../factories/quadrilateralFactories';
-import Square from '../../../../components/math/shapes/quadrilaterals/Square';
 
 /**
  * Core generator for Pythagoras' theorem questions

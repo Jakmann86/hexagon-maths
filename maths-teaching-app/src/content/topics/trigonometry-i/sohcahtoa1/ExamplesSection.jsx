@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
 import MathDisplay from '../../../../components/common/MathDisplay';
-import RightTriangle from '../../../../components/math/shapes/RightTriangle';
 import _ from 'lodash';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 

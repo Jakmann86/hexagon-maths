@@ -1,7 +1,6 @@
-// maths-teaching-app/src/components/math/shapes/base/BaseShape.jsx
+// src/components/math/shapes/base/BaseShape.jsx
 import React, { useRef, useEffect, useMemo } from 'react';
 import JSXGraphBoard from '../../JSXGraphBoard';
-import { BOARD_DEFAULTS } from '../../../../utils/shapeConfig';
 
 /**
  * BaseShape - Foundation component for all mathematical shapes
@@ -15,6 +14,10 @@ import { BOARD_DEFAULTS } from '../../../../utils/shapeConfig';
  * @param {string} props.backgroundColor - Background color of the board
  * @param {boolean} props.axis - Whether to show axes
  * @param {boolean} props.grid - Whether to show grid
+ * @param {boolean} props.showNavigation - Whether to show navigation controls
+ * @param {boolean} props.showCopyright - Whether to show copyright
+ * @param {Object} props.pan - Pan configuration
+ * @param {Object} props.zoom - Zoom configuration 
  * @param {Function} props.onMount - Callback when the board is mounted
  * @param {Function} props.onUpdate - Function to update the board with shape-specific rendering
  * @param {Array} props.dependencies - Array of dependencies that should trigger a re-render
@@ -23,11 +26,15 @@ import { BOARD_DEFAULTS } from '../../../../utils/shapeConfig';
  */
 const BaseShape = ({
   id,
-  boundingBox = BOARD_DEFAULTS.boundingBox,
+  boundingBox = [-1, 6, 6, -1],
   containerHeight = 250,
   backgroundColor = 'transparent',
-  axis = BOARD_DEFAULTS.axis,
-  grid = BOARD_DEFAULTS.grid,
+  axis = false,
+  grid = false,
+  showNavigation = false,
+  showCopyright = false,
+  pan = { enabled: false },
+  zoom = { enabled: false },
   onMount = null,
   onUpdate = null,
   dependencies = [],
@@ -114,6 +121,10 @@ const BaseShape = ({
         backgroundColor={backgroundColor}
         axis={axis}
         grid={grid}
+        showNavigation={showNavigation}
+        showCopyright={showCopyright}
+        pan={pan}
+        zoom={zoom}
         onMount={handleBoardMount}
         dependencies={dependencies}
         skipCleanup={true} // Let BaseShape handle cleanup, not JSXGraphBoard

@@ -1,7 +1,6 @@
 // src/content/topics/trigonometry-i/sohcahtoa1/DiagnosticSection.jsx
 import React from 'react';
 import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSectionBase';
-import RightTriangle from '../../../../components/math/shapes/RightTriangle';
 import _ from 'lodash';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import MathDisplay from '../../../../components/common/MathDisplay';

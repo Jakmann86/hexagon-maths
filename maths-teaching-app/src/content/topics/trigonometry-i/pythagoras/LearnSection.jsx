@@ -1,7 +1,6 @@
 // src/content/topics/trigonometry-i/pythagoras/LearnSection.jsx
 import React from 'react';
 import { Card, CardContent } from '../../../../components/common/Card';
-import PythagorasVisualization from '../../../../components/math/visualizations/PythagorasVisualization';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import { useUI } from '../../../../context/UIContext';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';

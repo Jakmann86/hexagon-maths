@@ -1,4 +1,4 @@
-// maths-teaching-app/src/components/math/shapes/triangles/IsoscelesTriangle.jsx
+// src/components/math/shapes/triangles/IsoscelesTriangle.jsx - updated for compatibility
 import React, { useMemo } from 'react';
 import BaseShape from '../base/BaseShape';
 import useShapeConfiguration from '../base/useShapeConfiguration';
@@ -219,11 +219,17 @@ const IsoscelesTriangle = ({
     board.suspendUpdate();
 
     try {
-      // Clear all existing objects first
+      // Clear all existing objects first - using the safer approach like in RightTriangle
+      const objectIds = [];
       for (const id in board.objects) {
         if (board.objects[id] && typeof board.objects[id].remove === 'function') {
-          board.removeObject(board.objects[id], false);
+          objectIds.push(id);
         }
+      }
+      
+      // Then remove them in a separate loop to avoid modifying while iterating
+      for (const id of objectIds) {
+        board.removeObject(board.objects[id], false);
       }
 
       // Extract styling options
@@ -237,27 +243,31 @@ const IsoscelesTriangle = ({
       // Define the triangle points based on orientation
       let points;
 
+      // Use fixed proportions for visualization consistency
+      const fixedBase = 3; 
+      const fixedHeight = 2.5;
+
       switch (resolvedOrientation) {
         case 'rotate90': // Apex on left
           points = [
-            [0, base / 2],          // Apex on left side
-            [height, 0],            // Bottom right
-            [height, base]          // Top right
+            [0, fixedBase / 2],          // Apex on left side
+            [fixedHeight, 0],            // Bottom right
+            [fixedHeight, fixedBase]          // Top right
           ];
           break;
 
         case 'rotate180': // Apex on bottom
           points = [
-            [base / 2, 0],          // Apex on bottom
-            [base, height],         // Top right
-            [0, height]             // Top left
+            [fixedBase / 2, 0],          // Apex on bottom
+            [fixedBase, fixedHeight],         // Top right
+            [0, fixedHeight]             // Top left
           ];
           break;
 
         case 'rotate270': // Apex on right
           points = [
-            [height, base / 2],     // Apex on right side
-            [0, base],              // Top left
+            [fixedHeight, fixedBase / 2],     // Apex on right side
+            [0, fixedBase],              // Top left
             [0, 0]                  // Bottom left
           ];
           break;
@@ -265,9 +275,9 @@ const IsoscelesTriangle = ({
         case 'default': // Apex on top
         default:
           points = [
-            [base / 2, height],     // Apex on top
+            [fixedBase / 2, fixedHeight],     // Apex on top
             [0, 0],                 // Bottom left
-            [base, 0]               // Bottom right
+            [fixedBase, 0]               // Bottom right
           ];
           break;
       }
@@ -300,7 +310,7 @@ const IsoscelesTriangle = ({
       // Create equal side markers if enabled
       if (showEqualSides) {
         // Marker length scales with triangle size
-        const markLength = Math.min(base, height) * 0.1;
+        const markLength = Math.min(fixedBase, fixedHeight) * 0.1;
 
         // Add hash marks on the equal sides (legs)
         const addEqualSideMarks = (p1, p2) => {
@@ -360,7 +370,7 @@ const IsoscelesTriangle = ({
 
       // Create equal angle markers if enabled
       if (showEqualAngles) {
-        const radius = Math.min(base, height) * 0.15;
+        const radius = Math.min(fixedBase, fixedHeight) * 0.15;
 
         // Create angles at the base (these are equal in an isosceles triangle)
         board.create('angle', [
@@ -392,33 +402,21 @@ const IsoscelesTriangle = ({
 
       // Create labels if enabled
       if (config.showLabels) {
-        // Add debug log
-        console.log("[Triangle] Processing labels:", {
-          labelStyle,
-          receivedLabels: labels,
-          configLabels: config.labels,
-          showLabels: config.showLabels
-        });
-
         // Determine side labels based on labelStyle
         let sideLabels;
         if (labelStyle === 'custom' && Array.isArray(labels) && labels.length > 0) {
           // Prioritize custom labels when provided
           sideLabels = [...labels];
-          console.log("[Triangle] Using custom labels:", sideLabels);
         } else if (labelStyle === 'numeric') {
           sideLabels = [
             `${base} ${units}`,                 // Base
             `${roundedLegLength} ${units}`,     // Left leg
             `${roundedLegLength} ${units}`      // Right leg
           ];
-          console.log("[Triangle] Using numeric labels:", sideLabels);
         } else if (labelStyle === 'algebraic') {
           sideLabels = ['b', 'a', 'a']; // a for equal sides, b for base
-          console.log("[Triangle] Using algebraic labels:", sideLabels);
         } else {
           sideLabels = ['', '', ''];
-          console.log("[Triangle] Using empty labels");
         }
 
         // Calculate label positions using our internal method
@@ -504,18 +502,7 @@ const IsoscelesTriangle = ({
 
     // Otherwise calculate based on dimensions with padding
     const padding = 2;
-
-    switch (resolvedOrientation) {
-      case 'rotate90':
-        return [-padding, base + padding, height + padding, -padding];
-      case 'rotate180':
-        return [-padding, height + padding, base + padding, -padding];
-      case 'rotate270':
-        return [-padding, base + padding, height + padding, -padding];
-      case 'default':
-      default:
-        return [-padding, height + padding, base + padding, -padding];
-    }
+    return [-padding, 5 + padding, 5 + padding, -padding];
   };
 
   // Memoize the dependencies to avoid unnecessary redraws

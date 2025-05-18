@@ -1,10 +1,16 @@
 // src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
 import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
+import IsoscelesTriangle from '../../../../components/math/shapes/triangles/IsoscelesTriangle';
 import PythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
 
+/**
+ * ExamplesSection for Pythagoras' Theorem lesson
+ * Implements Pattern 2 architecture:
+ * - Generators create configuration objects
+ * - Section converts configurations to React components
+ */
 const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   // State setup
   const [examples, setExamples] = useState([]);
@@ -17,45 +23,54 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   const initializedRef = useRef(false);
   const regenerateCountRef = useRef(0);
 
-  // Simple inline adapter function to prepare generator output for display
-  const adaptForExamples = (generatedQuestion) => {
-    return {
-      title: generatedQuestion.title,
-      question: generatedQuestion.questionText,
-      visualization: generatedQuestion.visualization,
-      steps: generatedQuestion.solution
-    };
-  };
-
-  // Generate examples using generators directly
+  // Generate examples using Pattern 2 architecture
   const generateExamples = useCallback(() => {
     // Increment counter for key generation
     regenerateCountRef.current += 1;
     const seed = Date.now() + regenerateCountRef.current * 1000;
     
     try {
-      // Call generators with the same seed for deterministic results
-      const hypotenuse = PythagorasGenerators.findHypotenuse({ 
+      // Generate the three example configurations using PythagorasGenerators methods
+      const hypenuseExample = PythagorasGenerators.findHypotenuse({ 
         seed, 
         sectionType: 'examples' 
       });
       
-      const missingSide = PythagorasGenerators.findMissingSide({ 
+      const missingSideExample = PythagorasGenerators.findMissingSide({ 
         seed: seed + 1000, // Offset to ensure different questions 
         sectionType: 'examples'
       });
       
-      const isoscelesArea = PythagorasGenerators.isoscelesArea({ 
+      const isoscelesExample = PythagorasGenerators.isoscelesArea({ 
         seed: seed + 2000, 
         sectionType: 'examples'
       });
       
-      // Adapt and set examples
-      setExamples([
-        adaptForExamples(hypotenuse),
-        adaptForExamples(missingSide),
-        adaptForExamples(isoscelesArea)
-      ]);
+      // Create examples array with configuration objects (not components yet)
+      const exampleItems = [
+        {
+          title: hypenuseExample.title,
+          question: hypenuseExample.questionText,
+          steps: hypenuseExample.solution,
+          // Store visualization config (Pattern 2)
+          visualizationConfig: hypenuseExample.visualization
+        },
+        {
+          title: missingSideExample.title,
+          question: missingSideExample.questionText,
+          steps: missingSideExample.solution,
+          visualizationConfig: missingSideExample.visualization
+        },
+        {
+          title: isoscelesExample.title,
+          question: isoscelesExample.questionText,
+          steps: isoscelesExample.solution,
+          visualizationConfig: isoscelesExample.visualization
+        }
+      ];
+      
+      // Set the examples in state
+      setExamples(exampleItems);
       
       // Reset interactive state
       setInteractiveState({
@@ -106,38 +121,59 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     });
   }, []);
 
-  // Content configuration for rendering
-  const getExampleContentConfig = useCallback((example) => {
-    if (!example) return null;
-    
-    return {
-      question: example.question,
-      visualization: example.visualization
-    };
-  }, []);
-
-  // Render example content
+  // KEY PATTERN 2 FUNCTION: Convert configuration to component here
   const renderExampleContent = useCallback((example) => {
     if (!example) return null;
     
-    const config = getExampleContentConfig(example);
-    
-    // Generate a key that changes whenever regeneration happens
+    // Generate a unique key for the visualization
     const visualizationKey = `triangle-${regenerateCountRef.current}-${currentExampleIndex}`;
+    
+    // Create the visualization component from configuration
+    const renderVisualization = () => {
+      if (!example.visualizationConfig) return null;
+      
+      // If it's already a React element, just return it
+      if (React.isValidElement(example.visualizationConfig)) {
+        return example.visualizationConfig;
+      }
+      
+      // Check if this is an isosceles triangle configuration
+      if (example.visualizationConfig.showEqualSides) {
+        // Render IsoscelesTriangle with the configuration
+        return (
+          <IsoscelesTriangle 
+            {...example.visualizationConfig} 
+            key={visualizationKey}
+            showHeight={interactiveState.showHeight} // Apply interactive state
+            containerHeight={280} // Standard size for examples
+          />
+        );
+      } 
+      
+      // Otherwise it's a right triangle
+      return (
+        <RightTriangle 
+          {...example.visualizationConfig} 
+          key={visualizationKey}
+          showAngles={interactiveState.showAngles ? [true, false] : [false, false]} // Apply interactive state
+          containerHeight={280} // Standard size for examples
+        />
+      );
+    };
     
     return (
       <div className="flex flex-col-reverse md:flex-row gap-6 items-center pt-4">
         {/* Visualization section */}
         <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0">
-          <div key={visualizationKey} className="w-full">
-            {config.visualization && <RightTriangle {...config.visualization} />}
+          <div className="w-full">
+            {renderVisualization()}
           </div>
         </div>
         
         {/* Question section with working area */}
         <div className="md:w-3/5">
           <div className="p-5 bg-orange-50 rounded-lg mb-6">
-            <p className="text-gray-700 font-medium">{config.question}</p>
+            <p className="text-gray-700 font-medium">{example.question}</p>
           </div>
 
           {/* Working area for teacher */}
@@ -147,7 +183,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
         </div>
       </div>
     );
-  }, [regenerateCountRef, currentExampleIndex, getExampleContentConfig]);
+  }, [currentExampleIndex, regenerateCountRef, interactiveState]);
 
   return (
     <div className="space-y-6 mb-8">

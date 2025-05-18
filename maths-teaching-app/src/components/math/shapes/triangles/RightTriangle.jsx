@@ -1,69 +1,84 @@
 // src/components/math/shapes/triangles/RightTriangle.jsx
+import React, { useMemo } from 'react';
+import BaseShape from '../base/BaseShape';
+import useShapeConfiguration from '../base/useShapeConfiguration';
+import { STANDARD_SHAPES } from '../../../../config/standardShapes';
 
-import React, { useId, useCallback } from 'react';
-import { useShapeConfig } from '../../../../hooks/useShapeConfig';
-import JSXGraphBoard from '../../JSXGraphBoard';
+/**
+ * RightTriangle - Renders a right triangle with consistent styling and labels
+ * Based on the standardized architecture using BaseShape
+ * 
+ * @param {Object} props
+ * @param {number} props.base - Base length of the triangle
+ * @param {number} props.height - Height of the triangle
+ * @param {boolean} props.showRightAngle - Whether to show the right angle marker
+ * @param {string} props.labelStyle - Label style ('numeric', 'algebraic', 'custom')
+ * @param {Array} props.labels - Custom labels for sides when labelStyle is 'custom'
+ * @param {boolean[]} props.showAngles - Array of booleans to determine which angles to show
+ * @param {string[]} props.angleLabels - Labels for angles
+ * @param {string} props.orientation - Orientation ('default', 'rotate90', 'rotate180', 'rotate270')
+ * @param {string} props.units - Units to display ('cm', 'm', etc.)
+ * @param {number} props.containerHeight - Height of the container
+ * @param {Object} props.style - Custom styling options
+ * @param {string} props.sectionType - Section type for styling
+ */
+const RightTriangle = (props) => {
+  // Process and standardize configuration
+  const config = useShapeConfiguration(props, 'rightTriangle', props.sectionType);
 
-function RightTriangle({
-  // Allow direct dimension specification
-  base,
-  height,
-
-  // Standard properties
-  shapeType = 'rightTriangle',
-  sectionType = 'learn',
-  orientation = 'default',
-  labels = [],
-  labelStyle = 'numeric',
-  showRightAngle = true,
-  units = 'cm',
-
-  // Other props
-  ...otherProps
-}) {
-  // Generate stable ID
-  const uniqueId = useId().replace(/:/g, '-');
-  const boardId = `triangle-${uniqueId}`;
-
-  // Get unified configuration
-  const config = useShapeConfig({
-    shapeType,
-    sectionType,
-    orientation,
-    // Pass all props for proper overrides
-    base,
-    height,
-    labels,
-    labelStyle,
-    ...otherProps
-  });
-
-  // Use final values from config
+  // Extract key properties after configuration is processed
   const {
-    dimensions,
-    theme,
-    size
-  } = config;
+    base = STANDARD_SHAPES.rightTriangle?.base || 6,
+    height = STANDARD_SHAPES.rightTriangle?.height || 5,
+    showRightAngle = true,
+    labelStyle = 'numeric',
+    labels = [],
+    showAngles = [false, false],
+    angleLabels = ['θ', 'φ'],
+    orientation = 'default',
+    units = 'cm'
+  } = props;
 
-  // Use provided dimensions or defaults
-  const finalBase = base || dimensions.base || 6;
-  const finalHeight = height || dimensions.height || 5;
-
-  // Calculate hypotenuse
-  const hypotenuse = Math.sqrt(finalBase * finalBase + finalHeight * finalHeight);
+  // Calculate hypotenuse for labels
+  const hypotenuse = Math.sqrt(base * base + height * height);
   const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
 
-  // Initialize board function
-  const initializeBoard = useCallback((board) => {
+  // Generate deterministic ID
+  const triangleId = useMemo(() => {
+    return `rt-${base}-${height}-${orientation}-${Math.random().toString(36).substr(2, 9)}`;
+  }, [base, height, orientation]);
+
+  // JSXGraph board update function
+  const updateBoard = (board) => {
     if (!board) return;
 
     board.suspendUpdate();
 
     try {
-      // Clear any existing objects
-      board.removeObject(board.select(() => true));
+      // Clear any existing objects for clean redraw
+      // First get all objects in a safe way
+      const objectIds = [];
+      for (const id in board.objects) {
+        if (board.objects[id] && typeof board.objects[id].remove === 'function') {
+          objectIds.push(id);
+        }
+      }
       
+      // Then remove them in a separate loop to avoid modifying while iterating
+      for (const id of objectIds) {
+        board.removeObject(board.objects[id], false);
+      }
+
+      // Extract styling options
+      const {
+        fillColor = '#3498db', // Default blue color
+        fillOpacity = 0.2,
+        strokeColor = '#3498db',
+        strokeWidth = 2
+      } = config.style;
+
       // FIXED DIMENSIONS FOR ALL TRIANGLES - regardless of actual measurements
+      // This ensures consistent visualization while allowing labels to show actual values
       const fixedBase = 3;
       const fixedHeight = 4;
 
@@ -117,10 +132,10 @@ function RightTriangle({
 
       // Create the triangle with theme colors
       board.create('polygon', trianglePoints, {
-        fillColor: theme.backgroundColor || '#e0f2fe',
-        fillOpacity: theme.fillOpacity || 0.2,
-        strokeColor: theme.color || '#0284c7',
-        strokeWidth: theme.strokeWidth || 2,
+        fillColor: fillColor,
+        fillOpacity: fillOpacity,
+        strokeColor: strokeColor,
+        strokeWidth: strokeWidth,
         vertices: {
           visible: false,
           withLabel: false
@@ -198,7 +213,7 @@ function RightTriangle({
       };
 
       // Create labels if needed
-      if (labels.length > 0 || labelStyle !== 'none') {
+      if (config.showLabels) {
         // Determine side labels based on labelStyle
         let sideLabels;
 
@@ -207,8 +222,8 @@ function RightTriangle({
           while (sideLabels.length < 3) sideLabels.push('');
         } else if (labelStyle === 'numeric') {
           sideLabels = [
-            `${finalBase} ${units}`,
-            `${finalHeight} ${units}`,
+            `${base} ${units}`,
+            `${height} ${units}`,
             `${roundedHypotenuse} ${units}`
           ];
         } else if (labelStyle === 'algebraic') {
@@ -220,7 +235,7 @@ function RightTriangle({
         // Add the labels if they exist
         if (sideLabels[0]) {
           board.create('text', [...labelPositions.base, sideLabels[0]], {
-            fontSize: size.labelSize || 14,
+            fontSize: config.labelSize || 14,
             anchorX: 'middle',
             anchorY: 'middle',
             fixed: true,
@@ -230,7 +245,7 @@ function RightTriangle({
 
         if (sideLabels[1]) {
           board.create('text', [...labelPositions.height, sideLabels[1]], {
-            fontSize: size.labelSize || 14,
+            fontSize: config.labelSize || 14,
             anchorX: 'middle',
             anchorY: 'middle',
             fixed: true,
@@ -240,7 +255,7 @@ function RightTriangle({
 
         if (sideLabels[2]) {
           board.create('text', [...labelPositions.hypotenuse, sideLabels[2]], {
-            fontSize: size.labelSize || 14,
+            fontSize: config.labelSize || 14,
             anchorX: 'middle',
             anchorY: 'middle',
             fixed: true,
@@ -249,7 +264,40 @@ function RightTriangle({
         }
       }
 
-      // Add right angle marker if requested - with FIXED size
+      // Add angle markers if requested
+      if (showAngles[0] || showAngles[1]) {
+        const angleRadius = 0.7;
+        const anglePoints = [
+          [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Angle at right angle point
+          [trianglePoints[0], trianglePoints[1], trianglePoints[2]], // Angle at base endpoint
+          [trianglePoints[1], trianglePoints[2], trianglePoints[0]]  // Angle at height endpoint
+        ];
+
+        // Create angle markers
+        if (showAngles[0]) {
+          board.create('angle', anglePoints[1], {
+            radius: angleRadius,
+            name: angleLabels[0] || 'θ',
+            fillColor: fillColor,
+            fillOpacity: 0.2,
+            strokeColor: strokeColor,
+            strokeWidth: 1
+          });
+        }
+
+        if (showAngles[1]) {
+          board.create('angle', anglePoints[2], {
+            radius: angleRadius,
+            name: angleLabels[1] || 'φ',
+            fillColor: fillColor,
+            fillOpacity: 0.2,
+            strokeColor: strokeColor,
+            strokeWidth: 1
+          });
+        }
+      }
+
+      // Add right angle marker if requested
       if (showRightAngle) {
         // Fixed size for right angle marker
         const rightAngleSize = 0.5;
@@ -274,18 +322,70 @@ function RightTriangle({
     }
 
     board.unsuspendUpdate();
-  }, [boardId, finalBase, finalHeight, orientation, labelStyle, labels, showRightAngle, theme, size, units]);
+  };
+
+  // Calculate appropriate bounding box
+  const calculateBoundingBox = () => {
+    // Use standard shape dimensions if available
+    if (STANDARD_SHAPES.rightTriangle && STANDARD_SHAPES.rightTriangle.boundingBox) {
+      return STANDARD_SHAPES.rightTriangle.boundingBox;
+    }
+    
+    // Otherwise use a fixed bounding box that works for all orientations
+    return [-1, 5, 5, -1];
+  };
+
+  // Dependencies array for BaseShape
+  const deps = useMemo(() => [
+    base,
+    height,
+    orientation,
+    labelStyle,
+    JSON.stringify(labels),
+    showRightAngle ? 1 : 0,
+    JSON.stringify(showAngles),
+    JSON.stringify(angleLabels),
+    units
+  ], [
+    base,
+    height,
+    orientation,
+    labelStyle,
+    labels,
+    showRightAngle,
+    showAngles,
+    angleLabels,
+    units
+  ]);
 
   return (
-    <JSXGraphBoard
-      id={boardId}
-      boundingBox={[-1, 5, 5, -1]} // Fixed standard bounding box for all triangles
-      containerHeight={size.containerHeight || 250}
-      onMount={initializeBoard}
-      axis={false}
-      grid={false}
+    <BaseShape
+      id={triangleId}
+      boundingBox={calculateBoundingBox()}
+      containerHeight={config.containerHeight}
+      axis={config.board.axis}
+      grid={config.board.grid}
+      showNavigation={config.board.showNavigation}
+      showCopyright={config.board.showCopyright}
+      pan={config.board.pan}
+      zoom={config.board.zoom}
+      onUpdate={updateBoard}
+      dependencies={deps}
     />
   );
-}
+};
+
+// Default props for RightTriangle
+RightTriangle.defaultProps = {
+  base: 6,
+  height: 5,
+  showRightAngle: true,
+  labelStyle: 'numeric',
+  showAngles: [false, false],
+  angleLabels: ['θ', 'φ'],
+  orientation: 'default',
+  units: 'cm',
+  sectionType: 'learn'
+};
 
 export default RightTriangle;
