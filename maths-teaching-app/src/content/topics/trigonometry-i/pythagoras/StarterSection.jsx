@@ -21,48 +21,69 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
     () => {
       // Get configuration from generator
       const question = squareGenerators.describeSquare({ units: 'cm' });
-      
+
       // ALWAYS convert configuration to component here - Pattern 2
       question.visualization = <Square {...question.visualization} />;
-      
+
       return question;
     },
-    
+
     // Last Week: Triangle area 
     () => {
       // Get configuration from generator
       const question = triangleGenerators.triangleArea({ units: 'cm' });
-      
+
       // ALWAYS convert configuration to component here - Pattern 2
       question.visualization = <RightTriangle {...question.visualization} />;
-      
+
       return question;
     },
-    
+
     // Last Topic: Naming quadrilaterals
     () => ({
       question: "Name all the quadrilaterals (4-sided shapes):",
       answer: `• Square: Equal sides, all 90° angles
-• Rectangle: Opposite sides equal, all angles 90°
-• Rhombus: All sides equal, opposite angles equal
-• Parallelogram: Opposite sides parallel & equal
-• Trapezium/Trapezoid: Exactly one pair of parallel sides
-• Kite: Two pairs of adjacent sides equal`,
+- Rectangle: Opposite sides equal, all angles 90°
+- Rhombus: All sides equal, opposite angles equal
+- Parallelogram: Opposite sides parallel & equal
+- Trapezium/Trapezoid: Exactly one pair of parallel sides
+- Kite: Two pairs of adjacent sides equal`,
       difficulty: 'text'
     }),
-    
+
     // Last Year: Number puzzle
     () => numberPuzzleGenerators.numberPuzzle1()
   ];
+  // Custom rendering function for question visualizations
+  const renderQuestionContent = (questionData, questionType) => {
+    // If there's no visualization data, return null
+    if (!questionData.visualization) return null;
+
+    // If the visualization is already a React element
+    if (React.isValidElement(questionData.visualization)) {
+      // For the Last Week triangle, we want to center it properly
+      if (questionType === 'lastWeek') {
+        return (
+          <div className="h-full w-full flex items-start justify-center pt-2">
+            {questionData.visualization}
+          </div>
+        );
+      }
+
+      // For other visualizations, render as-is
+      return questionData.visualization;
+    }
+
+    return null;
+  };
 
   return (
-    <div className="border-2 border-t-4 border-blue-500 rounded-lg shadow-md bg-white overflow-hidden">
-      <StarterSectionBase
-        questionGenerators={questionGenerators}
-        currentTopic={currentTopic}
-        currentLessonId={currentLessonId}
-      />
-    </div>
+    <StarterSectionBase
+      questionGenerators={questionGenerators}
+      renderQuestionContent={renderQuestionContent} // Add the custom render function
+      currentTopic={currentTopic}
+      currentLessonId={currentLessonId}
+    />
   );
 };
 
