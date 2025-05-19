@@ -78,36 +78,6 @@
   }
 }
 
-/* ===== MAFS STYLING ===== */
-/* Force Mafs background transparency */
-.mafs-wrapper svg {
-  background: transparent !important;
-}
-
-.mafs-wrapper svg > rect:first-child {
-  fill: transparent !important;
-}
-
-.mafs-container {
-  --mafs-bg: transparent !important;
-  background: transparent !important;
-}
-
-.mafs-wrapper * {
-  background: inherit !important;
-}
-
-.mafs-wrapper text {
-  fill: #000000 !important;
-  color: #000000 !important;
-}
-
-.MafsView-extension svg,
-.MafsView svg,
-.MafsView * {
-  background: transparent !important;
-}
-
 /* ===== JSXGRAPH STYLING ===== */
 /* Base styles for all JSXGraph elements */
 .jxgbox {

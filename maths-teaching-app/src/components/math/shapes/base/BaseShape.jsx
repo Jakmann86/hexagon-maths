@@ -4,14 +4,14 @@ import JSXGraphBoard from '../../JSXGraphBoard';
 
 /**
  * BaseShape - Foundation component for all mathematical shapes
- * Handles common functionality like JSXGraph initialization, configuration management,
- * and consistent rendering patterns for educational visualizations.
+ * Now passes sectionType to JSXGraphBoard for consistent sizing
  * 
  * @param {Object} props
  * @param {string} props.id - Unique identifier for the JSXGraph board
  * @param {Array} props.boundingBox - Bounding box for the JSXGraph board [xMin, yMax, xMax, yMin]
  * @param {number} props.containerHeight - Height of the container in pixels
  * @param {string} props.backgroundColor - Background color of the board
+ * @param {string} props.sectionType - Section type ('starter', 'diagnostic', 'examples', 'challenge')
  * @param {boolean} props.axis - Whether to show axes
  * @param {boolean} props.grid - Whether to show grid
  * @param {boolean} props.showNavigation - Whether to show navigation controls
@@ -29,6 +29,7 @@ const BaseShape = ({
   boundingBox = [-1, 6, 6, -1],
   containerHeight = 250,
   backgroundColor = 'transparent',
+  sectionType = 'default',
   axis = false,
   grid = false,
   showNavigation = false,
@@ -119,6 +120,7 @@ const BaseShape = ({
         boundingBox={boundingBox}
         height={containerHeight}
         backgroundColor={backgroundColor}
+        sectionType={sectionType} // Pass section type for consistent sizing
         axis={axis}
         grid={grid}
         showNavigation={showNavigation}

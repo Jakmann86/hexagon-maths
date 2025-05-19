@@ -120,7 +120,7 @@ const QuestionDisplay = memo(({
                     </div>
 
                     {/* Standardized visualization container - always same height even when empty */}
-                    <div className="visualization-container h-[160px] w-full flex justify-center items-center">
+                    <div className="visualization-container h-[120px] w-full flex justify-center items-center">
                         {stableData.visualization && (
                             renderQuestionContent ?
                                 renderQuestionContent(stableData, type) :

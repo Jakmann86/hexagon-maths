@@ -4,8 +4,9 @@
 export const STANDARD_SHAPES = {
   rightTriangle: {
     base: 6,
-    height: 5, // Slightly increased minimum height for better label spacing
-    boundingBox: [-2, 6, 8, -2] // More generous bounding box
+    height: 5,
+    // Just a simple bounding box
+    boundingBox: [-1, 5, 5, -1]
   },
   square: {
     size: 5,

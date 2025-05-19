@@ -5,12 +5,14 @@ import JXG from 'jsxgraph';
 
 /**
  * JSXGraphBoard - A clean React wrapper for JSXGraph
+ * Now with section-type awareness for consistent sizing
  * 
  * @param {Object} props
  * @param {string} props.id - Unique identifier for the board
  * @param {Array} props.boundingBox - Bounding box [xMin, yMax, xMax, yMin]
  * @param {number} props.containerHeight - Height of the container in pixels
  * @param {number} props.containerWidth - Width of the container (default: 100%)
+ * @param {string} props.sectionType - Section type ('starter', 'diagnostic', 'examples', 'challenge')
  * @param {boolean} props.axis - Whether to show axes
  * @param {boolean} props.grid - Whether to show grid
  * @param {Function} props.onMount - Callback when the board is mounted with the board instance
@@ -20,9 +22,10 @@ import JXG from 'jsxgraph';
  */
 function JSXGraphBoard({
   id,
-  boundingBox = [-5, 5, 5, -5],
+  boundingBox,
   containerHeight = 300,
   containerWidth = '100%',
+  sectionType = 'default',
   axis = false,
   grid = false,
   showNavigation = false,
@@ -33,8 +36,57 @@ function JSXGraphBoard({
   onMount = null,
   dependencies = [],
   style = {},
-  className = ''
+  className = '',
+  skipCleanup = false
 }) {
+  // Apply section-specific configurations
+  const getSectionConfig = () => {
+    const configs = {
+      starter: {
+        boundingBox: [-3, 3, 3, -3],  // Smaller, more balanced for starter sections
+        height: 160,                  // Respect standard starter height
+        verticalOffset: 0.5           // Shift shapes up slightly for starter
+      },
+      diagnostic: {
+        boundingBox: [-4, 4, 4, -3],  // Standard with slightly more bottom space
+        height: 250,                  // Standard diagnostic height
+        verticalOffset: 0
+      },
+      examples: {
+        boundingBox: [-5, 5, 5, -3],  // Larger for examples
+        height: 280,                  // Larger examples height
+        verticalOffset: 0
+      },
+      challenge: {
+        boundingBox: [-6, 6, 6, -4],  // Largest for challenge sections
+        height: 320,                  // Largest challenge height
+        verticalOffset: 0
+      },
+      default: {
+        boundingBox: [-5, 5, 5, -5],
+        height: 300,                  // Default height
+        verticalOffset: 0
+      }
+    };
+    
+    return configs[sectionType] || configs.default;
+  };
+  
+  // Get the appropriate configuration
+  const sectionConfig = getSectionConfig();
+  
+  // Use provided values or section defaults
+  const effectiveBoundingBox = boundingBox || sectionConfig.boundingBox;
+  const effectiveHeight = containerHeight || sectionConfig.height;
+  
+  // Apply vertical offset if needed (especially for starter sections)
+  let adjustedBoundingBox = [...effectiveBoundingBox];
+  if (sectionConfig.verticalOffset !== 0) {
+    // Shift the top and bottom of the bounding box
+    adjustedBoundingBox[1] += sectionConfig.verticalOffset;  // yMax
+    adjustedBoundingBox[3] += sectionConfig.verticalOffset;  // yMin
+  }
+  
   // Reference to the container element
   const containerRef = useRef(null);
   
@@ -46,11 +98,11 @@ function JSXGraphBoard({
     if (!containerRef.current) return;
     
     try {
-      console.log(`Creating JSXGraph board: ${id}`);
+      console.log(`Creating JSXGraph board: ${id} with sectionType: ${sectionType}`);
       
-      // Create the board
+      // Create the board with adjusted bounding box
       const board = JXG.JSXGraph.initBoard(id, {
-        boundingbox: boundingBox,
+        boundingbox: adjustedBoundingBox,
         axis: axis,
         grid: grid,
         showNavigation: showNavigation,
@@ -75,7 +127,7 @@ function JSXGraphBoard({
     // Clean up on unmount
     return () => {
       try {
-        if (boardRef.current) {
+        if (!skipCleanup && boardRef.current) {
           console.log(`Cleaning up JSXGraph board: ${id}`);
           // Check if the board exists in the global JSXGraph registry
           if (JXG.JSXGraph.boards && JXG.JSXGraph.boards[id]) {
@@ -87,12 +139,12 @@ function JSXGraphBoard({
         console.error("Error cleaning up JSXGraph board:", error);
       }
     };
-  }, [id]); // Only create/destroy on id change
+  }, [id, JSON.stringify(adjustedBoundingBox)]); // Re-initialize if ID or bounding box changes
   
   // Container style with specified dimensions
   const containerStyle = {
     width: containerWidth,
-    height: `${containerHeight}px`,
+    height: `${effectiveHeight}px`,
     ...style
   };
   

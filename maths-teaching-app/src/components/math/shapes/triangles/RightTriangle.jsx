@@ -63,7 +63,7 @@ const RightTriangle = (props) => {
           objectIds.push(id);
         }
       }
-      
+
       // Then remove them in a separate loop to avoid modifying while iterating
       for (const id of objectIds) {
         board.removeObject(board.objects[id], false);
@@ -324,14 +324,13 @@ const RightTriangle = (props) => {
     board.unsuspendUpdate();
   };
 
-  // Calculate appropriate bounding box
   const calculateBoundingBox = () => {
     // Use standard shape dimensions if available
     if (STANDARD_SHAPES.rightTriangle && STANDARD_SHAPES.rightTriangle.boundingBox) {
       return STANDARD_SHAPES.rightTriangle.boundingBox;
     }
-    
-    // Otherwise use a fixed bounding box that works for all orientations
+
+    // Simple default
     return [-1, 5, 5, -1];
   };
 

@@ -23,7 +23,8 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
       const question = squareGenerators.describeSquare({ units: 'cm' });
 
       // ALWAYS convert configuration to component here - Pattern 2
-      question.visualization = <Square {...question.visualization} />;
+      // Add sectionType="starter" to the Square component
+      question.visualization = <Square {...question.visualization} sectionType="starter" />;
 
       return question;
     },
@@ -33,8 +34,8 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
       // Get configuration from generator
       const question = triangleGenerators.triangleArea({ units: 'cm' });
 
-      // ALWAYS convert configuration to component here - Pattern 2
-      question.visualization = <RightTriangle {...question.visualization} />;
+      // Override the sectionType in the component
+      question.visualization = <RightTriangle {...question.visualization} sectionType="starter" />;
 
       return question;
     },
@@ -55,23 +56,36 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
     () => numberPuzzleGenerators.numberPuzzle1()
   ];
   // Custom rendering function for question visualizations
+
   const renderQuestionContent = (questionData, questionType) => {
     // If there's no visualization data, return null
     if (!questionData.visualization) return null;
 
     // If the visualization is already a React element
     if (React.isValidElement(questionData.visualization)) {
-      // For the Last Week triangle, we want to center it properly
-      if (questionType === 'lastWeek') {
+      // Special handling for the Right Triangle
+      if (questionType === 'lastWeek' && questionData.visualization.type === RightTriangle) {
         return (
-          <div className="h-full w-full flex items-start justify-center pt-2">
-            {questionData.visualization}
+          <div className="w-full h-full flex items-center justify-center">
+            {React.cloneElement(questionData.visualization, {
+              // Override props to fit in starter section
+              containerHeight: 130,  // Slightly smaller than container
+              style: {
+                ...questionData.visualization.props.style,
+                transform: 'scale(0.85)',  // Scale down slightly
+                transformOrigin: 'center center'
+              }
+            })}
           </div>
         );
       }
 
-      // For other visualizations, render as-is
-      return questionData.visualization;
+      // Default rendering for other components
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          {questionData.visualization}
+        </div>
+      );
     }
 
     return null;
