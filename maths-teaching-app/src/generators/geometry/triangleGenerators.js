@@ -6,7 +6,10 @@ import { createPythagoreanTriangle } from '../../factories/triangleFactory';
  * Generate a triangle area question
  * Used primarily for starter questions
  */
-export const triangleArea = ({ units = 'cm', sectionType = 'starter' } = {}) => {
+export const triangleArea = ({ units = 'cm', sectionContext = {} } = {}) => {
+  // Extract section type from context, default to 'starter' if not provided
+  const { sectionType = 'starter' } = sectionContext;
+
   // Generate reasonable dimensions for a triangle
   const base = _.random(4, 10);
   const height = _.random(3, 8);
@@ -22,7 +25,7 @@ export const triangleArea = ({ units = 'cm', sectionType = 'starter' } = {}) => 
       labelStyle: "custom",
       labels: [`${base} ${units}`, `${height} ${units}`, null],
       units,
-      sectionType, // Pass through the sectionType parameter
+      sectionType, // Pass the section type from context
       style: {
         fillColor: '#2ecc71',
         fillOpacity: 0.2

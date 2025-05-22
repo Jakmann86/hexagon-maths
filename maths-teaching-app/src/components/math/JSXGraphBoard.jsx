@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import JXG from 'jsxgraph';
+import { sections } from '../../config';
 
 /**
  * JSXGraphBoard - A clean React wrapper for JSXGraph
@@ -41,44 +42,16 @@ function JSXGraphBoard({
 }) {
   // Apply section-specific configurations
   const getSectionConfig = () => {
-    const configs = {
-      starter: {
-        boundingBox: [-3, 3, 3, -3],  // Smaller, more balanced for starter sections
-        height: 160,                  // Respect standard starter height
-        verticalOffset: 0.5           // Shift shapes up slightly for starter
-      },
-      diagnostic: {
-        boundingBox: [-4, 4, 4, -3],  // Standard with slightly more bottom space
-        height: 250,                  // Standard diagnostic height
-        verticalOffset: 0
-      },
-      examples: {
-        boundingBox: [-5, 5, 5, -3],  // Larger for examples
-        height: 280,                  // Larger examples height
-        verticalOffset: 0
-      },
-      challenge: {
-        boundingBox: [-6, 6, 6, -4],  // Largest for challenge sections
-        height: 320,                  // Largest challenge height
-        verticalOffset: 0
-      },
-      default: {
-        boundingBox: [-5, 5, 5, -5],
-        height: 300,                  // Default height
-        verticalOffset: 0
-      }
-    };
-    
-    return configs[sectionType] || configs.default;
+    return sections.boardConfig[sectionType] || sections.boardConfig.default;
   };
-  
+
   // Get the appropriate configuration
   const sectionConfig = getSectionConfig();
-  
+
   // Use provided values or section defaults
   const effectiveBoundingBox = boundingBox || sectionConfig.boundingBox;
   const effectiveHeight = containerHeight || sectionConfig.height;
-  
+
   // Apply vertical offset if needed (especially for starter sections)
   let adjustedBoundingBox = [...effectiveBoundingBox];
   if (sectionConfig.verticalOffset !== 0) {
@@ -86,20 +59,20 @@ function JSXGraphBoard({
     adjustedBoundingBox[1] += sectionConfig.verticalOffset;  // yMax
     adjustedBoundingBox[3] += sectionConfig.verticalOffset;  // yMin
   }
-  
+
   // Reference to the container element
   const containerRef = useRef(null);
-  
+
   // Reference to the board instance
   const boardRef = useRef(null);
-  
+
   // Create board on mount and handle cleanup
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     try {
       console.log(`Creating JSXGraph board: ${id} with sectionType: ${sectionType}`);
-      
+
       // Create the board with adjusted bounding box
       const board = JXG.JSXGraph.initBoard(id, {
         boundingbox: adjustedBoundingBox,
@@ -111,10 +84,10 @@ function JSXGraphBoard({
         pan: pan,
         zoom: zoom
       });
-      
+
       // Store reference to the board
       boardRef.current = board;
-      
+
       // Call onMount callback with the board instance
       if (onMount && typeof onMount === 'function') {
         console.log(`Calling onMount for board: ${id}`);
@@ -123,7 +96,7 @@ function JSXGraphBoard({
     } catch (error) {
       console.error("Error creating JSXGraph board:", error);
     }
-    
+
     // Clean up on unmount
     return () => {
       try {
@@ -140,16 +113,16 @@ function JSXGraphBoard({
       }
     };
   }, [id, JSON.stringify(adjustedBoundingBox)]); // Re-initialize if ID or bounding box changes
-  
+
   // Container style with specified dimensions
   const containerStyle = {
     width: containerWidth,
     height: `${effectiveHeight}px`,
     ...style
   };
-  
+
   return (
-    <div 
+    <div
       ref={containerRef}
       id={id}
       className={`jxgbox ${className}`}

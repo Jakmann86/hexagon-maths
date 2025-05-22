@@ -2,24 +2,10 @@
 import React from 'react';
 import { StarterSection as PythagorasStarter } from './topics/trigonometry-i/pythagoras';
 import { ExamplesSection as PythagorasExamples } from './topics/trigonometry-i/pythagoras';
+import { StarterSection as SohcahtoaStarter, ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
 
 
-/**
- * Placeholder component for sections that haven't been migrated yet
- */
-const PlaceholderSection = ({ sectionName, message }) => (
-  <div className="p-6 bg-white border-2 border-amber-500 rounded-lg shadow-sm">
-    <h2 className="text-xl font-semibold mb-4 text-amber-700">
-      {sectionName} Section
-    </h2>
-    <p className="mb-4">
-      {message || "This section is currently being migrated to the new architecture."}
-    </p>
-    <p className="font-medium">
-      Try the "Examples" section which has been migrated.
-    </p>
-  </div>
-);
+// src/content/LessonContentProvider.jsx - Updated to include SOHCAHTOA sections
 
 /**
  * Component that renders the appropriate lesson section based on topic, lesson ID, and section
@@ -58,8 +44,28 @@ const LessonContentProvider = ({
           return <PlaceholderSection sectionName="Unknown" message="Please select a valid section." />;
       }
     }
-    // Lesson 2 & 3: SOHCAHTOA - Currently placeholder during migration
-    else if (currentLessonId === 2 || currentLessonId === 3) {
+    // Lesson 2: SOHCAHTOA - Finding Missing Sides
+    else if (currentLessonId === 2) {
+      switch (currentSection) {
+        case 'starter':
+          return <SohcahtoaStarter 
+            currentTopic={currentTopic} 
+            currentLessonId={currentLessonId}
+          />;
+        case 'examples':
+          return <PlaceholderSection sectionName="Examples" />;
+        case 'diagnostic': 
+          return <PlaceholderSection sectionName="Diagnostic" />;
+        case 'learn':
+          return <PlaceholderSection sectionName="Learn" />;
+        case 'challenge':
+          return <PlaceholderSection sectionName="Challenge" />;
+        default:
+          return <PlaceholderSection sectionName="Unknown" message="Please select a valid section." />;
+      }
+    }
+    // Lesson 3: SOHCAHTOA - Finding Angles
+    else if (currentLessonId === 3) {
       return <PlaceholderSection 
         sectionName={`SOHCAHTOA Lesson ${currentLessonId} - ${currentSection}`}
         message="This lesson will be migrated to the new architecture soon."

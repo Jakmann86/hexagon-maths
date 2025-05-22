@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import BaseShape from '../base/BaseShape';
 import useShapeConfiguration from '../base/useShapeConfiguration';
 import { STANDARD_SHAPES } from '../../../../config/standardShapes';
+import { sections } from '../../../../config';
 
 /**
  * RightTriangle - Renders a right triangle with consistent styling and labels
@@ -79,17 +80,21 @@ const RightTriangle = (props) => {
 
       // FIXED DIMENSIONS FOR ALL TRIANGLES - regardless of actual measurements
       // This ensures consistent visualization while allowing labels to show actual values
-      const fixedBase = 3;
-      const fixedHeight = 4;
+      const sectionConfig = sections.boardConfig[props.sectionType] || sections.boardConfig.default;
+      const fixedBase = sectionConfig.fixedDimensions.triangleBase;
+      const fixedHeight = sectionConfig.fixedDimensions.triangleHeight;
+
+      const triangleOffset = sectionConfig.triangleOffset || { x: 0, y: 0 };
 
       // Define the triangle points based on orientation with FIXED dimensions
       let points;
       switch (orientation) {
-        case 'rotate90': // Right angle at origin, vertical base, horizontal height
+        case 'default':
+        default:
           points = [
-            [0, 0],           // Right angle at origin
-            [0, fixedBase],   // Vertical base (up from origin)
-            [fixedHeight, 0]  // Horizontal height (right from origin)
+            [0 + triangleOffset.x, 0 + triangleOffset.y],                        // Right angle at origin + offset
+            [fixedBase + triangleOffset.x, 0 + triangleOffset.y],                // Horizontal base + offset
+            [0 + triangleOffset.x, fixedHeight + triangleOffset.y]               // Vertical height + offset
           ];
           break;
 
@@ -110,7 +115,6 @@ const RightTriangle = (props) => {
           break;
 
         case 'default': // Right angle at origin, horizontal base right, vertical height up
-        default:
           points = [
             [0, 0],            // Right angle at origin
             [fixedBase, 0],    // Horizontal base (right from origin)
@@ -299,8 +303,8 @@ const RightTriangle = (props) => {
 
       // Add right angle marker if requested
       if (showRightAngle) {
-        // Fixed size for right angle marker
-        const rightAngleSize = 0.5;
+        // Get size from section config, or use default
+        const rightAngleSize = sectionConfig.rightAngleSize || 0.5;
 
         // Create right angle marker
         board.create('angle', [
@@ -325,13 +329,18 @@ const RightTriangle = (props) => {
   };
 
   const calculateBoundingBox = () => {
-    // Use standard shape dimensions if available
-    if (STANDARD_SHAPES.rightTriangle && STANDARD_SHAPES.rightTriangle.boundingBox) {
-      return STANDARD_SHAPES.rightTriangle.boundingBox;
+    // Get section-specific config (with fallback)
+    const sectionConfig = sections.boardConfig[props.sectionType] || sections.boardConfig.default;
+
+    // Use section-specific boundingBox if available
+    if (sectionConfig && sectionConfig.boundingBox) {
+      console.log("Using section bounding box:", sectionConfig.boundingBox);
+      return sectionConfig.boundingBox;
     }
 
-    // Simple default
-    return [-1, 5, 5, -1];
+    // Otherwise calculate based on dimensions with padding
+    const padding = sectionConfig?.padding || 3;
+    return [-padding, fixedHeight + padding, fixedBase + padding, -padding];
   };
 
   // Dependencies array for BaseShape
@@ -384,7 +393,7 @@ RightTriangle.defaultProps = {
   angleLabels: ['θ', 'φ'],
   orientation: 'default',
   units: 'cm',
-  sectionType: 'learn'
+  sectionType: 'starter'
 };
 
 export default RightTriangle;

@@ -63,22 +63,7 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
 
     // If the visualization is already a React element
     if (React.isValidElement(questionData.visualization)) {
-      // Special handling for the Right Triangle
-      if (questionType === 'lastWeek' && questionData.visualization.type === RightTriangle) {
-        return (
-          <div className="w-full h-full flex items-center justify-center">
-            {React.cloneElement(questionData.visualization, {
-              // Override props to fit in starter section
-              containerHeight: 130,  // Slightly smaller than container
-              style: {
-                ...questionData.visualization.props.style,
-                transform: 'scale(0.85)',  // Scale down slightly
-                transformOrigin: 'center center'
-              }
-            })}
-          </div>
-        );
-      }
+    
 
       // Default rendering for other components
       return (

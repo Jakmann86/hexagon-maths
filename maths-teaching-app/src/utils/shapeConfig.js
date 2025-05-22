@@ -15,10 +15,13 @@
 export const SHAPE_SIZES = {
   // Size for starter questions (smaller, compact)
   starter: {
-    containerHeight: 140,    // Container height in pixels
-    scale: 0.9,              // Scale factor for the shape
-    labelSize: 12,           // Font size for labels
-    padding: 1.5            // Padding around shape (relative units)
+    containerHeight: 140,
+    scale: 0.9,
+    labelSize: 12,
+    padding: 1.5,
+    // Add positioning parameters
+    boundingBox: [-4, 3, 3, -3], // Shifted left viewing area
+    horizontalOffset: -1.0      // Left shift
   },
   
   // Size for diagnostic questions (medium)

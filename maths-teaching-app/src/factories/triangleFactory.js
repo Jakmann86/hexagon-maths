@@ -3,7 +3,7 @@
  * Triangle Factory - Generates configuration objects for triangle shapes
  * ONLY returns configuration objects, never React components
  */
-
+import sections from '../config/sections';
 /**
  * Creates configuration for a Pythagorean triangle with unknown side
  * 
@@ -17,7 +17,7 @@
  * @param {Object} config.style - Custom styling
  * @returns {Object} Configuration object for RightTriangle component
  */
-export function createPythagoreanTriangle({ 
+export function createPythagoreanTriangle({
   base = 6,
   height = 5,
   unknownSide = null,
@@ -29,7 +29,7 @@ export function createPythagoreanTriangle({
   // Calculate hypotenuse
   const hypotenuse = Math.sqrt(base * base + height * height);
   const roundedHypotenuse = Math.round(hypotenuse * 100) / 100;
-  
+
   // Create labels based on which side is unknown
   let labels;
   if (unknownSide === 'base') {
@@ -41,7 +41,7 @@ export function createPythagoreanTriangle({
   } else {
     labels = [`${base} ${units}`, `${height} ${units}`, `${roundedHypotenuse} ${units}`];
   }
-  
+
   // Set default style if not provided
   const defaultStyle = {
     fillColor: '#3498db',
@@ -49,13 +49,13 @@ export function createPythagoreanTriangle({
     strokeColor: '#0284c7',
     strokeWidth: 2
   };
-  
+
   // Merge provided style with defaults
   const mergedStyle = {
     ...defaultStyle,
     ...style
   };
-  
+
   // Return configuration object for the RightTriangle component
   return {
     base,
@@ -82,17 +82,18 @@ export function createPythagoreanTriangle({
  * @param {Object} config.style - Custom styling
  * @returns {Object} Configuration object for RightTriangle component
  */
+// REPLACE with this code
 export function createPythagoreanTripleTriangle({
   triple = [3, 4, 5],
   unknownSide = null,
   orientation = 'default',
   units = 'cm',
-  sectionType = 'examples',
+  sectionType = 'default', // Changed to neutral default
   style = {}
 }) {
   // Extract the triple values
   const [a, b, c] = triple;
-  
+
   // Create labels based on which side is unknown
   let labels;
   if (unknownSide === 'base') {
@@ -104,7 +105,7 @@ export function createPythagoreanTripleTriangle({
   } else {
     labels = [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`];
   }
-  
+
   // Set default style if not provided
   const defaultStyle = {
     fillColor: '#3498db',
@@ -112,13 +113,13 @@ export function createPythagoreanTripleTriangle({
     strokeColor: '#0284c7',
     strokeWidth: 2
   };
-  
+
   // Merge provided style with defaults
   const mergedStyle = {
     ...defaultStyle,
     ...style
   };
-  
+
   // Return configuration object for the RightTriangle component
   return {
     base: a,
@@ -128,7 +129,7 @@ export function createPythagoreanTripleTriangle({
     labels,
     showRightAngle: true,
     units,
-    sectionType,
+    sectionType, // This will be 'default' unless overridden
     style: mergedStyle
   };
 }
@@ -174,7 +175,7 @@ export function createIsoscelesTriangle({
     // Round for cleaner display
     height = Math.round(height * 100) / 100;
   }
-  
+
   // If legLength isn't provided but height is, calculate legLength using Pythagoras
   if (legLength === undefined && height !== undefined) {
     const halfBase = base / 2;
@@ -182,7 +183,7 @@ export function createIsoscelesTriangle({
     // Round for cleaner display
     legLength = Math.round(legLength * 100) / 100;
   }
-  
+
   // If neither is provided, use defaults
   if (height === undefined && legLength === undefined) {
     height = 5;
@@ -190,7 +191,7 @@ export function createIsoscelesTriangle({
     legLength = Math.sqrt(height * height + halfBase * halfBase);
     legLength = Math.round(legLength * 100) / 100;
   }
-  
+
   // Default labels if not provided
   if (labels.length === 0 && labelStyle === 'custom') {
     labels = [
@@ -199,7 +200,7 @@ export function createIsoscelesTriangle({
       `${legLength} ${units}`
     ];
   }
-  
+
   // Return the configuration object
   return {
     base,

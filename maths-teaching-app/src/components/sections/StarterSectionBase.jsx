@@ -214,14 +214,17 @@ const StarterSectionBase = ({
         generatorsRef.current = normalizedGenerators;
     }, [normalizedGenerators]);
 
-    // Store generated questions in state, only update when explicitly regenerated
+    // REPLACE with this code
     const [questions, setQuestions] = useState(() => {
         initializedRef.current = true;
 
         // Create initial questions object with section types as keys
         const initialQuestions = {};
         sectionTypes.forEach((type, index) => {
-            initialQuestions[type] = normalizedGenerators[index]();
+            // Pass section context to generators
+            initialQuestions[type] = normalizedGenerators[index]({
+                sectionContext: { sectionType: 'starter' }
+            });
         });
 
         // Store these initial questions in our cache
@@ -238,7 +241,10 @@ const StarterSectionBase = ({
         // Force new questions
         const newQuestions = {};
         sectionTypes.forEach((type, index) => {
-            newQuestions[type] = generatorsRef.current[index]();
+            // Pass section context when regenerating
+            newQuestions[type] = generatorsRef.current[index]({
+                sectionContext: { sectionType: 'starter' }
+            });
         });
 
         // Update our question cache with these new questions
