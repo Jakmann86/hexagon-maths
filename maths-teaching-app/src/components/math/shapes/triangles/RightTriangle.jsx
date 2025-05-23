@@ -296,35 +296,37 @@ const RightTriangle = (props) => {
 
       // Add angle markers if requested
       if (showAngles[0] || showAngles[1]) {
-        const angleRadius = 0.7;
-        const anglePoints = [
-          [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Angle at right angle point
-          [trianglePoints[0], trianglePoints[1], trianglePoints[2]], // Angle at base endpoint
-          [trianglePoints[1], trianglePoints[2], trianglePoints[0]]  // Angle at height endpoint
-        ];
+          const angleRadius = 0.7;
+          const anglePoints = [
+              [trianglePoints[2], trianglePoints[0], trianglePoints[1]], // Right angle (not used)
+              [trianglePoints[2], trianglePoints[1], trianglePoints[0]], // Base angle (reversed order)
+              [trianglePoints[0], trianglePoints[2], trianglePoints[1]]  // Height angle
+          ];
 
-        // Create angle markers
-        if (showAngles[0]) {
-          board.create('angle', anglePoints[1], {
-            radius: angleRadius,
-            name: angleLabels[0] || 'θ',
-            fillColor: fillColor,
-            fillOpacity: 0.2,
-            strokeColor: strokeColor,
-            strokeWidth: 1
-          });
-        }
+          // Create angle markers
+          if (showAngles[0]) {
+              board.create('angle', anglePoints[1], {
+                  radius: angleRadius,
+                  name: angleLabels[0] || 'θ',
+                  fillColor: fillColor,
+                  fillOpacity: 0.2,
+                  strokeColor: strokeColor,
+                  strokeWidth: 1,
+                  type: 'sector'  // Ensure we're using sector type for acute angles
+              });
+          }
 
-        if (showAngles[1]) {
-          board.create('angle', anglePoints[2], {
-            radius: angleRadius,
-            name: angleLabels[1] || 'φ',
-            fillColor: fillColor,
-            fillOpacity: 0.2,
-            strokeColor: strokeColor,
-            strokeWidth: 1
-          });
-        }
+          if (showAngles[1]) {
+              board.create('angle', anglePoints[2], {
+                  radius: angleRadius,
+                  name: angleLabels[1] || 'φ',
+                  fillColor: fillColor,
+                  fillOpacity: 0.2,
+                  strokeColor: strokeColor,
+                  strokeWidth: 1,
+                  type: 'sector'  // Ensure we're using sector type for acute angles
+              });
+          }
       }
 
       // Add right angle marker if requested
