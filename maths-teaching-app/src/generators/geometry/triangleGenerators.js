@@ -47,6 +47,13 @@ export const triangleLengthFromArea = ({ units = 'cm' } = {}) => {
   const height = (area * 2) / base;
 
   return {
+    // ADD PROPER QUESTION TEXT (was missing before)
+    question: `A triangle has a base of ${base} ${units} and an area of ${area} ${units}². Find its height.`,
+
+    // FOR STARTER SECTIONS: Use simple answer format
+    answer: `\\text{Height} = \\frac{2 \\times \\text{Area}}{\\text{base}} = \\frac{2 \\times ${area}}{${base}} = ${height}\\text{ ${units}}`,
+
+    // FOR DIAGNOSTIC SECTIONS: Keep the diagnostic format
     questionDisplay: `A triangle has a base of ${base} ${units} and an area of ${area} ${units}². Find its height.`,
     correctAnswer: `${height}\\text{ ${units}}`,
     options: [
@@ -56,10 +63,13 @@ export const triangleLengthFromArea = ({ units = 'cm' } = {}) => {
       `${area / base}\\text{ ${units}}`  // Common mistake: forgetting the factor of 2
     ].sort(() => Math.random() - 0.5),
     explanation: `Height = \\frac{2 \\times \\text{Area}}{\\text{base}} = \\frac{2 \\times ${area}}{${base}} = ${height} ${units}`,
+
     visualization: createPythagoreanTriangle({
       base,
       height,
       unknownSide: 'height',
+      labelStyle: "custom",
+      labels: [`${base} ${units}`, `? ${units}`, null], // ← Remove hypotenuse label (set to null)
       units,
       sectionType: 'diagnostic',
       style: {

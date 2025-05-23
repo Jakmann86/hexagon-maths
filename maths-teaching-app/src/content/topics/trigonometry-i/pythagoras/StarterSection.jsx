@@ -22,20 +22,34 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
       // Get configuration from generator
       const question = squareGenerators.describeSquare({ units: 'cm' });
 
-      // ALWAYS convert configuration to component here - Pattern 2
-      // Add sectionType="starter" to the Square component
-      question.visualization = <Square {...question.visualization} sectionType="starter" />;
+      // Force default orientation for starter consistency + clean positioning
+      question.visualization = (
+        <Square 
+          {...question.visualization} 
+          sectionType="starter"
+          orientation="default"  // ← Force default for starters
+        />
+      );
 
       return question;
     },
 
     // Last Week: Triangle area 
     () => {
-      // Get configuration from generator
-      const question = triangleGenerators.triangleArea({ units: 'cm' });
+      // Get configuration from generator with starter context
+      const question = triangleGenerators.triangleArea({ 
+        units: 'cm',
+        sectionContext: { sectionType: 'starter' }  // Pass starter context
+      });
 
-      // Override the sectionType in the component
-      question.visualization = <RightTriangle {...question.visualization} sectionType="starter" />;
+      // Force default orientation for starter consistency + clean positioning
+      question.visualization = (
+        <RightTriangle 
+          {...question.visualization} 
+          sectionType="starter"
+          orientation="default"  // ← Force default for starters
+        />
+      );
 
       return question;
     },
@@ -55,17 +69,15 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
     // Last Year: Number puzzle
     () => numberPuzzleGenerators.numberPuzzle1()
   ];
-  // Custom rendering function for question visualizations
 
+  // Custom rendering function for question visualizations
   const renderQuestionContent = (questionData, questionType) => {
     // If there's no visualization data, return null
     if (!questionData.visualization) return null;
 
     // If the visualization is already a React element
     if (React.isValidElement(questionData.visualization)) {
-    
-
-      // Default rendering for other components
+      // Default rendering for components
       return (
         <div className="w-full h-full flex items-center justify-center">
           {questionData.visualization}
@@ -79,7 +91,7 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
   return (
     <StarterSectionBase
       questionGenerators={questionGenerators}
-      renderQuestionContent={renderQuestionContent} // Add the custom render function
+      renderQuestionContent={renderQuestionContent}
       currentTopic={currentTopic}
       currentLessonId={currentLessonId}
     />

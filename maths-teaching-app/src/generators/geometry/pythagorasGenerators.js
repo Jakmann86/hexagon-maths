@@ -20,14 +20,19 @@ const findHypotenuse = (options = {}) => {
     triples = triples.slice(3); // Harder triples
   }
 
-  // Deterministically select triple and orientation based on seed
+  // Deterministically select triple based on seed
   const tripleIndex = Math.floor((seed % 100) / 12.5) % triples.length;
   const triple = triples[tripleIndex];
   const [a, b, c] = triple;
 
-  const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
-  const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
-  const orientation = orientations[orientationIndex];
+  // Generate orientation variety for all sections EXCEPT starter
+  let orientationConfig = {};
+  if (sectionType !== 'starter') {
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    orientationConfig.orientation = orientations[orientationIndex];
+  }
+  // For starter section, don't set orientation (will use default)
 
   // Create solution steps
   const solution = [
@@ -60,7 +65,7 @@ const findHypotenuse = (options = {}) => {
       base: a,
       height: b,
       unknownSide: 'hypotenuse',
-      orientation,
+      ...orientationConfig, // Only includes orientation for non-starter sections
       units: 'cm',
       sectionType
     }),
@@ -86,14 +91,19 @@ const findMissingSide = (options = {}) => {
     triples = triples.slice(3); // Harder triples
   }
 
-  // Deterministically select triple and orientation based on seed
+  // Deterministically select triple based on seed
   const tripleIndex = Math.floor((seed % 100) / 12.5) % triples.length;
   const triple = triples[tripleIndex];
   const [a, b, c] = triple;
 
-  const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
-  const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
-  const orientation = orientations[orientationIndex];
+  // Generate orientation variety for all sections EXCEPT starter
+  let orientationConfig = {};
+  if (sectionType !== 'starter') {
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    orientationConfig.orientation = orientations[orientationIndex];
+  }
+  // For starter section, don't set orientation (will use default)
 
   // Deterministically choose which leg to find based on the seed
   const legToFind = (seed % 2 === 0) ? 'base' : 'height';
@@ -149,7 +159,7 @@ const findMissingSide = (options = {}) => {
       base: a,
       height: b,
       unknownSide: missingValue,
-      orientation,
+      ...orientationConfig, // Only includes orientation for non-starter sections
       units: 'cm',
       sectionType
     }),
@@ -182,14 +192,12 @@ const isoscelesArea = (options = {}) => {
 
   // Extract values
   const { base, legLength } = config;
-  
+
   // Calculate height using Pythagoras' theorem
-  // In an isosceles triangle, if we draw the height from the apex to the base,
-  // it divides the base into two equal halves, and forms a right-angled triangle.
   const halfBase = base / 2;
   const height = Math.sqrt(legLength * legLength - halfBase * halfBase);
   const roundedHeight = Math.round(height * 100) / 100;
-  
+
   // Calculate area
   const area = (base * roundedHeight) / 2;
   const roundedArea = Math.round(area * 100) / 100;
@@ -251,22 +259,56 @@ const isoscelesArea = (options = {}) => {
       showHeight: false,
       units: 'cm',
       sectionType
+      // Note: isosceles triangles don't use orientation in the same way
     },
     solution
   };
 };
+
 
 // Export all functions as part of the PythagorasGenerators object
 const PythagorasGenerators = {
   findHypotenuse,
   findMissingSide,
   isoscelesArea,
-  
+
+  // ADD THIS NEW FUNCTION HERE:
+  identifyHypotenuse: ({ units = 'cm' } = {}) => {
+    // Choose a simple Pythagorean triple
+    const triple = _.sample(PYTHAGOREAN_TRIPLES.slice(0, 3)); // Use easier triples
+    const [a, b, c] = triple;
+
+    return {
+      questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
+      correctAnswer: `${c} ${units}`,
+      options: [
+        `${a} ${units}`,     // Side A
+        `${b} ${units}`,     // Side B  
+        `${c} ${units}`,     // Side C (correct - hypotenuse)
+        'None of these'      // Standard option
+      ].sort(() => Math.random() - 0.5),
+      explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
+      visualization: createPythagoreanTriangle({
+        base: a,
+        height: b,
+        showRightAngle: true,
+        labelStyle: 'custom',
+        labels: [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`], // All sides labeled
+        units,
+        sectionType: 'diagnostic',
+        style: {
+          fillColor: '#9b59b6',
+          fillOpacity: 0.2
+        }
+      })
+    };
+  },
+
   // Generate example questions for the examples section
   generateExampleQuestions: () => {
     // This is a helper method that creates all three example types
     const seed = Date.now();
-    
+
     return [
       findHypotenuse({ seed }),
       findMissingSide({ seed: seed + 1000 }),

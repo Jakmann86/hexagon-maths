@@ -89,36 +89,36 @@ const RightTriangle = (props) => {
       // Define the triangle points based on orientation with FIXED dimensions
       let points;
       switch (orientation) {
-        case 'default':
+        case 'rotate90': // Right angle at origin, triangle rotated 90 degrees clockwise
+          points = [
+            [0 + triangleOffset.x, 0 + triangleOffset.y],                    // Right angle at origin + offset
+            [0 + triangleOffset.x, fixedBase + triangleOffset.y],            // What was base, now vertical
+            [fixedHeight + triangleOffset.x, 0 + triangleOffset.y]           // What was height, now horizontal
+          ];
+          break;
+
+        case 'rotate180': // Right angle at top-right, triangle upside down
+          points = [
+            [fixedBase + triangleOffset.x, fixedHeight + triangleOffset.y],  // Right angle at top-right
+            [0 + triangleOffset.x, fixedHeight + triangleOffset.y],          // Horizontal base (left from right angle)
+            [fixedBase + triangleOffset.x, 0 + triangleOffset.y]            // Vertical height (down from right angle)
+          ];
+          break;
+
+        case 'rotate270': // Right angle at bottom-right, triangle rotated 270 degrees
+          points = [
+            [fixedHeight + triangleOffset.x, fixedBase + triangleOffset.y],  // Right angle at bottom-right
+            [fixedHeight + triangleOffset.x, 0 + triangleOffset.y],         // What was base, now vertical up
+            [0 + triangleOffset.x, fixedBase + triangleOffset.y]            // What was height, now horizontal left
+          ];
+          break;
+
+        case 'default': // Right angle at origin, standard orientation
         default:
           points = [
             [0 + triangleOffset.x, 0 + triangleOffset.y],                        // Right angle at origin + offset
             [fixedBase + triangleOffset.x, 0 + triangleOffset.y],                // Horizontal base + offset
             [0 + triangleOffset.x, fixedHeight + triangleOffset.y]               // Vertical height + offset
-          ];
-          break;
-
-        case 'rotate180': // Right angle at top-right
-          points = [
-            [fixedBase, fixedHeight], // Right angle at top-right
-            [0, fixedHeight],         // Horizontal base (left from right angle)
-            [fixedBase, 0]            // Vertical height (down from right angle)
-          ];
-          break;
-
-        case 'rotate270': // Right angle at bottom-right
-          points = [
-            [fixedHeight, fixedBase], // Right angle at bottom-right
-            [fixedHeight, 0],         // Vertical base (up from right angle)
-            [0, fixedBase]            // Horizontal height (left from right angle)
-          ];
-          break;
-
-        case 'default': // Right angle at origin, horizontal base right, vertical height up
-          points = [
-            [0, 0],            // Right angle at origin
-            [fixedBase, 0],    // Horizontal base (right from origin)
-            [0, fixedHeight]   // Vertical height (up from origin)
           ];
           break;
       }
@@ -162,38 +162,38 @@ const RightTriangle = (props) => {
 
       // Offset factors for different orientations
       const getOffsets = () => {
-        const baseOffset = 0.6;
-        const heightOffset = 0.6;
+        const baseOffset = 0.4;  // Reduced for better positioning
+        const heightOffset = 0.5;
         const hypotenuseOffset = 0.5;
 
         switch (orientation) {
-          case 'rotate90': // Right angle at origin, vertical base, horizontal height
+          case 'rotate90': // Right angle at origin, but rotated 90 degrees
             return {
-              base: [-baseOffset, 0],        // Left for vertical base
-              height: [0, -heightOffset],    // Down for horizontal height
-              hypotenuse: [hypotenuseOffset * 0.8, -hypotenuseOffset * 0.8] // Diagonal
+              base: [-baseOffset, 0],        // Left for what's now vertical
+              height: [0, -heightOffset],    // Down for what's now horizontal
+              hypotenuse: [hypotenuseOffset, -hypotenuseOffset] // Diagonal
             };
 
-          case 'rotate180': // Right angle at top-right
+          case 'rotate180': // Right angle at top-right, upside down
             return {
               base: [0, baseOffset],          // Up for horizontal base
               height: [heightOffset, 0],      // Right for vertical height
-              hypotenuse: [-hypotenuseOffset * 0.8, -hypotenuseOffset * 0.8] // Diagonal
+              hypotenuse: [-hypotenuseOffset, -hypotenuseOffset] // Diagonal
             };
 
-          case 'rotate270': // Right angle at bottom-right
+          case 'rotate270': // Right angle at bottom-right, rotated 270 degrees
             return {
-              base: [baseOffset, 0],          // Right for vertical base
-              height: [0, heightOffset],      // Up for horizontal height
-              hypotenuse: [-hypotenuseOffset * 0.8, hypotenuseOffset * 0.8] // Diagonal
+              base: [baseOffset, 0],          // Right for what's now vertical
+              height: [0, heightOffset],      // Up for what's now horizontal
+              hypotenuse: [-hypotenuseOffset, hypotenuseOffset] // Diagonal
             };
 
-          case 'default': // Right angle at origin
+          case 'default': // Right angle at origin (standard orientation)
           default:
             return {
-              base: [0, -baseOffset],         // Down for horizontal base
+              base: [0, -baseOffset * 0.7],   // Down for horizontal base (brought up slightly)
               height: [-heightOffset, 0],     // Left for vertical height
-              hypotenuse: [hypotenuseOffset * 0.5, hypotenuseOffset * 0.8] // Diagonal
+              hypotenuse: [hypotenuseOffset * 0.3, hypotenuseOffset * 0.6] // Diagonal, adjusted
             };
         }
       };

@@ -15,11 +15,10 @@ export default {
     starter: {
       boundingBox: [-4, 3, 3, -3],
       containerHeight: 160,
-      verticalOffset: 0.5,
+      verticalOffset: 1.0,  // ← INCREASE from 0.5 to 1.0 to raise triangles
       labelSize: 12,
-      // ADD THESE TWO LINES:
-      triangleOffset: { x: -2, y: 0 }, // Move triangle left to center it
-      rightAngleSize: 0.3,                // Make right angle marker smaller
+      triangleOffset: { x: -2, y: 0.5 }, // ← ADD y: 0.5 to raise triangle vertically
+      rightAngleSize: 0.3,
       fixedDimensions: {
         triangleBase: 1.8,
         triangleHeight: 1.5

@@ -1,6 +1,8 @@
 // src/content/LessonContentProvider.jsx
 import React from 'react';
 import { StarterSection as PythagorasStarter } from './topics/trigonometry-i/pythagoras';
+import { DiagnosticSection as PythagorasDiagnostic } from './topics/trigonometry-i/pythagoras';
+import { LearnSection as PythagorasLearn } from './topics/trigonometry-i/pythagoras';
 import { ExamplesSection as PythagorasExamples } from './topics/trigonometry-i/pythagoras';
 import { StarterSection as SohcahtoaStarter, ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
 
@@ -11,10 +13,10 @@ import { StarterSection as SohcahtoaStarter, ExamplesSection as SohcahtoaExample
  * Component that renders the appropriate lesson section based on topic, lesson ID, and section
  * Simplified during architecture migration
  */
-const LessonContentProvider = ({ 
-  currentTopic, 
-  currentLessonId, 
-  currentSection 
+const LessonContentProvider = ({
+  currentTopic,
+  currentLessonId,
+  currentSection
 }) => {
   // Function to render Trigonometry I lessons
   const renderTrigonometryI = () => {
@@ -23,21 +25,27 @@ const LessonContentProvider = ({
       switch (currentSection) {
         // Only the Examples section is active during migration
         case 'examples':
-          return <PythagorasExamples 
-            currentTopic={currentTopic} 
+          return <PythagorasExamples
+            currentTopic={currentTopic}
             currentLessonId={currentLessonId}
           />;
-          
+
         // Placeholders for other sections
         case 'starter':
-          return <PythagorasStarter 
-            currentTopic={currentTopic} 
+          return <PythagorasStarter
+            currentTopic={currentTopic}
             currentLessonId={currentLessonId}
           />;
-        case 'diagnostic': 
-          return <PlaceholderSection sectionName="Diagnostic" />;
+        case 'diagnostic':
+          return <PythagorasDiagnostic
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
         case 'learn':
-          return <PlaceholderSection sectionName="Learn" />;
+          return <PythagorasLearn
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
         case 'challenge':
           return <PlaceholderSection sectionName="Challenge" />;
         default:
@@ -48,13 +56,13 @@ const LessonContentProvider = ({
     else if (currentLessonId === 2) {
       switch (currentSection) {
         case 'starter':
-          return <SohcahtoaStarter 
-            currentTopic={currentTopic} 
+          return <SohcahtoaStarter
+            currentTopic={currentTopic}
             currentLessonId={currentLessonId}
           />;
         case 'examples':
           return <PlaceholderSection sectionName="Examples" />;
-        case 'diagnostic': 
+        case 'diagnostic':
           return <PlaceholderSection sectionName="Diagnostic" />;
         case 'learn':
           return <PlaceholderSection sectionName="Learn" />;
@@ -66,14 +74,14 @@ const LessonContentProvider = ({
     }
     // Lesson 3: SOHCAHTOA - Finding Angles
     else if (currentLessonId === 3) {
-      return <PlaceholderSection 
+      return <PlaceholderSection
         sectionName={`SOHCAHTOA Lesson ${currentLessonId} - ${currentSection}`}
         message="This lesson will be migrated to the new architecture soon."
       />;
     }
     // Lesson 4: 3D Pythagoras & Applications
     else if (currentLessonId === 4) {
-      return <PlaceholderSection 
+      return <PlaceholderSection
         sectionName={`3D Pythagoras - ${currentSection}`}
         message="This lesson will be migrated to the new architecture soon."
       />;
@@ -95,7 +103,7 @@ const LessonContentProvider = ({
       return renderTrigonometryI();
     case 'Algebra I':
       return (
-        <PlaceholderSection 
+        <PlaceholderSection
           sectionName="Algebra I"
           message="Algebra lessons will be migrated after Trigonometry I is complete."
         />

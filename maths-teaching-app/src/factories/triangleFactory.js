@@ -4,6 +4,7 @@
  * ONLY returns configuration objects, never React components
  */
 import sections from '../config/sections';
+
 /**
  * Creates configuration for a Pythagorean triangle with unknown side
  * 
@@ -11,10 +12,10 @@ import sections from '../config/sections';
  * @param {number} config.base - Base length
  * @param {number} config.height - Height
  * @param {string} config.unknownSide - Which side to mark as unknown ('base', 'height', 'hypotenuse')
- * @param {string} config.orientation - Triangle orientation
  * @param {string} config.units - Units to display
  * @param {string} config.sectionType - Section type for styling
  * @param {Object} config.style - Custom styling
+ * @param {string} config.orientation - Triangle orientation (now optional, added by generators)
  * @returns {Object} Configuration object for RightTriangle component
  */
 export function createPythagoreanTriangle({
@@ -22,9 +23,12 @@ export function createPythagoreanTriangle({
   height = 5,
   unknownSide = null,
   sectionType = 'examples',
-  orientation = 'default',
+  // orientation removed from parameters - generators will add it conditionally
   units = 'cm',
-  style = {}
+  style = {},
+  // But we still accept it if passed (for backward compatibility)
+  orientation,
+  ...otherProps
 }) {
   // Calculate hypotenuse
   const hypotenuse = Math.sqrt(base * base + height * height);
@@ -56,18 +60,25 @@ export function createPythagoreanTriangle({
     ...style
   };
 
-  // Return configuration object for the RightTriangle component
-  return {
+  // Build the config object
+  const config = {
     base,
     height,
-    orientation,
     labelStyle: 'custom',
     labels,
     showRightAngle: true,
     units,
     sectionType,
-    style: mergedStyle
+    style: mergedStyle,
+    ...otherProps // Include any other props passed
   };
+
+  // Only add orientation if it was provided (generators will add it conditionally)
+  if (orientation !== undefined) {
+    config.orientation = orientation;
+  }
+
+  return config;
 }
 
 /**
@@ -76,20 +87,22 @@ export function createPythagoreanTriangle({
  * @param {Object} config - Configuration options
  * @param {Array} config.triple - Array of 3 integers representing a Pythagorean triple [a, b, c]
  * @param {string} config.unknownSide - Which side to mark as unknown
- * @param {string} config.orientation - Triangle orientation
  * @param {string} config.units - Units to display
  * @param {string} config.sectionType - Section type for styling
  * @param {Object} config.style - Custom styling
+ * @param {string} config.orientation - Triangle orientation (now optional, added by generators)
  * @returns {Object} Configuration object for RightTriangle component
  */
-// REPLACE with this code
 export function createPythagoreanTripleTriangle({
   triple = [3, 4, 5],
   unknownSide = null,
-  orientation = 'default',
+  // orientation removed from parameters - generators will add it conditionally
   units = 'cm',
-  sectionType = 'default', // Changed to neutral default
-  style = {}
+  sectionType = 'default',
+  style = {},
+  // But we still accept it if passed (for backward compatibility)
+  orientation,
+  ...otherProps
 }) {
   // Extract the triple values
   const [a, b, c] = triple;
@@ -120,18 +133,25 @@ export function createPythagoreanTripleTriangle({
     ...style
   };
 
-  // Return configuration object for the RightTriangle component
-  return {
+  // Build the config object
+  const config = {
     base: a,
     height: b,
-    orientation,
     labelStyle: 'custom',
     labels,
     showRightAngle: true,
     units,
-    sectionType, // This will be 'default' unless overridden
-    style: mergedStyle
+    sectionType,
+    style: mergedStyle,
+    ...otherProps // Include any other props passed
   };
+
+  // Only add orientation if it was provided (generators will add it conditionally)
+  if (orientation !== undefined) {
+    config.orientation = orientation;
+  }
+
+  return config;
 }
 
 /**
@@ -148,9 +168,9 @@ export function createPythagoreanTripleTriangle({
  * @param {string} config.areaLabel - Custom area label
  * @param {string} config.labelStyle - Label style ('numeric', 'algebraic', 'custom')
  * @param {Array} config.labels - Custom labels for sides when labelStyle is 'custom'
- * @param {string} config.orientation - Orientation of triangle ('default', 'rotate90', etc.)
  * @param {string} config.units - Units for measurements (cm, m, etc.)
  * @param {string} config.sectionType - Section type for styling
+ * @param {string} config.orientation - Orientation of triangle (now optional, added by generators)
  * @returns {Object} - Configuration object for IsoscelesTriangle component
  */
 export function createIsoscelesTriangle({
@@ -164,9 +184,12 @@ export function createIsoscelesTriangle({
   areaLabel = null,
   labelStyle = 'custom',
   labels = [],
-  orientation = 'default',
+  // orientation removed from parameters - generators will add it conditionally
   units = 'cm',
-  sectionType = 'examples'
+  sectionType = 'examples',
+  // But we still accept it if passed (for backward compatibility)
+  orientation,
+  ...otherProps
 } = {}) {
   // If height isn't provided but legLength is, calculate height using Pythagoras
   if (height === undefined && legLength !== undefined) {
@@ -201,8 +224,8 @@ export function createIsoscelesTriangle({
     ];
   }
 
-  // Return the configuration object
-  return {
+  // Build the config object
+  const config = {
     base,
     height,
     showEqualSides,
@@ -212,10 +235,17 @@ export function createIsoscelesTriangle({
     areaLabel,
     labelStyle,
     labels,
-    orientation,
     units,
-    sectionType
+    sectionType,
+    ...otherProps // Include any other props passed
   };
+
+  // Only add orientation if it was provided (generators will add it conditionally)
+  if (orientation !== undefined) {
+    config.orientation = orientation;
+  }
+
+  return config;
 }
 
 // Common Pythagorean triples for convenience

@@ -1,4 +1,4 @@
-// maths-teaching-app/src/content/topics/trigonometry-i/sohcahtoa1/StarterSection.jsx
+// src/content/topics/trigonometry-i/sohcahtoa1/StarterSection.jsx
 import React from 'react';
 import _ from 'lodash';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
@@ -18,9 +18,9 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
   const questionGenerators = [
     // Last Lesson: Find hypotenuse
     () => {
-      // Get configuration from generator
+      // Get configuration from generator with starter context
       const generatedQuestion = PythagorasGenerators.findHypotenuse({
-        sectionType: 'starter',
+        sectionType: 'starter',  // This prevents orientation from being added
         difficulty: 'easy'
       });
 
@@ -28,7 +28,14 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
       const question = {
         question: generatedQuestion.questionText,
         answer: generatedQuestion.solution[generatedQuestion.solution.length - 1].formula,
-        visualization: <RightTriangle {...generatedQuestion.visualization} sectionType="starter" />
+        // Force default orientation for starter consistency + clean positioning
+        visualization: (
+          <RightTriangle 
+            {...generatedQuestion.visualization} 
+            sectionType="starter"
+            orientation="default"  // ← Force default for starters
+          />
+        )
       };
 
       return question;
@@ -36,9 +43,9 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
 
     // Last Week: Find missing side
     () => {
-      // Get configuration from generator
+      // Get configuration from generator with starter context
       const generatedQuestion = PythagorasGenerators.findMissingSide({
-        sectionType: 'starter',
+        sectionType: 'starter',  // This prevents orientation from being added
         difficulty: 'medium'
       });
 
@@ -46,22 +53,34 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
       const question = {
         question: generatedQuestion.questionText,
         answer: generatedQuestion.solution[generatedQuestion.solution.length - 1].formula,
-        visualization: <RightTriangle {...generatedQuestion.visualization} sectionType="starter" />
+        // Force default orientation for starter consistency + clean positioning
+        visualization: (
+          <RightTriangle 
+            {...generatedQuestion.visualization} 
+            sectionType="starter"
+            orientation="default"  // ← Force default for starters
+          />
+        )
       };
 
       return question;
     },
 
-    // Last Topic: Find side length from area of triangle
+    // Last Topic: Find side length from area (NOT find area)
     () => {
-      // Get configuration from generator
-      const question = triangleGenerators.triangleArea({
-        units: 'cm',
-        sectionContext: { sectionType: 'starter' }
+      // Use the triangleLengthFromArea generator for side length questions
+      const question = triangleGenerators.triangleLengthFromArea({
+        units: 'cm'
       });
 
-      // Convert configuration to component
-      question.visualization = <RightTriangle {...question.visualization} sectionType="starter" />;
+      // Force default orientation for starter consistency + clean positioning
+      question.visualization = (
+        <RightTriangle 
+          {...question.visualization} 
+          sectionType="starter"
+          orientation="default"  // ← Force default for starters
+        />
+      );
 
       return question;
     },
