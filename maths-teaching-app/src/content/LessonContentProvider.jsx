@@ -1,13 +1,13 @@
-// src/content/LessonContentProvider.jsx
+// src/content/LessonContentProvider.jsx - Updated for SOHCAHTOA Examples
 import React from 'react';
 import { StarterSection as PythagorasStarter } from './topics/trigonometry-i/pythagoras';
 import { DiagnosticSection as PythagorasDiagnostic } from './topics/trigonometry-i/pythagoras';
 import { LearnSection as PythagorasLearn } from './topics/trigonometry-i/pythagoras';
 import { ExamplesSection as PythagorasExamples } from './topics/trigonometry-i/pythagoras';
-import { StarterSection as SohcahtoaStarter, ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
-
-
-// src/content/LessonContentProvider.jsx - Updated to include SOHCAHTOA sections
+import { ChallengeSection as PythagorasChallenge } from './topics/trigonometry-i/pythagoras';
+import { StarterSection as SohcahtoaStarter } from './topics/trigonometry-i/sohcahtoa1';
+import { ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
+import PlaceholderSection from '../components/sections/PlaceholderSection';
 
 /**
  * Component that renders the appropriate lesson section based on topic, lesson ID, and section
@@ -23,14 +23,11 @@ const LessonContentProvider = ({
     // Lesson 1: Pythagoras' Theorem
     if (currentLessonId === 1) {
       switch (currentSection) {
-        // Only the Examples section is active during migration
         case 'examples':
           return <PythagorasExamples
             currentTopic={currentTopic}
             currentLessonId={currentLessonId}
           />;
-
-        // Placeholders for other sections
         case 'starter':
           return <PythagorasStarter
             currentTopic={currentTopic}
@@ -47,7 +44,10 @@ const LessonContentProvider = ({
             currentLessonId={currentLessonId}
           />;
         case 'challenge':
-          return <PlaceholderSection sectionName="Challenge" />;
+          return <PythagorasChallenge
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
         default:
           return <PlaceholderSection sectionName="Unknown" message="Please select a valid section." />;
       }
@@ -61,7 +61,10 @@ const LessonContentProvider = ({
             currentLessonId={currentLessonId}
           />;
         case 'examples':
-          return <PlaceholderSection sectionName="Examples" />;
+          return <SohcahtoaExamples
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
         case 'diagnostic':
           return <PlaceholderSection sectionName="Diagnostic" />;
         case 'learn':

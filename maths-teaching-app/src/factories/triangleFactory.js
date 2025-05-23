@@ -259,10 +259,20 @@ export const PYTHAGOREAN_TRIPLES = [
   [15, 20, 25]
 ];
 
-// Export default object for consistency
+// Make sure the export is properly defined
+export const createRightTriangle = ({ base, height, ...props }) => {
+    return {
+        type: 'rightTriangle',
+        base,
+        height,
+        ...props
+    };
+};
+
 export default {
   createPythagoreanTriangle,
   createPythagoreanTripleTriangle,
   createIsoscelesTriangle,
-  PYTHAGOREAN_TRIPLES
+  PYTHAGOREAN_TRIPLES,
+  createRightTriangle
 };

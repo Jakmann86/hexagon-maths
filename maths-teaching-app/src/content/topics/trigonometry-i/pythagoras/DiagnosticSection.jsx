@@ -1,5 +1,5 @@
 // src/content/topics/trigonometry-i/pythagoras/DiagnosticSection.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSectionBase';
 import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
 import Square from '../../../../components/math/shapes/quadrilaterals/Square';
@@ -12,6 +12,9 @@ import PythagorasGenerators from '../../../../generators/geometry/pythagorasGene
  * Uses Pattern 2 architecture with factory-based shape creation
  */
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
+    // Add state to track question changes
+    const [questionCounter, setQuestionCounter] = useState(0);
+
     // Get theme colors for diagnostic section
     const theme = useSectionTheme('diagnostic');
 
@@ -19,15 +22,24 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     const questionTypes = {
         squareArea: {
             title: 'Find Square Area',
-            generator: squareGenerators.squareAreaDiagnostic
+            generator: () => {
+                setQuestionCounter(prev => prev + 1); // Increment counter on new question
+                return squareGenerators.squareAreaDiagnostic();
+            }
         },
         squareRoot: {
             title: 'Find Side Length',
-            generator: squareGenerators.squareRootDiagnostic
+            generator: () => {
+                setQuestionCounter(prev => prev + 1);
+                return squareGenerators.squareRootDiagnostic();
+            }
         },
         identifyHypotenuse: {
             title: 'Identify Hypotenuse',
-            generator: PythagorasGenerators.identifyHypotenuse
+            generator: () => {
+                setQuestionCounter(prev => prev + 1);
+                return PythagorasGenerators.identifyHypotenuse();
+            }
         }
     };
 
@@ -35,7 +47,6 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     const renderVisualization = (currentQuestion) => {
         if (!currentQuestion.visualization) return null;
         
-        // If it's already a React element, return it
         if (React.isValidElement(currentQuestion.visualization)) {
             return (
                 <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
@@ -44,9 +55,8 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
             );
         }
         
-        // If it's a config object, convert to component based on shape type
         if (currentQuestion.visualization.sideLength) {
-            // It's a square config
+            // Square config remains unchanged
             return (
                 <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
                     <Square 
@@ -57,13 +67,14 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                 </div>
             );
         } else {
-            // It's a triangle config
+            // Triangle config with auto-cycling enabled
             return (
                 <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
                     <RightTriangle 
                         {...currentQuestion.visualization} 
                         sectionType="diagnostic"
-                        orientation="default"
+                        autoCycle={true}
+                        questionId={questionCounter} // Use counter instead of Date.now()
                     />
                 </div>
             );

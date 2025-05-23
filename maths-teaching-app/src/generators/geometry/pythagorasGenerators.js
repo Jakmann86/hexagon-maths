@@ -265,43 +265,151 @@ const isoscelesArea = (options = {}) => {
   };
 };
 
+/**
+ * Generate a coordinate distance problem for the challenge section
+ */
+const generateCoordinateChallenge = () => {
+  // Generate points until we get a non-horizontal, non-vertical line
+  let point1, point2, dx, dy;
+  
+  do {
+    point1 = [_.random(-4, 4), _.random(-4, 4)];
+    point2 = [_.random(-4, 4), _.random(-4, 4)];
+    
+    // Calculate differences
+    dx = point2[0] - point1[0];
+    dy = point2[1] - point1[1];
+    
+    // Repeat if points create a horizontal or vertical line (dx or dy is 0)
+  } while (dx === 0 || dy === 0);
+  
+  // Calculate the distance
+  const exactDistance = Math.sqrt(dx * dx + dy * dy);
+  const distance = Math.round(exactDistance * 100) / 100;
+
+  // Create the visualization config
+  const visualizationConfig = {
+    points: [point1, point2],
+    pointLabels: ['A', 'B'],
+    segments: [[0, 1]],
+    style: {
+      pointColors: ['#e74c3c', '#3498db'], // Red for A, Blue for B
+      segmentColors: ['#9b59b6'],          // Purple for line
+    }
+  };
+
+  // Create solution steps
+  const solution = [
+    {
+      explanation: "To find the distance between two points, we use the distance formula, which is derived from the Pythagorean theorem.",
+      formula: "d = \\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}"
+    },
+    {
+      explanation: "Substitute the coordinates of points A and B:",
+      formula: `d = \\sqrt{(${point2[0]} - ${point1[0]})^2 + (${point2[1]} - ${point1[1]})^2}`
+    },
+    {
+      explanation: "Calculate the differences:",
+      formula: `d = \\sqrt{(${dx})^2 + (${dy})^2}`
+    },
+    {
+      explanation: "Square the differences:",
+      formula: `d = \\sqrt{${dx * dx} + ${dy * dy}}`
+    },
+    {
+      explanation: "Add the squares:",
+      formula: `d = \\sqrt{${dx * dx + dy * dy}}`
+    },
+    {
+      explanation: "Take the square root to find the distance:",
+      formula: `d = ${distance}`
+    }
+  ];
+
+  return {
+    title: "Finding Distance in the Coordinate Plane",
+    questionText: `Find the distance between the points A(${point1[0]}, ${point1[1]}) and B(${point2[0]}, ${point2[1]}) on the coordinate plane.`,
+    visualizationConfig,
+    solution,
+    dx,
+    dy,
+    distance
+  };
+};
 
 // Export all functions as part of the PythagorasGenerators object
 const PythagorasGenerators = {
   findHypotenuse,
   findMissingSide,
   isoscelesArea,
+  generateCoordinateChallenge,
 
   // ADD THIS NEW FUNCTION HERE:
   identifyHypotenuse: ({ units = 'cm' } = {}) => {
     // Choose a simple Pythagorean triple
-    const triple = _.sample(PYTHAGOREAN_TRIPLES.slice(0, 3)); // Use easier triples
+    const triple = _.sample(PYTHAGOREAN_TRIPLES.slice(0, 3));
     const [a, b, c] = triple;
+    
+    // Randomly decide between numeric or algebraic labels
+    const useAlgebraic = Math.random() > 0.5;
+    
+    if (useAlgebraic) {
+        return {
+            questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
+            correctAnswer: 'c',
+            options: [
+                'a',     // Side A
+                'b',     // Side B  
+                'c',     // Side C (correct - hypotenuse)
+                'None of these'
+            ].sort(() => Math.random() - 0.5),
+            explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
+            visualization: createPythagoreanTriangle({
+                base: a,
+                height: b,
+                showRightAngle: true,
+                labelStyle: 'algebraic',
+                units,
+                sectionType: 'diagnostic',
+                style: {
+                    fillColor: '#9b59b6',
+                    fillOpacity: 0.2
+                }
+            })
+        };
+    }
 
     return {
-      questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
-      correctAnswer: `${c} ${units}`,
-      options: [
-        `${a} ${units}`,     // Side A
-        `${b} ${units}`,     // Side B  
-        `${c} ${units}`,     // Side C (correct - hypotenuse)
-        'None of these'      // Standard option
-      ].sort(() => Math.random() - 0.5),
-      explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        showRightAngle: true,
-        labelStyle: 'custom',
-        labels: [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`], // All sides labeled
-        units,
-        sectionType: 'diagnostic',
-        style: {
-          fillColor: '#9b59b6',
-          fillOpacity: 0.2
-        }
-      })
+        questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
+        correctAnswer: `${c} ${units}`,
+        options: [
+            `${a} ${units}`,
+            `${b} ${units}`,
+            `${c} ${units}`,
+            'None of these'
+        ].sort(() => Math.random() - 0.5),
+        explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
+        visualization: createPythagoreanTriangle({
+            base: a,
+            height: b,
+            showRightAngle: true,
+            labelStyle: 'custom',
+            labels: [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`],
+            units,
+            sectionType: 'diagnostic',
+            style: {
+                fillColor: '#9b59b6',
+                fillOpacity: 0.2
+            }
+        })
     };
+  },
+
+  generateChallengeQuestions: () => {
+    return [
+      generateCoordinateChallenge(),
+      // You could add more challenge types here in the future
+    ];
   },
 
   // Generate example questions for the examples section

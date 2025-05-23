@@ -1,182 +1,237 @@
-// maths-teaching-app/src/components/math/CoordinateGrid.jsx
-import React from 'react';
+// src/components/math/visualizations/CoordinateGrid.jsx
+import React, { useRef, useEffect } from 'react';
 import JSXGraphBoard from './JSXGraphBoard';
+/**
+ * A generic coordinate grid visualization component
+ * Renders only basic elements: grid, axes, points, and segments
+ * 
+ * @param {Object} props - Props from coordinateFactory
+ */
+const CoordinateGrid = (props) => {
+  // Extract props with defaults
+  const {
+    points = [[0, 0]],
+    pointLabels = ["O"],
+    segments = [],
+    showGrid = true,
+    showAxes = true,
+    gridSize = 6,
+    sectionType = 'default',
+    containerHeight = 300,
+    style = {},
+    // Optional callback for custom drawings
+    onBoardCreated = null
+  } = props;
 
-const CoordinateGrid = ({
-  id = `coordinate-grid-${Math.random().toString(36).substr(2, 9)}`,
-  boundingBox = [-6, 6, 6, -6],
-  height = 300,
-  showGrid = true,
-  showAxes = true,
-  points = [],
-  lines = [],
-  backgroundColor = "transparent"
-}) => {
-  
-  // Function that gets called when the board is created
-  const onMountBoard = (board) => {
-    if (!board) return;
-    
+  // Extract style properties with defaults
+  const {
+    pointColors = Array(points.length).fill('#666666'),
+    segmentColors = Array(segments.length).fill('#666666'),
+    gridColor = '#cccccc',  // Darker grid lines
+    axisColor = '#666666',
+    strokeWidth = 2,
+    opacity = 0.9
+  } = style;
+
+  // Reference to the board
+  const boardRef = useRef(null);
+
+  // JSXGraph board initialization
+  const initBoard = (board) => {
+    // Store reference to the board
+    boardRef.current = board;
+
+    // Create grid if showGrid is true
     if (showGrid) {
-      // Create a simple grid
-      for (let x = Math.ceil(boundingBox[0]); x <= Math.floor(boundingBox[2]); x++) {
-        if (x === 0) continue; // Skip axis line
-        board.create('line', [[x, boundingBox[1]], [x, boundingBox[3]]], {
-          strokeColor: '#ddd',
-          strokeWidth: 1,
-          fixed: true,
-          highlight: false,
-          straightFirst: true,
-          straightLast: true,
-          firstArrow: false,
-          lastArrow: false,
-          withLabel: false,
-          name: ''
-        });
+      for (let x = -gridSize; x <= gridSize; x++) {
+        if (x === 0) continue; // Skip the axis line
+        board.create('line',
+          [[x, -gridSize], [x, gridSize]],
+          {
+            straightFirst: false,
+            straightLast: false,
+            strokeColor: gridColor,
+            strokeWidth: 1,
+            dash: 1,
+            fixed: true,
+            highlight: false
+          }
+        );
       }
-      
-      for (let y = Math.ceil(boundingBox[1]); y <= Math.floor(boundingBox[3]); y++) {
-        if (y === 0) continue; // Skip axis line
-        board.create('line', [[boundingBox[0], y], [boundingBox[2], y]], {
-          strokeColor: '#ddd',
-          strokeWidth: 1,
-          fixed: true,
-          highlight: false,
-          straightFirst: true,
-          straightLast: true,
-          firstArrow: false,
-          lastArrow: false,
-          withLabel: false,
-          name: ''
-        });
+
+      for (let y = -gridSize; y <= gridSize; y++) {
+        if (y === 0) continue; // Skip the axis line
+        board.create('line',
+          [[-gridSize, y], [gridSize, y]],
+          {
+            straightFirst: false,
+            straightLast: false,
+            strokeColor: gridColor,
+            strokeWidth: 1,
+            dash: 1,
+            fixed: true,
+            highlight: false
+          }
+        );
       }
     }
-    
+
+    // Create axes if showAxes is true
     if (showAxes) {
-      // Create x and y axes with very explicit styling
-      const xAxis = board.create('line', [
-        [boundingBox[0], 0],
-        [boundingBox[2], 0]
-      ], {
-        strokeColor: '#444',
+      // Step 1: Create axis lines that stop at grid boundaries
+      // X-axis as a segment (not a full axis)
+      board.create('segment', [[-gridSize, 0], [gridSize, 0]], {
+        strokeColor: axisColor,
         strokeWidth: 2,
-        fixed: true,
         highlight: false,
-        straightFirst: true,
-        straightLast: true,
-        firstArrow: false,
-        lastArrow: true,
-        withLabel: false,
-        name: ''
+        fixed: true,
+        name: 'xAxis'
       });
-      
-      const yAxis = board.create('line', [
-        [0, boundingBox[1]],
-        [0, boundingBox[3]]
-      ], {
-        strokeColor: '#444',
+
+      // Y-axis as a segment (not a full axis)
+      board.create('segment', [[0, -gridSize], [0, gridSize]], {
+        strokeColor: axisColor,
         strokeWidth: 2,
-        fixed: true,
         highlight: false,
-        straightFirst: true,
-        straightLast: true,
-        firstArrow: false,
-        lastArrow: true,
-        withLabel: false,
-        name: ''
-      });
-      
-      // Add tick marks and numbers
-      for (let x = Math.ceil(boundingBox[0]); x <= Math.floor(boundingBox[2]); x++) {
-        if (x === 0) continue; // Skip origin
-        board.create('text', [x, -0.3, `${x}`], {
-          fontSize: 10,
-          fixed: true,
-          anchorX: 'middle',
-          anchorY: 'top'
-        });
-      }
-      
-      for (let y = Math.ceil(boundingBox[1]); y <= Math.floor(boundingBox[3]); y++) {
-        if (y === 0) continue; // Skip origin
-        board.create('text', [-0.3, y, `${y}`], {
-          fontSize: 10,
-          fixed: true,
-          anchorX: 'right',
-          anchorY: 'middle'
-        });
-      }
-      
-      // Origin label
-      board.create('text', [0.3, 0.3, "O"], {
-        fontSize: 10,
         fixed: true,
-        anchorX: 'left',
-        anchorY: 'bottom'
+        name: 'yAxis'
       });
-    }
-  };
-  
-  // Update the board with points and lines
-  const updateBoard = (board) => {
-    if (!board) return;
-    
-    // Clear previous points and lines but keep grid/axes
-    Object.keys(board.objects).forEach(id => {
-      const obj = board.objects[id];
-      if (obj && 
-          obj.elType !== 'axis' && 
-          obj.elType !== 'ticks' &&
-          !obj.visProp?.isGrid) {
-        try {
-          board.removeObject(obj);
-        } catch (e) {
-          // Ignore errors
-        }
-      }
-    });
-    
-    // Create points
-    const boardPoints = points.map(point => {
-      return board.create('point', point.coordinates, {
-        name: point.label || '',
-        fixed: true,
-        color: point.color || '#3498db',
-        size: point.size || 4,
-        withLabel: !!point.label, // Only show label if one is provided
-        label: { 
-          offset: point.labelOffset || [10, 10],
-          color: point.color || '#3498db'
-        }
-      });
-    });
-    
-    // Create lines between points
-    lines.forEach(line => {
-      const from = line.from !== undefined ? boardPoints[line.from] : line.fromCoords;
-      const to = line.to !== undefined ? boardPoints[line.to] : line.toCoords;
-      
-      board.create('segment', [from, to], {
-        strokeColor: line.color || '#9b59b6',
-        strokeWidth: line.width || 2,
-        dash: line.dash ? 2 : 0,
+
+      // Step 2: Add arrows at the ends of the axes
+      // X-axis arrow
+      board.create('arrow', [[gridSize - 0.7, 0], [gridSize, 0]], {
+        strokeColor: axisColor,
+        strokeWidth: 2,
+        highlight: false,
         fixed: true
       });
+
+      // Y-axis arrow
+      board.create('arrow', [[0, gridSize - 0.7], [0, gridSize]], {
+        strokeColor: axisColor,
+        strokeWidth: 2,
+        highlight: false,
+        fixed: true
+      });
+
+      // Step 3: Add axis labels (x and y)
+      // X-axis label
+      board.create('text', [gridSize - 0.5, -0.5, "x"], {
+        fontSize: 16,
+        color: axisColor,
+        fixed: true
+      });
+
+      // Y-axis label
+      board.create('text', [0.5, gridSize - 0.5, "y"], {
+        fontSize: 16,
+        color: axisColor,
+        fixed: true
+      });
+
+      // Step 4: Add numeric labels for the axes
+      // X-axis numeric labels
+      for (let x = -gridSize; x <= gridSize; x++) {
+        if (x !== 0) { // Skip origin
+          // Add tick mark
+          board.create('segment', [[x, -0.1], [x, 0.1]], {
+            strokeColor: axisColor,
+            strokeWidth: 1,
+            fixed: true
+          });
+          // Add number label
+          board.create('text', [x, -0.2, x.toString()], {
+            anchorX: 'middle',
+            anchorY: 'top',
+            fontSize: 10,  // Smaller font
+            color: axisColor,
+            fixed: true
+          });
+        }
+      }
+
+      // Y-axis numeric labels
+      for (let y = -gridSize; y <= gridSize; y++) {
+        if (y !== 0) { // Skip origin
+          // Add tick mark
+          board.create('segment', [[-0.1, y], [0.1, y]], {
+            strokeColor: axisColor,
+            strokeWidth: 1,
+            fixed: true
+          });
+          // Add number label
+          board.create('text', [-0.2, y, y.toString()], {
+            anchorX: 'right',
+            anchorY: 'middle',
+            fontSize: 10,  // Smaller font
+            color: axisColor,
+            fixed: true
+          });
+        }
+      }
+
+      // Origin label (0)
+      board.create('text', [-0.2, -0.2, "0"], {
+        anchorX: 'right',
+        anchorY: 'top',
+        fontSize: 10,  // Smaller font
+        color: axisColor,
+        fixed: true
+      });
+    }
+    
+
+    // Create points
+    const jsxPoints = points.map((coords, index) => {
+      return board.create('point', coords, {
+        name: pointLabels[index] || '',
+        size: 4,
+        fixed: true,
+        strokeColor: pointColors[index] || pointColors[0] || '#666666',
+        fillColor: pointColors[index] || pointColors[0] || '#666666',
+        label: {
+          offset: [10, 10],
+          color: pointColors[index] || pointColors[0] || '#666666'
+        }
+      });
     });
+
+    // Create segments
+    segments.forEach((segmentPoints, index) => {
+      const [p1Index, p2Index] = segmentPoints;
+      if (jsxPoints[p1Index] && jsxPoints[p2Index]) {
+        board.create('segment', [jsxPoints[p1Index], jsxPoints[p2Index]], {
+          strokeColor: segmentColors[index] || segmentColors[0] || '#666666',
+          strokeWidth: strokeWidth,
+          fixed: true
+        });
+      }
+    });
+
+    // Call the onBoardCreated callback if provided
+    // This allows topic-specific customizations without polluting the generic component
+    if (onBoardCreated && typeof onBoardCreated === 'function') {
+      onBoardCreated(board, jsxPoints);
+    }
   };
-  
+
+  // Generate a unique ID for the board
+  const boardId = `coordinate-grid-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Set the bounding box to the gridSize
+  const boundingBox = [-gridSize, gridSize, gridSize, -gridSize];
+
   return (
-    <div className="coordinate-grid-container" style={{ width: '100%', height: `${height}px` }}>
+    <div className="coordinate-grid" style={{ width: '100%', height: `${containerHeight}px` }}>
       <JSXGraphBoard
-        id={id}
+        id={boardId}
         boundingBox={boundingBox}
-        axis={false}  // We'll create our own axes with onMount
-        grid={false}  // We'll create our own grid with onMount
-        height={height}
-        backgroundColor={backgroundColor}
-        onMount={onMountBoard}
-        onUpdate={updateBoard}
-        dependencies={[JSON.stringify(points), JSON.stringify(lines)]}
+        axis={false}  // We'll create our own axes
+        grid={false}  // We'll create our own grid
+        containerHeight={containerHeight}
+        backgroundColor="#f9f9f9"  // Light gray background
+        onMount={initBoard}
+        sectionType={sectionType}
       />
     </div>
   );
