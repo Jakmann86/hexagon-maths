@@ -6,7 +6,7 @@ import MathDisplay from '../common/MathDisplay';
 import { useSectionTheme } from '../../hooks/useSectionTheme';
 
 /**
- * ContentRenderer - Renders different types of content in diagnostic questions
+ * ContentRenderer - Renders different types of content consistently
  */
 const ContentRenderer = React.memo(({ content, type = 'text' }) => {
   if (!content) return null;
@@ -14,6 +14,25 @@ const ContentRenderer = React.memo(({ content, type = 'text' }) => {
   // Handle React components directly
   if (React.isValidElement(content)) {
     return content;
+  }
+
+  // Handle structured content with mixed text and math
+  if (typeof content === 'object' && content.text !== undefined) {
+    if (content.layout === 'vertical') {
+      return (
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-gray-800 text-lg">{content.text}</span>
+          {content.math && <MathDisplay math={content.math} size="normal" />}
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center justify-center gap-1">
+          <span className="text-gray-800 text-lg">{content.text}</span>
+          {content.math && <MathDisplay math={content.math} size="normal" />}
+        </div>
+      );
+    }
   }
 
   switch (type) {
@@ -26,7 +45,7 @@ const ContentRenderer = React.memo(({ content, type = 'text' }) => {
       if (typeof content === 'string' && (content.includes('\\') || content.includes('$'))) {
         return <MathDisplay math={content} />;
       }
-      return <div className="text-gray-800">{content}</div>;
+      return <div className="text-gray-800 text-lg text-center">{content}</div>;
   }
 });
 
@@ -78,7 +97,7 @@ const DiagnosticSectionBase = ({
   questionTypes = {},
   currentTopic,
   currentLessonId,
-  onQuestionComplete = () => {},
+  onQuestionComplete = () => { },
   themeKey = 'diagnostic',
   loadingIndicator,
   renderVisualization,
@@ -87,10 +106,10 @@ const DiagnosticSectionBase = ({
 }) => {
   // Get theme colors for the section
   const theme = useSectionTheme(themeKey);
-  
+
   // Memoize the type keys to prevent recreating array on each render
   const typeKeys = useMemo(() => Object.keys(questionTypes), [questionTypes]);
-  
+
   // State management for the current question and navigation
   const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -114,12 +133,12 @@ const DiagnosticSectionBase = ({
   // Question generation and management
   const generateNewQuestion = useCallback(() => {
     if (typeKeys.length === 0) return;
-    
+
     const currentTypeId = typeKeys[currentTypeIndex];
     if (!questionTypes[currentTypeId]) return;
-    
+
     const generator = questionTypes[currentTypeId].generator;
-    
+
     if (typeof generator === 'function') {
       try {
         const question = generator();
@@ -141,20 +160,20 @@ const DiagnosticSectionBase = ({
   // Handle answer selection
   const checkAnswer = useCallback((option) => {
     if (!currentQuestion || answered) return;
-    
+
     setSelectedAnswer(option);
     setShowAnswer(true);
     setAnswered(true);
-    
+
     const isCorrect = option === currentQuestion.correctAnswer;
     onQuestionComplete(isCorrect);
-    
+
     // Auto-select next question type if enabled
     if (autoSelectNextType && isCorrect) {
       const timer = setTimeout(() => {
         setCurrentTypeIndex(prev => (prev + 1) % typeKeys.length);
       }, 1500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [currentQuestion, answered, onQuestionComplete, autoSelectNextType, typeKeys.length]);
@@ -162,17 +181,17 @@ const DiagnosticSectionBase = ({
   // Render visualization with better error handling
   const renderQuestionVisualization = useCallback(() => {
     if (!currentQuestion) return null;
-    
+
     // Use custom renderer if provided
     if (renderVisualization && typeof renderVisualization === 'function') {
       return renderVisualization(currentQuestion);
     }
-    
+
     // Support different visualization formats
     const visualization = currentQuestion.visualization || currentQuestion.shape;
-    
+
     if (!visualization) return null;
-    
+
     return <VisualizationRenderer visualization={visualization} />;
   }, [currentQuestion, renderVisualization]);
 
@@ -186,7 +205,7 @@ const DiagnosticSectionBase = ({
   // Custom loading indicator or default
   const renderLoadingState = () => {
     if (loadingIndicator) return loadingIndicator;
-    
+
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-pulse flex flex-col items-center">
@@ -213,7 +232,7 @@ const DiagnosticSectionBase = ({
         <h3 className="text-xl font-semibold text-gray-800">
           {getCurrentTitle()}
         </h3>
-        
+
         {/* New Question Button */}
         <button
           onClick={generateNewQuestion}
@@ -222,17 +241,16 @@ const DiagnosticSectionBase = ({
           <RefreshCw size={18} />
           <span>New Question</span>
         </button>
-        
+
         {/* Navigation Buttons - Optimized for up to 5 tabs */}
         <div className="flex gap-2">
           {typeKeys.map((typeKey, index) => (
             <button
               key={typeKey}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                index === currentTypeIndex
-                  ? `bg-${theme.primary} text-white`
-                  : `bg-${theme.secondary} text-${theme.secondaryText} hover:bg-${theme.primaryHover} hover:text-white`
-              }`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${index === currentTypeIndex
+                ? `bg-${theme.primary} text-white`
+                : `bg-${theme.secondary} text-${theme.secondaryText} hover:bg-${theme.primaryHover} hover:text-white`
+                }`}
               onClick={() => setCurrentTypeIndex(index)}
               aria-label={questionTypes[typeKey]?.title || `Question Type ${index + 1}`}
             >
@@ -276,14 +294,14 @@ const DiagnosticSectionBase = ({
                   >
                     {/* Option Display with math support */}
                     <ContentRenderer content={option} />
-                    
+
                     {/* Correct Answer Indicator */}
                     {showAnswer && option === currentQuestion.correctAnswer && (
                       <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1 shadow-md">
                         <Check className="w-4 h-4 text-white" />
                       </div>
                     )}
-                    
+
                     {/* Incorrect Answer Indicator */}
                     {showAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
                       <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1 shadow-md">
@@ -293,7 +311,7 @@ const DiagnosticSectionBase = ({
                   </button>
                 ))}
               </div>
-              
+
               {/* Feedback Area (optional) */}
               {showAnswer && currentQuestion.explanation && (
                 <div className={`mt-4 p-4 rounded-lg bg-${theme.pastelBg} border border-${theme.borderColor}`}>

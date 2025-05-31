@@ -6,6 +6,7 @@ import { LearnSection as PythagorasLearn } from './topics/trigonometry-i/pythago
 import { ExamplesSection as PythagorasExamples } from './topics/trigonometry-i/pythagoras';
 import { ChallengeSection as PythagorasChallenge } from './topics/trigonometry-i/pythagoras';
 import { StarterSection as SohcahtoaStarter } from './topics/trigonometry-i/sohcahtoa1';
+import { DiagnosticSection as SohcahtoaDiagnostic } from './topics/trigonometry-i/sohcahtoa1';
 import { ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
 import PlaceholderSection from '../components/sections/PlaceholderSection';
 
@@ -66,7 +67,10 @@ const LessonContentProvider = ({
             currentLessonId={currentLessonId}
           />;
         case 'diagnostic':
-          return <PlaceholderSection sectionName="Diagnostic" />;
+          return <SohcahtoaDiagnostic
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
         case 'learn':
           return <PlaceholderSection sectionName="Learn" />;
         case 'challenge':
