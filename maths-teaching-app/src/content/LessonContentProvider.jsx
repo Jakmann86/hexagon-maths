@@ -1,4 +1,4 @@
-// src/content/LessonContentProvider.jsx - Updated for SOHCAHTOA Examples
+// src/content/LessonContentProvider.jsx - Updated for Algebra I
 import React from 'react';
 import { StarterSection as PythagorasStarter } from './topics/trigonometry-i/pythagoras';
 import { DiagnosticSection as PythagorasDiagnostic } from './topics/trigonometry-i/pythagoras';
@@ -8,11 +8,13 @@ import { ChallengeSection as PythagorasChallenge } from './topics/trigonometry-i
 import { StarterSection as SohcahtoaStarter } from './topics/trigonometry-i/sohcahtoa1';
 import { DiagnosticSection as SohcahtoaDiagnostic } from './topics/trigonometry-i/sohcahtoa1';
 import { ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
+import { StarterSection as AlgebraExpandingStarter } from './topics/algebra-i/expanding-brackets';
+import { DiagnosticSection as AlgebraExpandingDiagnostic } from './topics/algebra-i/expanding-brackets';
 import PlaceholderSection from '../components/sections/PlaceholderSection';
 
 /**
  * Component that renders the appropriate lesson section based on topic, lesson ID, and section
- * Simplified during architecture migration
+ * Now includes Algebra I content
  */
 const LessonContentProvider = ({
   currentTopic,
@@ -104,17 +106,78 @@ const LessonContentProvider = ({
     }
   };
 
+  // Function to render Algebra I lessons
+  const renderAlgebraI = () => {
+    // Lesson 1: Expanding Double Brackets
+    if (currentLessonId === 1) {
+      switch (currentSection) {
+        case 'starter':
+          return <AlgebraExpandingStarter
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
+        case 'diagnostic':
+          return <AlgebraExpandingDiagnostic
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
+        case 'learn':
+          return <PlaceholderSection
+            sectionName="Learn"
+            message="Learn section for Expanding Double Brackets coming soon."
+          />;
+        case 'examples':
+          return <PlaceholderSection
+            sectionName="Examples"
+            message="Examples section for Expanding Double Brackets coming soon."
+          />;
+        case 'challenge':
+          return <PlaceholderSection
+            sectionName="Challenge"
+            message="Challenge section for Expanding Double Brackets coming soon."
+          />;
+        default:
+          return <PlaceholderSection sectionName="Unknown" message="Please select a valid section." />;
+      }
+    }
+    // Lesson 2: Solving Equations with Unknown on Both Sides
+    else if (currentLessonId === 2) {
+      return <PlaceholderSection
+        sectionName={`Solving Equations with Unknown on Both Sides - ${currentSection}`}
+        message="This lesson is planned for future development."
+      />;
+    }
+    // Lesson 3: Solving Simultaneous Equations
+    else if (currentLessonId === 3) {
+      return <PlaceholderSection
+        sectionName={`Solving Simultaneous Equations - ${currentSection}`}
+        message="This lesson is planned for future development."
+      />;
+    }
+    // Lesson 4: Negative and Fractional Indices
+    else if (currentLessonId === 4) {
+      return <PlaceholderSection
+        sectionName={`Negative and Fractional Indices - ${currentSection}`}
+        message="This lesson is planned for future development."
+      />;
+    }
+    // Other lessons not yet implemented
+    else {
+      return (
+        <div className="p-6 bg-white border rounded-lg shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Algebra I - Lesson {currentLessonId} - {currentSection}</h2>
+          <p>Content for this lesson is still in development.</p>
+        </div>
+      );
+    }
+  };
+
   // Main renderer based on topic
   switch (currentTopic) {
     case 'Trigonometry I':
       return renderTrigonometryI();
     case 'Algebra I':
-      return (
-        <PlaceholderSection
-          sectionName="Algebra I"
-          message="Algebra lessons will be migrated after Trigonometry I is complete."
-        />
-      );
+      return renderAlgebraI();
     default:
       return (
         <div className="p-6 bg-white border rounded-lg shadow-sm">

@@ -65,24 +65,35 @@ export const curriculum = {
             },
             {
                 id: 2,
-                title: "Collecting Like Terms",
+                title: "Solving Equations with Unknown on Both Sides",
                 sections: {
-                    starter: 'collecting-terms/StarterSection',
-                    diagnostic: 'collecting-terms/DiagnosticSection',
-                    learn: 'collecting-terms/LearnSection',
-                    examples: 'collecting-terms/ExamplesSection',
-                    challenge: 'collecting-terms/ChallengeSection'
+                    starter: 'linear-equations/StarterSection',
+                    diagnostic: 'linear-equations/DiagnosticSection',
+                    learn: 'linear-equations/LearnSection',
+                    examples: 'linear-equations/ExamplesSection',
+                    challenge: 'linear-equations/ChallengeSection'
                 }
             },
             {
                 id: 3,
-                title: "Substituting Values",
+                title: "Solving Simultaneous Equations",
                 sections: {
-                    starter: 'substitution/StarterSection',
-                    diagnostic: 'substitution/DiagnosticSection',
-                    learn: 'substitution/LearnSection',
-                    examples: 'substitution/ExamplesSection',
-                    challenge: 'substitution/ChallengeSection'
+                    starter: 'simultaneous-equations/StarterSection',
+                    diagnostic: 'simultaneous-equations/DiagnosticSection',
+                    learn: 'simultaneous-equations/LearnSection',
+                    examples: 'simultaneous-equations/ExamplesSection',
+                    challenge: 'simultaneous-equations/ChallengeSection'
+                }
+            },
+            {
+                id: 4,
+                title: "Negative and Fractional Indices",
+                sections: {
+                    starter: 'indices/StarterSection',
+                    diagnostic: 'indices/DiagnosticSection',
+                    learn: 'indices/LearnSection',
+                    examples: 'indices/ExamplesSection',
+                    challenge: 'indices/ChallengeSection'
                 }
             }
         ]
