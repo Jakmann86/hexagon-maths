@@ -187,6 +187,101 @@ export const generateSquareSideLength = (options = {}) => {
 };
 
 /**
+ * Unified square area question generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
+ * Favors perfect squares for cleaner calculations
+ */
+export const generateSquareArea = (options = {}) => {
+  const {
+    units = 'cm',
+    sectionType = 'diagnostic',
+    difficulty = 'medium'
+  } = options;
+
+  // FAVOR PERFECT SQUARES - 80% chance of using perfect square side lengths
+  const usePerfectSquare = Math.random() < 0.8; // 80% perfect squares, 20% random
+  
+  let side;
+  if (usePerfectSquare) {
+    // Use side lengths that give nice square areas
+    const perfectSides = [3, 4, 5, 6, 7, 8, 9, 10, 12];
+    side = _.sample(perfectSides);
+  } else {
+    // Occasional non-perfect square for variety
+    side = _.random(3, 10);
+  }
+
+  const area = side * side;
+  const perimeter = side * 4;
+
+  // SECTION-AWARE OUTPUT FORMATTING
+  if (sectionType === 'starter') {
+    return {
+      question: `Find the area and perimeter of a square with sides ${side} ${units}.`,
+      answer: `\\text{Area} = ${side}^2 = ${area}\\text{ ${units}}^2\\\\\\text{Perimeter} = 4 \\times ${side} = ${perimeter}\\text{ ${units}}`,
+      visualization: createSquare({
+        sideLength: side,
+        showDimensions: true,
+        units,
+        sectionType: 'starter',
+        style: {
+          fillColor: '#3498db',
+          fillOpacity: 0.2
+        }
+      })
+    };
+  }
+  
+  else if (sectionType === 'diagnostic') {
+    return {
+      questionDisplay: {
+        text: `Find the area of this square with side length`,
+        math: `${side}\\text{ ${units}}`
+      },
+      correctAnswer: `${area}\\text{ ${units}}^2`,
+      options: generateUniqueOptions([
+        `${area}\\text{ ${units}}^2`,        // Correct answer
+        `${perimeter}\\text{ ${units}}^2`,   // Mistake: using perimeter
+        `${area + side}\\text{ ${units}}^2`, // Mistake: area + side
+        `${side * 2}\\text{ ${units}}^2`     // Mistake: doubling instead of squaring
+      ]),
+      explanation: `Area of a square = side² = ${side}² = ${area} ${units}²`,
+      visualization: createSquare({
+        sideLength: side,
+        showDimensions: true,
+        units,
+        sectionType: 'diagnostic',
+        style: {
+          fillColor: '#3498db',
+          fillOpacity: 0.2
+        }
+      })
+    };
+  }
+
+  else if (sectionType === 'examples') {
+    return {
+      title: "Finding the Area of a Square",
+      questionText: `Find the area of a square with side length ${side} ${units}.`,
+      solution: generateSquareSolution(side, 'findArea', units),
+      visualization: createSquare({
+        sideLength: side,
+        showDimensions: true,
+        units,
+        sectionType: 'examples',
+        style: {
+          fillColor: '#3498db',
+          fillOpacity: 0.2
+        }
+      })
+    };
+  }
+
+  // Fallback to diagnostic format
+  return generateSquareArea({ ...options, sectionType: 'diagnostic' });
+};
+
+/**
  * Square-related solution steps generator
  * Enhanced to handle area calculation for starter questions
  */
@@ -275,6 +370,8 @@ export const generateSquareSolution = (side, questionType, units = 'cm') => {
 
   return steps;
 };
+
+
 
 // Export unified generators
 export const squareGenerators = {

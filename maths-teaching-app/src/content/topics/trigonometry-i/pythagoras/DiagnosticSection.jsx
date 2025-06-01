@@ -9,7 +9,7 @@ import PythagorasGenerators from '../../../../generators/geometry/pythagorasGene
 
 /**
  * DiagnosticSection component for Pythagoras lesson
- * Uses Pattern 2 architecture with factory-based shape creation
+ * Uses Pattern 2 architecture with unified generators
  */
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     // Add state to track question changes
@@ -18,20 +18,28 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     // Get theme colors for diagnostic section
     const theme = useSectionTheme('diagnostic');
 
-    // Get question types from generators
+    // Updated question types using unified generators
     const questionTypes = {
         squareArea: {
             title: 'Find Square Area',
             generator: () => {
-                setQuestionCounter(prev => prev + 1); // Increment counter on new question
-                return squareGenerators.squareAreaDiagnostic();
+                setQuestionCounter(prev => prev + 1);
+                // Use unified generator with diagnostic section type
+                return squareGenerators.generateSquareArea({ 
+                    sectionType: 'diagnostic',
+                    units: 'cm'
+                });
             }
         },
         squareRoot: {
             title: 'Find Side Length',
             generator: () => {
                 setQuestionCounter(prev => prev + 1);
-                return squareGenerators.squareRootDiagnostic();
+                // Use unified generator with diagnostic section type
+                return squareGenerators.generateSquareSideLength({ 
+                    sectionType: 'diagnostic',
+                    units: 'cm'
+                });
             }
         },
         identifyHypotenuse: {
@@ -47,6 +55,7 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     const renderVisualization = (currentQuestion) => {
         if (!currentQuestion.visualization) return null;
         
+        // Handle React elements directly (from generators that return JSX)
         if (React.isValidElement(currentQuestion.visualization)) {
             return (
                 <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
@@ -55,8 +64,8 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
             );
         }
         
-        if (currentQuestion.visualization.sideLength) {
-            // Square config remains unchanged
+        // Handle square visualization configs
+        if (currentQuestion.visualization.sideLength !== undefined) {
             return (
                 <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
                     <Square 
@@ -66,19 +75,25 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                     />
                 </div>
             );
-        } else {
-            // Triangle config with auto-cycling enabled
+        } 
+        
+        // Handle triangle visualization configs
+        if (currentQuestion.visualization.base !== undefined && currentQuestion.visualization.height !== undefined) {
             return (
                 <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
                     <RightTriangle 
                         {...currentQuestion.visualization} 
                         sectionType="diagnostic"
                         autoCycle={true}
-                        questionId={questionCounter} // Use counter instead of Date.now()
+                        questionId={questionCounter} // Use counter for orientation cycling
                     />
                 </div>
             );
         }
+        
+        // Fallback for unknown visualization types
+        console.warn('Unknown visualization type in diagnostic section:', currentQuestion.visualization);
+        return null;
     };
 
     return (

@@ -3,80 +3,72 @@ import React from 'react';
 import _ from 'lodash';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
 import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
-import PythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
+import { pythagorasGenerators } from '../../../../generators/geometry/pythagorasGenerators';
 import { triangleGenerators } from '../../../../generators/geometry/triangleGenerators';
 import { numberPuzzleGenerators } from '../../../../generators/puzzles/numberPuzzles';
 
 /**
  * StarterSection component for SOHCAHTOA lesson
- * Uses Pattern 2 architecture:
+ * Uses Pattern 2 architecture with unified generators:
  * 1. Generators produce configuration objects
  * 2. Section converts configurations to components
  */
 const StarterSection = ({ currentTopic, currentLessonId }) => {
   // Create generator functions for each section type
   const questionGenerators = [
-    // Last Lesson: Find hypotenuse
+    // Last Lesson: Find hypotenuse using Pythagoras
     () => {
-      // Get configuration from generator with starter context
-      const generatedQuestion = PythagorasGenerators.findHypotenuse({
-        sectionType: 'starter',  // This prevents orientation from being added
-        difficulty: 'easy'
+      // Use unified Pythagoras generator with starter context
+      const question = pythagorasGenerators.generateFindHypotenuse({
+        sectionType: 'starter',
+        difficulty: 'easy',
+        units: 'cm'
       });
 
-      // Adapt to the format expected by StarterSectionBase
-      const question = {
-        question: generatedQuestion.questionText,
-        answer: generatedQuestion.solution[generatedQuestion.solution.length - 1].formula,
-        // Force default orientation for starter consistency + clean positioning
-        visualization: (
-          <RightTriangle 
-            {...generatedQuestion.visualization} 
-            sectionType="starter"
-            orientation="default"  // ← Force default for starters
-          />
-        )
-      };
+      // Convert visualization config to React component (Pattern 2)
+      question.visualization = (
+        <RightTriangle
+          {...question.visualization}
+          sectionType="starter"
+          orientation="default"  // ← Force default for starters
+        />
+      );
 
       return question;
     },
 
-    // Last Week: Find missing side
+    // Last Week: Find missing side using Pythagoras
     () => {
-      // Get configuration from generator with starter context
-      const generatedQuestion = PythagorasGenerators.findMissingSide({
-        sectionType: 'starter',  // This prevents orientation from being added
-        difficulty: 'medium'
+      // Use unified Pythagoras generator with starter context
+      const question = pythagorasGenerators.generateFindMissingSide({
+        sectionType: 'starter',
+        difficulty: 'medium',
+        units: 'cm'
       });
 
-      // Adapt to the format expected by StarterSectionBase
-      const question = {
-        question: generatedQuestion.questionText,
-        answer: generatedQuestion.solution[generatedQuestion.solution.length - 1].formula,
-        // Force default orientation for starter consistency + clean positioning
-        visualization: (
-          <RightTriangle 
-            {...generatedQuestion.visualization} 
-            sectionType="starter"
-            orientation="default"  // ← Force default for starters
-          />
-        )
-      };
+      // Convert visualization config to React component (Pattern 2)
+      question.visualization = (
+        <RightTriangle
+          {...question.visualization}
+          sectionType="starter"
+          orientation="default"  // ← Force default for starters
+        />
+      );
 
       return question;
     },
 
-    // Last Topic: Find side length from area (NOT find area)
+    // Last Topic: Find side length from area (triangle area to side length)
     () => {
       // Use the triangleLengthFromArea generator for side length questions
       const question = triangleGenerators.triangleLengthFromArea({
         units: 'cm'
       });
 
-      // Force default orientation for starter consistency + clean positioning
+      // Convert visualization config to React component (Pattern 2)
       question.visualization = (
-        <RightTriangle 
-          {...question.visualization} 
+        <RightTriangle
+          {...question.visualization}
           sectionType="starter"
           orientation="default"  // ← Force default for starters
         />
@@ -94,7 +86,7 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
     // If there's no visualization data, return null
     if (!questionData.visualization) return null;
 
-    // If the visualization is already a React element
+    // If the visualization is already a React element (Pattern 2 conversion)
     if (React.isValidElement(questionData.visualization)) {
       // Default rendering for components
       return (

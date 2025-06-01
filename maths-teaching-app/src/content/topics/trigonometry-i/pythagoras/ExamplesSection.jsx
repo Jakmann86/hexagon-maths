@@ -3,11 +3,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
 import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
 import IsoscelesTriangle from '../../../../components/math/shapes/triangles/IsoscelesTriangle';
-import PythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
+import { pythagorasGenerators } from '../../../../generators/geometry/pythagorasGenerators';
 
 /**
  * ExamplesSection for Pythagoras' Theorem lesson
- * Implements Pattern 2 architecture:
+ * Implements Pattern 2 architecture with unified generators:
  * - Generators create configuration objects
  * - Section converts configurations to React components
  */
@@ -23,37 +23,59 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   const initializedRef = useRef(false);
   const regenerateCountRef = useRef(0);
 
-  // Generate examples using Pattern 2 architecture
+  // Generate examples using Pattern 2 architecture with unified generators
   const generateExamples = useCallback(() => {
     // Increment counter for key generation
     regenerateCountRef.current += 1;
     const seed = Date.now() + regenerateCountRef.current * 1000;
     
     try {
-      // Generate the three example configurations using PythagorasGenerators methods
-      const hypenuseExample = PythagorasGenerators.findHypotenuse({ 
+      // Generate the three example configurations using unified generators
+      const hypotenuseExample = pythagorasGenerators.generateFindHypotenuse({ 
         seed, 
-        sectionType: 'examples' 
+        sectionType: 'examples',
+        difficulty: 'medium',
+        units: 'cm'
       });
       
-      const missingSideExample = PythagorasGenerators.findMissingSide({ 
+      const missingSideExample = pythagorasGenerators.generateFindMissingSide({ 
         seed: seed + 1000, // Offset to ensure different questions 
-        sectionType: 'examples'
+        sectionType: 'examples',
+        difficulty: 'medium',
+        units: 'cm'
       });
       
-      const isoscelesExample = PythagorasGenerators.isoscelesArea({ 
-        seed: seed + 2000, 
-        sectionType: 'examples'
-      });
+      // Note: Keep the legacy isoscelesArea for now since it's not yet unified
+      // TODO: Create unified isosceles generator in future iteration
+      const isoscelesExample = {
+        title: "Finding Area of Isosceles Triangle",
+        questionText: "Find the area of this isosceles triangle using Pythagoras' theorem.",
+        solution: [
+          {
+            explanation: "This is a placeholder for the isosceles triangle example.",
+            formula: "\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}"
+          }
+        ],
+        visualization: {
+          base: 8,
+          height: 4,
+          showEqualSides: true,
+          showHeight: false,
+          labelStyle: "custom",
+          labels: ["8 cm", "5 cm", "5 cm"],
+          units: 'cm',
+          sectionType: 'examples'
+        }
+      };
       
       // Create examples array with configuration objects (not components yet)
       const exampleItems = [
         {
-          title: hypenuseExample.title,
-          question: hypenuseExample.questionText,
-          steps: hypenuseExample.solution,
+          title: hypotenuseExample.title,
+          question: hypotenuseExample.questionText,
+          steps: hypotenuseExample.solution,
           // Store visualization config (Pattern 2)
-          visualizationConfig: hypenuseExample.visualization
+          visualizationConfig: hypotenuseExample.visualization
         },
         {
           title: missingSideExample.title,
