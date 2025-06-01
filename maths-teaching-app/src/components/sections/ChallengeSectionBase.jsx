@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Lightbulb, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
-import MathDisplay from '../common/MathDisplay';
+import ContentRenderer from '../common/ContentRenderer';
 import { useUI } from '../../context/UIContext';
 import { useSectionTheme } from '../../hooks/useSectionTheme';
 
@@ -18,10 +18,10 @@ const ChallengeSectionBase = ({
 }) => {
   // Get theme colors for the section
   const theme = useSectionTheme(themeKey);
-  
+
   // Memoize the type keys to prevent recreating array on each render
   const typeKeys = useMemo(() => Object.keys(challengeTypes), [challengeTypes]);
-  
+
   // State management
   const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
   const [currentChallenge, setCurrentChallenge] = useState(null);
@@ -42,20 +42,20 @@ const ChallengeSectionBase = ({
   // Question generation and management
   const generateNewChallenge = () => {
     if (typeKeys.length === 0) return;
-    
+
     const currentTypeId = typeKeys[currentTypeIndex];
     if (!challengeTypes[currentTypeId]) return;
-    
+
     const challenge = challengeTypes[currentTypeId].generator();
     setCurrentChallenge(challenge);
   };
 
   // Shape rendering logic
-      const renderShape = () => {
+  const renderShape = () => {
     if (!currentChallenge?.shapeConfig) return null;
-    
+
     const { component: ShapeComponent, props } = currentChallenge.shapeConfig;
-    
+
     if (ShapeComponent && props) {
       return (
         <div className="w-full my-10" style={{ height: '380px' }}>
@@ -63,7 +63,7 @@ const ChallengeSectionBase = ({
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -96,7 +96,7 @@ const ChallengeSectionBase = ({
         <h3 className="text-xl font-semibold text-gray-800">
           {getCurrentTitle()}
         </h3>
-        
+
         {/* New Question Button - In the middle */}
         <button
           onClick={generateNewChallenge}
@@ -105,17 +105,16 @@ const ChallengeSectionBase = ({
           <RefreshCw size={18} />
           <span>New Challenge</span>
         </button>
-        
+
         {/* Navigation Buttons (1,2,3) - Matching Examples style */}
         <div className="flex gap-2">
           {typeKeys.map((_, index) => (
             <button
               key={index}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                index === currentTypeIndex
-                  ? 'bg-red-500 text-white'
-                  : 'bg-red-100 text-red-700 hover:bg-red-200'
-              }`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${index === currentTypeIndex
+                ? 'bg-red-500 text-white'
+                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                }`}
               onClick={() => {
                 setCurrentTypeIndex(index);
               }}
@@ -132,9 +131,14 @@ const ChallengeSectionBase = ({
           <div className="space-y-8 max-w-4xl mx-auto">
             {/* Problem Statement - Made wider */}
             <div className="bg-red-50 p-5 rounded-lg mb-6">
-              <div className="text-lg text-gray-800">
-                {currentChallenge.problemText}
-              </div>
+              <ContentRenderer
+                content={currentChallenge.problemText}
+                sectionType="challenge"
+                size="large"
+                color="default"
+                fontWeight="normal"
+                className="text-gray-800"
+              />
             </div>
 
             {/* Shape Visualization - with increased gap */}
@@ -142,17 +146,35 @@ const ChallengeSectionBase = ({
               {renderShape()}
             </div>
 
-            {/* Solution Steps - Simplified to match Examples section */}
+            {/* Solution Steps - Enhanced with ContentRenderer */}
             {showAnswers && currentChallenge.solution && (
               <div className="p-5 bg-green-50 rounded-lg border border-green-200">
                 <h4 className="font-medium text-green-800 mb-4">Solution:</h4>
                 <div className="space-y-3">
                   {currentChallenge.solution.map((step, index) => (
                     <div key={index} className="mb-3">
-                      <p className="text-gray-700">{step.explanation}</p>
+                      {/* Step explanation using ContentRenderer */}
+                      <div className="mb-2">
+                        <ContentRenderer
+                          content={step.explanation}
+                          sectionType="challenge"
+                          size="normal"
+                          color="default"
+                          fontWeight="normal"
+                          className="text-gray-700"
+                        />
+                      </div>
+
+                      {/* Step formula using ContentRenderer */}
                       {step.formula && (
                         <div className="mt-2 text-center">
-                          <MathDisplay math={step.formula} />
+                          <ContentRenderer
+                            content={step.formula}
+                            sectionType="challenge"
+                            size="normal"
+                            center={true}
+                            mathOptions={{ displayMode: true }}
+                          />
                         </div>
                       )}
                     </div>

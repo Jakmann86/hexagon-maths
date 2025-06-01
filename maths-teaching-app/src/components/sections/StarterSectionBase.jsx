@@ -2,48 +2,8 @@
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
-import MathDisplay from '../common/MathDisplay';
+import ContentRenderer from '../common/ContentRenderer';
 import { useUI } from '../../context/UIContext';
-
-
-/**
- * ContentRenderer - Renders different content types consistently
- * Optimized for Pattern 2 architecture
- */
-const ContentRenderer = memo(({ content, type = 'text' }) => {
-    if (!content) return null;
-
-    // Handle React elements (Pattern 2: components created by sections)
-    if (React.isValidElement(content)) {
-        return content; // Simple and clean - no unnecessary cloning
-    }
-
-    // Process text content
-    const processText = (text) => {
-        if (typeof text !== 'string') return text;
-        return text.trim();
-    };
-
-    // Render based on content type
-    switch (type) {
-        case 'math':
-            return <MathDisplay math={processText(content)} displayMode={true} size="large" />;
-        case 'puzzle-answer':
-            return (
-                <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
-                    {processText(content)}
-                </div>
-            );
-        default:
-            // Auto-detect math strings and use MathDisplay when appropriate
-            if (typeof content === 'string' && (content.includes('\\') || content.includes('$'))) {
-                return <MathDisplay math={processText(content)} size="normal" />;
-            }
-            return <div className="text-gray-800 text-lg">{processText(content)}</div>;
-    }
-});
-
-ContentRenderer.displayName = 'ContentRenderer';
 
 /**
  * QuestionDisplay component renders a single question card
@@ -93,7 +53,13 @@ const QuestionDisplay = memo(({
                 <div className="flex-grow space-y-4">
                     {/* Question Text */}
                     <div>
-                        <ContentRenderer content={data.question} />
+                        <ContentRenderer
+                            content={data.question}
+                            sectionType="starter"
+                            size="normal"
+                            color="default"
+                            fontWeight="normal"
+                        />
                     </div>
 
                     {/* Visualization Container - Consistent height for all questions */}
@@ -108,27 +74,28 @@ const QuestionDisplay = memo(({
 
                 {/* Answer Section - WITH CLICK PREVENTION */}
                 {showAnswers && data.answer && (
-                    <div 
+                    <div
                         className="mt-auto pt-3 border-t border-gray-300"
                         onClick={(e) => e.stopPropagation()} // ← PREVENT NEW QUESTION TRIGGER
                     >
                         <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
-                        <div 
-                            className="math-answer overflow-y-auto" 
+                        <div
+                            className="math-answer overflow-y-auto"
                             style={{ maxHeight: '100px' }}
                             onClick={(e) => e.stopPropagation()} // ← DOUBLE PREVENTION
                         >
-                            {isPuzzle || data.difficulty === 'text' || !(typeof data.answer === 'string' && data.answer.includes('\\')) ? (
-                                <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
-                                    {data.answer}
-                                </div>
-                            ) : (
-                                <MathDisplay
-                                    math={data.answer}
-                                    displayMode={true}
-                                    size="normal"
-                                />
-                            )}
+                            <ContentRenderer
+                                content={data.answer}
+                                sectionType="starter"
+                                size="normal"
+                                color="default"
+                                fontWeight="normal"
+                                type={isPuzzle || data.difficulty === 'text' ? 'text' : 'auto'}
+                                textOptions={{
+                                    className: isPuzzle ? 'whitespace-pre-wrap text-gray-700 text-sm leading-relaxed' : 'text-gray-700'
+                                }}
+                                mathOptions={{ displayMode: true }}
+                            />
                         </div>
                     </div>
                 )}

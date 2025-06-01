@@ -1,11 +1,10 @@
 // src/components/sections/ExamplesSectionBase.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
 import { useSectionTheme } from '../../hooks/useSectionTheme';
-import MathDisplay from '../common/MathDisplay';
-
+import ContentRenderer from '../common/ContentRenderer';
 /**
  * ExamplesSectionBase template for displaying worked examples with step-by-step solutions
  * 
@@ -147,11 +146,29 @@ const ExamplesSectionBase = ({
                                             }`}
                                         onClick={() => handleStepClick(stepIndex, step)}
                                     >
-                                        <p className="text-gray-700">{step.explanation}</p>
-                                        <div className="flex justify-center my-2">
-                                            {/* Render either step.math or step.formula using MathDisplay */}
-                                            {step.math || (step.formula && <MathDisplay math={step.formula} displayMode={true} />)}
+                                        {/* Explanation using ContentRenderer for intelligent detection */}
+                                        <div className="mb-3">
+                                            <ContentRenderer
+                                                content={step.explanation}
+                                                sectionType="examples"
+                                                size="normal"
+                                                color="default"
+                                                fontWeight="normal"
+                                            />
                                         </div>
+
+                                        {/* Formula using ContentRenderer - will auto-detect math */}
+                                        {(step.math || step.formula) && (
+                                            <div className="flex justify-center my-2">
+                                                <ContentRenderer
+                                                    content={step.math || step.formula}
+                                                    sectionType="examples"
+                                                    size="normal"
+                                                    center={true}
+                                                    mathOptions={{ displayMode: true }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

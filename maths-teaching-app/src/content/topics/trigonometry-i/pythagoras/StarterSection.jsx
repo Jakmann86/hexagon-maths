@@ -24,8 +24,8 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
 
       // Force default orientation for starter consistency + clean positioning
       question.visualization = (
-        <Square 
-          {...question.visualization} 
+        <Square
+          {...question.visualization}
           sectionType="starter"
           orientation="default"  // ← Force default for starters
         />
@@ -37,15 +37,15 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
     // Last Week: Triangle area 
     () => {
       // Get configuration from generator with starter context
-      const question = triangleGenerators.triangleArea({ 
+      const question = triangleGenerators.triangleArea({
         units: 'cm',
         sectionContext: { sectionType: 'starter' }  // Pass starter context
       });
 
       // Force default orientation for starter consistency + clean positioning
       question.visualization = (
-        <RightTriangle 
-          {...question.visualization} 
+        <RightTriangle
+          {...question.visualization}
           sectionType="starter"
           orientation="default"  // ← Force default for starters
         />
@@ -57,12 +57,12 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
     // Last Topic: Naming quadrilaterals
     () => ({
       question: "Name all the quadrilaterals (4-sided shapes):",
-      answer: `• Square: Equal sides, all 90° angles
-- Rectangle: Opposite sides equal, all angles 90°
-- Rhombus: All sides equal, opposite angles equal
-- Parallelogram: Opposite sides parallel & equal
-- Trapezium/Trapezoid: Exactly one pair of parallel sides
-- Kite: Two pairs of adjacent sides equal`,
+      answer: `Square: Equal sides, all 90° angles
+Rectangle: Opposite sides equal, all angles 90°
+Rhombus: All sides equal, opposite angles equal
+Parallelogram: Opposite sides parallel & equal
+Trapezium/Trapezoid: Exactly one pair of parallel sides
+Kite: Two pairs of adjacent sides equal`,
       difficulty: 'text'
     }),
 
