@@ -5,7 +5,7 @@ import { createRightTriangle } from '../../factories/triangleFactory';
 
 /**
  * Generate a basic trig calculator usage question
- * For diagnostic assessment of calculator skills
+ * For diagnostic assessment of calculator skills - FIXED for KaTeX consistency
  */
 const generateTrigCalculatorQuestion = (options = {}) => {
   const {
@@ -64,8 +64,13 @@ const generateTrigCalculatorQuestion = (options = {}) => {
       text: `Use your calculator to find ${func} of `,
       math: `${angle}`
     },
+    // FIXED: Format answer consistently with proper rounding
     correctAnswer: `${correctAnswer}`,
-    options: [`${correctAnswer}`, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+    // FIXED: Format all options consistently  
+    options: [
+      `${correctAnswer}`,
+      ...incorrectOptions.slice(0, 3).map(val => `${val}`)
+    ].sort(() => Math.random() - 0.5),
     explanation: `Using a calculator: ${func}(${angle}) = ${correctAnswer}`
   };
 };

@@ -271,18 +271,18 @@ const isoscelesArea = (options = {}) => {
 const generateCoordinateChallenge = () => {
   // Generate points until we get a non-horizontal, non-vertical line
   let point1, point2, dx, dy;
-  
+
   do {
     point1 = [_.random(-4, 4), _.random(-4, 4)];
     point2 = [_.random(-4, 4), _.random(-4, 4)];
-    
+
     // Calculate differences
     dx = point2[0] - point1[0];
     dy = point2[1] - point1[1];
-    
+
     // Repeat if points create a horizontal or vertical line (dx or dy is 0)
   } while (dx === 0 || dy === 0);
-  
+
   // Calculate the distance
   const exactDistance = Math.sqrt(dx * dx + dy * dy);
   const distance = Math.round(exactDistance * 100) / 100;
@@ -349,59 +349,60 @@ const PythagorasGenerators = {
     // Choose a simple Pythagorean triple
     const triple = _.sample(PYTHAGOREAN_TRIPLES.slice(0, 3));
     const [a, b, c] = triple;
-    
+
     // Randomly decide between numeric or algebraic labels
     const useAlgebraic = Math.random() > 0.5;
-    
-    if (useAlgebraic) {
-        return {
-            questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
-            correctAnswer: 'c',
-            options: [
-                'a',     // Side A
-                'b',     // Side B  
-                'c',     // Side C (correct - hypotenuse)
-                'None of these'
-            ].sort(() => Math.random() - 0.5),
-            explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
-            visualization: createPythagoreanTriangle({
-                base: a,
-                height: b,
-                showRightAngle: true,
-                labelStyle: 'algebraic',
-                units,
-                sectionType: 'diagnostic',
-                style: {
-                    fillColor: '#9b59b6',
-                    fillOpacity: 0.2
-                }
-            })
-        };
-    }
 
-    return {
+    if (useAlgebraic) {
+      return {
         questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
-        correctAnswer: `${c} ${units}`,
+        correctAnswer: 'c',
         options: [
-            `${a} ${units}`,
-            `${b} ${units}`,
-            `${c} ${units}`,
-            'None of these'
+          'a',     // Side A
+          'b',     // Side B  
+          'c',     // Side C (correct - hypotenuse)
+          { content: 'None of these', type: 'text' }
         ].sort(() => Math.random() - 0.5),
         explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
         visualization: createPythagoreanTriangle({
-            base: a,
-            height: b,
-            showRightAngle: true,
-            labelStyle: 'custom',
-            labels: [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`],
-            units,
-            sectionType: 'diagnostic',
-            style: {
-                fillColor: '#9b59b6',
-                fillOpacity: 0.2
-            }
+          base: a,
+          height: b,
+          showRightAngle: true,
+          labelStyle: 'algebraic',
+          units,
+          sectionType: 'diagnostic',
+          style: {
+            fillColor: '#9b59b6',
+            fillOpacity: 0.2
+          }
         })
+      };
+    }
+
+    return {
+      questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
+      // FIXED: Use LaTeX formatting for unit answers
+      correctAnswer: `${c}\\text{ ${units}}`,
+      options: [
+        `${a}\\text{ ${units}}`,  // FIXED: Proper LaTeX formatting
+        `${b}\\text{ ${units}}`,  // FIXED: Proper LaTeX formatting
+        `${c}\\text{ ${units}}`,  // FIXED: Proper LaTeX formatting
+        { content: 'None of these', type: 'text' }           // This stays as plain text
+      ].sort(() => Math.random() - 0.5),
+      explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
+      visualization: createPythagoreanTriangle({
+        base: a,
+        height: b,
+        showRightAngle: true,
+        labelStyle: 'custom',
+        labels: [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`],
+        units,
+        sectionType: 'diagnostic',
+        style: {
+          fillColor: '#9b59b6',
+          fillOpacity: 0.2
+        }
+      })
     };
   },
 

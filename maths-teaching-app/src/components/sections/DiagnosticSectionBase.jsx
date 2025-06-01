@@ -7,13 +7,16 @@ import { useSectionTheme } from '../../hooks/useSectionTheme';
 
 /**
  * ContentRenderer - Renders different types of content consistently
+ * PATTERN 2 ENFORCED: Only accepts config objects, no React elements
  */
 const ContentRenderer = React.memo(({ content, type = 'text' }) => {
   if (!content) return null;
 
-  // Handle React components directly
-  if (React.isValidElement(content)) {
-    return content;
+  // Handle explicit content objects with type override
+  if (typeof content === 'object' && content.content !== undefined) {
+    const { content: innerContent, type: overrideType = 'text' } = content;
+    // Recursively render with explicit type
+    return <ContentRenderer content={innerContent} type={overrideType} />;
   }
 
   // Handle structured content with mixed text and math
@@ -41,9 +44,19 @@ const ContentRenderer = React.memo(({ content, type = 'text' }) => {
     case 'html':
       return <div dangerouslySetInnerHTML={{ __html: content }} />;
     default:
-      // Auto-detect math content
-      if (typeof content === 'string' && (content.includes('\\') || content.includes('$'))) {
-        return <MathDisplay math={content} />;
+      // Enhanced auto-detection for math content
+      if (typeof content === 'string') {
+        // Always render as math if:
+        // 1. Contains LaTeX commands
+        // 2. Contains math symbols 
+        // 3. Is a pure number (for consistent diagnostic option rendering)
+        const isLaTeX = content.includes('\\') || content.includes('\\text');  // Fixed string termination
+        const isPureNumber = /^\d+(\.\d+)?$/.test(content.trim());
+        const hasUnits = /\d+\s*(cm|m|mm|km|°|degrees)/.test(content);
+        
+        if (isLaTeX || isPureNumber || hasUnits) {
+          return <MathDisplay math={content} />;
+        }
       }
       return <div className="text-gray-800 text-lg text-center">{content}</div>;
   }
@@ -53,20 +66,13 @@ ContentRenderer.displayName = 'ContentRenderer';
 
 /**
  * VisualizationRenderer - Generic renderer for visualization content
+ * PATTERN 2 ENFORCED: Only accepts config objects, no React elements
  */
 const VisualizationRenderer = React.memo(({ visualization }) => {
   if (!visualization) return null;
 
-  // Handle different visualization formats
-  if (React.isValidElement(visualization)) {
-    // Direct React element
-    return (
-      <div className="flex justify-center items-center w-full my-4">
-        {visualization}
-      </div>
-    );
-  } else if (visualization.component && typeof visualization.component === 'function') {
-    // Component with props pattern
+  // Only support component+props pattern (config-based)
+  if (visualization.component && typeof visualization.component === 'function') {
     const { component: Component, props = {} } = visualization;
     return (
       <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
@@ -75,22 +81,29 @@ const VisualizationRenderer = React.memo(({ visualization }) => {
     );
   }
 
-  return null;
+  // If we get here, it's likely a config object that needs custom rendering
+  console.warn('DiagnosticSectionBase: Visualization config received but no custom renderVisualization provided. Use the renderVisualization prop to convert configs to components.');
+  return (
+    <div className="flex justify-center items-center w-full my-4 text-gray-500 italic">
+      <p>Visualization requires custom renderer</p>
+    </div>
+  );
 });
 
 VisualizationRenderer.displayName = 'VisualizationRenderer';
 
 /**
  * DiagnosticSectionBase - Reusable template for diagnostic assessments
+ * PATTERN 2 ARCHITECTURE: Generators return config objects, sections convert to components
  * 
  * @param {Object} props
- * @param {Object} props.questionTypes - Question types with generators
+ * @param {Object} props.questionTypes - Question types with generators (must return config objects)
  * @param {string} props.currentTopic - Current topic ID
  * @param {number} props.currentLessonId - Current lesson ID
  * @param {Function} props.onQuestionComplete - Callback when question is answered
  * @param {string} props.themeKey - Theme key for styling
  * @param {React.ReactNode} props.loadingIndicator - Custom loading indicator
- * @param {Function} props.renderVisualization - Custom visualization renderer
+ * @param {Function} props.renderVisualization - REQUIRED for visualizations: converts config objects to React components
  * @param {boolean} props.autoSelectNextType - Auto select next question type after answering
  */
 const DiagnosticSectionBase = ({
@@ -142,6 +155,15 @@ const DiagnosticSectionBase = ({
     if (typeof generator === 'function') {
       try {
         const question = generator();
+        
+        // PATTERN 2 VALIDATION: Warn if generator returns React elements
+        if (question.visualization && React.isValidElement(question.visualization)) {
+          console.error('PATTERN 2 VIOLATION: Generator returned React element in visualization. Generators should return config objects only.');
+        }
+        if (question.questionDisplay && React.isValidElement(question.questionDisplay)) {
+          console.error('PATTERN 2 VIOLATION: Generator returned React element in questionDisplay. Generators should return config objects only.');
+        }
+        
         setCurrentQuestion(question);
         setShowAnswer(false);
         setSelectedAnswer(null);
@@ -178,16 +200,16 @@ const DiagnosticSectionBase = ({
     }
   }, [currentQuestion, answered, onQuestionComplete, autoSelectNextType, typeKeys.length]);
 
-  // Render visualization with better error handling
+  // Render visualization with Pattern 2 enforcement
   const renderQuestionVisualization = useCallback(() => {
     if (!currentQuestion) return null;
 
-    // Use custom renderer if provided
+    // PATTERN 2: Use custom renderer if provided (preferred approach)
     if (renderVisualization && typeof renderVisualization === 'function') {
       return renderVisualization(currentQuestion);
     }
 
-    // Support different visualization formats
+    // Fallback to generic renderer (limited functionality)
     const visualization = currentQuestion.visualization || currentQuestion.shape;
 
     if (!visualization) return null;
@@ -292,8 +314,8 @@ const DiagnosticSectionBase = ({
                       }
                     `}
                   >
-                    {/* Option Display with math support */}
-                    <ContentRenderer content={option} />
+                    {/* Option Display - Force KaTeX for numeric answers */}
+                    <ContentRenderer content={option} type="math" />
 
                     {/* Correct Answer Indicator */}
                     {showAnswer && option === currentQuestion.correctAnswer && (

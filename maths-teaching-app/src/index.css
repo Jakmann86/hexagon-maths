@@ -161,18 +161,138 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Improve math display */
+/* ===== ENHANCED KATEX STYLING - ADD THESE SECTIONS TO EXISTING index.css ===== */
+
+/* Replace the existing .math-display section with this enhanced version */
 .math-display {
   font-family: 'KaTeX_Main', serif;
-  margin: 0.5rem 0;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  margin: 0.25rem 0; /* Better spacing */
 }
 
+/* Keep existing .katex styles but add these enhancements */
 .math-display .katex {
-  font-size: 1.2em;
+  font-size: 1.2em; /* Keep existing size */
+}
+
+/* Enhance the existing .math-large with more size options */
+.math-display.math-normal .katex {
+  font-size: 1.1em;
 }
 
 .math-display.math-large .katex {
   font-size: 1.4em;
+}
+
+.math-display.math-x-large .katex {
+  font-size: 1.8em;
+}
+
+.math-display.math-huge .katex {
+  font-size: 2.2em;
+}
+
+/* ADD THESE NEW SECTIONS: */
+
+/* Block vs Inline mode styling */
+.katex-block {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+.katex-block .katex-display {
+  margin: 0.5rem 0;
+}
+
+.katex-inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Improve text wrapping for long expressions */
+.math-display .katex-html {
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Enhanced styling for specific math elements */
+.math-display .katex .mfrac {
+  margin: 0.2em 0;
+}
+
+.math-display .katex .msupsub {
+  margin: 0 0.1em;
+}
+
+.math-display .katex .sqrt {
+  margin: 0 0.1em;
+}
+
+/* Error styling for malformed LaTeX */
+.katex .katex-error {
+  color: #dc2626;
+  background-color: #fef2f2;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive math sizing */
+@media (max-width: 640px) {
+  .math-display .katex {
+    font-size: 1.0em; /* Slightly smaller on mobile */
+  }
+  
+  .math-display.math-large .katex {
+    font-size: 1.2em;
+  }
+  
+  .math-display.math-x-large .katex {
+    font-size: 1.4em;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .katex,
+  .katex-display,
+  .katex .mord,
+  .katex .mrel,
+  .katex .mbin,
+  .katex .mop {
+    color: #000000;
+    font-weight: 500;
+  }
+}
+
+/* Print styling */
+@media print {
+  .math-display {
+    break-inside: avoid;
+  }
+  
+  .katex-display {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* Section-specific math sizing - ADD to existing section styles */
+.section-starter .math-display .katex {
+  font-size: 1.0em; /* Compact for starter questions */
+}
+
+.section-diagnostic .math-display .katex {
+  font-size: 1.1em; /* Standard for diagnostic */
+}
+
+.section-examples .math-display .katex {
+  font-size: 1.2em; /* Larger for examples */
+}
+
+.section-challenge .math-display .katex {
+  font-size: 1.15em; /* Medium-large for challenges */
 }
 
 /* Improved button styling */

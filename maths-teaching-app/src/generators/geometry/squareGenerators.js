@@ -1,4 +1,4 @@
-// src/generators/geometry/squareGenerators.js
+// src/generators/geometry/squareGenerators.js - FIXED for consistent KaTeX
 import _ from 'lodash';
 import { createSquare } from '../../factories/quadrilateralFactory';
 
@@ -38,7 +38,10 @@ export const squareArea = ({ units = 'cm' } = {}) => {
   const area = side * side;
 
   return {
-    questionDisplay: `Find the area of this square with side length ${side} ${units}.`,
+    questionDisplay: {
+      text: `Find the area of this square with side length`,
+      math: `${side}\\text{ ${units}}`
+    },
     correctAnswer: `${area}\\text{ ${units}}^2`,
     options: [
       `${area}\\text{ ${units}}^2`,
@@ -71,7 +74,10 @@ export const squareRoot = ({ units = 'cm' } = {}) => {
   const side = Math.sqrt(area);
 
   return {
-    questionDisplay: `Find the side length of a square with area ${area} ${units}².`,
+    questionDisplay: {
+      text: `Find the side length of a square with area`,
+      math: `${area}\\text{ ${units}}^2`
+    },
     correctAnswer: `${side}\\text{ ${units}}`,
     options: [
       `${side}\\text{ ${units}}`,
@@ -91,6 +97,76 @@ export const squareRoot = ({ units = 'cm' } = {}) => {
         fillColor: '#3498db',
         fillOpacity: 0.3,
         backgroundTransparent: true
+      }
+    })
+  };
+};
+
+/**
+ * Generate diagnostic square area question with specific distractors
+ */
+export const squareAreaDiagnostic = ({ units = 'cm' } = {}) => {
+  const side = _.random(3, 8);
+  const area = side * side;
+  const perimeter = side * 4; // Common misconception
+
+  return {
+    questionDisplay: {
+      text: `Find the area of this square with side length`,
+      math: `${side}\\text{ ${units}}`
+    },
+    correctAnswer: `${area}\\text{ ${units}}^2`,
+    options: [
+      `${area}\\text{ ${units}}^2`,        // Correct answer
+      `${perimeter}\\text{ ${units}}^2`,   // Mistake: using perimeter
+      `${area + side}\\text{ ${units}}^2`, // Mistake: area + side
+      `${side * 2}\\text{ ${units}}^2`     // Mistake: doubling instead of squaring
+    ].sort(() => Math.random() - 0.5),
+    explanation: `Area of a square = side² = ${side}² = ${area} ${units}²`,
+    visualization: createSquare({
+      sideLength: side,
+      showDimensions: true,
+      units,
+      sectionType: 'diagnostic',
+      style: {
+        fillColor: '#3498db',
+        fillOpacity: 0.2
+      }
+    })
+  };
+};
+
+/**
+ * Generate diagnostic square root question with specific distractors
+ */
+export const squareRootDiagnostic = ({ units = 'cm' } = {}) => {
+  const perfectSquares = [16, 25, 36, 49, 64, 81, 100];
+  const area = _.sample(perfectSquares);
+  const side = Math.sqrt(area);
+
+  return {
+    questionDisplay: {
+      text: `Find the side length of a square with area`,
+      math: `${area}\\text{ ${units}}^2`
+    },
+    correctAnswer: `${side}\\text{ ${units}}`,
+    options: [
+      `${side}\\text{ ${units}}`,          // Correct answer
+      `${area / 4}\\text{ ${units}}`,      // Mistake: dividing by 4 instead of square root
+      `${area / 2}\\text{ ${units}}`,      // Mistake: dividing by 2
+      `${side + 1}\\text{ ${units}}`       // Close but wrong
+    ].sort(() => Math.random() - 0.5),
+    explanation: `Side length = √Area = √${area} = ${side} ${units}`,
+    visualization: createSquare({
+      sideLength: side,
+      showDimensions: false,
+      showArea: true,
+      areaLabel: `${area} ${units}²`,
+      units,
+      containerHeight: 240,
+      style: {
+        fillColor: '#3498db',
+        fillOpacity: 0.3
       }
     })
   };
@@ -143,71 +219,8 @@ export const generateSquareSolution = (side, questionType, units = 'cm') => {
 
   return steps;
 };
-/**
- * Generate diagnostic square area question with specific distractors
- */
-export const squareAreaDiagnostic = ({ units = 'cm' } = {}) => {
-  const side = _.random(3, 8);
-  const area = side * side;
-  const perimeter = side * 4; // Common misconception
 
-  return {
-    questionDisplay: `Find the area of this square with side length ${side} ${units}.`,
-    correctAnswer: `${area}\\text{ ${units}}^2`,
-    options: [
-      `${area}\\text{ ${units}}^2`,        // Correct answer
-      `${perimeter}\\text{ ${units}}^2`,   // Mistake: using perimeter
-      `${area + side}\\text{ ${units}}^2`, // Mistake: area + side
-      `${side * 2}\\text{ ${units}}^2`     // Mistake: doubling instead of squaring
-    ].sort(() => Math.random() - 0.5),
-    explanation: `Area of a square = side² = ${side}² = ${area} ${units}²`,
-    visualization: createSquare({
-      sideLength: side,
-      showDimensions: true,
-      units,
-      sectionType: 'diagnostic',
-      style: {
-        fillColor: '#3498db',
-        fillOpacity: 0.2
-      }
-    })
-  };
-};
-
-/**
- * Generate diagnostic square root question with specific distractors
- */
-export const squareRootDiagnostic = ({ units = 'cm' } = {}) => {
-  const perfectSquares = [16, 25, 36, 49, 64, 81, 100];
-  const area = _.sample(perfectSquares);
-  const side = Math.sqrt(area);
-
-  return {
-    questionDisplay: `Find the side length of a square with area ${area} ${units}².`,
-    correctAnswer: `${side}\\text{ ${units}}`,
-    options: [
-      `${side}\\text{ ${units}}`,          // Correct answer
-      `${area / 4}\\text{ ${units}}`,      // Mistake: dividing by 4 instead of square root
-      `${area / 2}\\text{ ${units}}`,      // Mistake: dividing by 2
-      `${side + 1}\\text{ ${units}}`       // Close but wrong
-    ].sort(() => Math.random() - 0.5),
-    explanation: `Side length = √Area = √${area} = ${side} ${units}`,
-    visualization: createSquare({
-      sideLength: side,
-      showDimensions: false,
-      showArea: true,
-      areaLabel: `${area} ${units}²`,
-      units,
-      containerHeight: 240,
-      style: {
-        fillColor: '#3498db',
-        fillOpacity: 0.3
-      }
-    })
-  };
-};
-
-// Export a grouped set of square-related generators
+// Export grouped generators for future expansion
 export const squareGenerators = {
   describeSquare,
   squareArea,
