@@ -5,6 +5,7 @@ import { Card, CardContent } from '../common/Card';
 import MathDisplay from '../common/MathDisplay';
 import { useUI } from '../../context/UIContext';
 
+
 /**
  * ContentRenderer - Renders different content types consistently
  * Optimized for Pattern 2 architecture

@@ -2,67 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { RefreshCw, Check, X } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
-import MathDisplay from '../common/MathDisplay';
 import { useSectionTheme } from '../../hooks/useSectionTheme';
-
-/**
- * ContentRenderer - Renders different types of content consistently
- * PATTERN 2 ENFORCED: Only accepts config objects, no React elements
- */
-const ContentRenderer = React.memo(({ content, type = 'text' }) => {
-  if (!content) return null;
-
-  // Handle explicit content objects with type override
-  if (typeof content === 'object' && content.content !== undefined) {
-    const { content: innerContent, type: overrideType = 'text' } = content;
-    // Recursively render with explicit type
-    return <ContentRenderer content={innerContent} type={overrideType} />;
-  }
-
-  // Handle structured content with mixed text and math
-  if (typeof content === 'object' && content.text !== undefined) {
-    if (content.layout === 'vertical') {
-      return (
-        <div className="flex flex-col items-center gap-3">
-          <span className="text-gray-800 text-lg">{content.text}</span>
-          {content.math && <MathDisplay math={content.math} size="normal" />}
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center justify-center gap-1">
-          <span className="text-gray-800 text-lg">{content.text}</span>
-          {content.math && <MathDisplay math={content.math} size="normal" />}
-        </div>
-      );
-    }
-  }
-
-  switch (type) {
-    case 'math':
-      return <MathDisplay math={content} />;
-    case 'html':
-      return <div dangerouslySetInnerHTML={{ __html: content }} />;
-    default:
-      // Enhanced auto-detection for math content
-      if (typeof content === 'string') {
-        // Always render as math if:
-        // 1. Contains LaTeX commands
-        // 2. Contains math symbols 
-        // 3. Is a pure number (for consistent diagnostic option rendering)
-        const isLaTeX = content.includes('\\') || content.includes('\\text');  // Fixed string termination
-        const isPureNumber = /^\d+(\.\d+)?$/.test(content.trim());
-        const hasUnits = /\d+\s*(cm|m|mm|km|°|degrees)/.test(content);
-        
-        if (isLaTeX || isPureNumber || hasUnits) {
-          return <MathDisplay math={content} />;
-        }
-      }
-      return <div className="text-gray-800 text-lg text-center">{content}</div>;
-  }
-});
-
-ContentRenderer.displayName = 'ContentRenderer';
+import ContentRenderer from '../common/ContentRenderer';
 
 /**
  * VisualizationRenderer - Generic renderer for visualization content
@@ -155,7 +96,7 @@ const DiagnosticSectionBase = ({
     if (typeof generator === 'function') {
       try {
         const question = generator();
-        
+
         // PATTERN 2 VALIDATION: Warn if generator returns React elements
         if (question.visualization && React.isValidElement(question.visualization)) {
           console.error('PATTERN 2 VIOLATION: Generator returned React element in visualization. Generators should return config objects only.');
@@ -163,7 +104,7 @@ const DiagnosticSectionBase = ({
         if (question.questionDisplay && React.isValidElement(question.questionDisplay)) {
           console.error('PATTERN 2 VIOLATION: Generator returned React element in questionDisplay. Generators should return config objects only.');
         }
-        
+
         setCurrentQuestion(question);
         setShowAnswer(false);
         setSelectedAnswer(null);
@@ -289,7 +230,12 @@ const DiagnosticSectionBase = ({
             <div className="space-y-6 w-full max-w-2xl mx-auto">
               {/* Question Display */}
               <div className="text-lg font-medium text-center text-gray-800 pb-4">
-                <ContentRenderer content={currentQuestion.questionDisplay} />
+                <ContentRenderer
+                  content={currentQuestion.questionDisplay}
+                  sectionType={themeKey}
+                  size="large"
+                  center={true}
+                />
               </div>
 
               {/* Visualization */}
@@ -315,7 +261,12 @@ const DiagnosticSectionBase = ({
                     `}
                   >
                     {/* Option Display - Force KaTeX for numeric answers */}
-                    <ContentRenderer content={option} type="math" />
+                    <ContentRenderer
+                      content={option}
+                      sectionType={themeKey}
+                      size="normal"
+                      center={true}
+                    />
 
                     {/* Correct Answer Indicator */}
                     {showAnswer && option === currentQuestion.correctAnswer && (
@@ -338,7 +289,11 @@ const DiagnosticSectionBase = ({
               {showAnswer && currentQuestion.explanation && (
                 <div className={`mt-4 p-4 rounded-lg bg-${theme.pastelBg} border border-${theme.borderColor}`}>
                   <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Explanation:</h4>
-                  <ContentRenderer content={currentQuestion.explanation} />
+                  <ContentRenderer
+                    content={currentQuestion.explanation}
+                    sectionType={themeKey}
+                    size="normal"
+                  />
                 </div>
               )}
             </div>
