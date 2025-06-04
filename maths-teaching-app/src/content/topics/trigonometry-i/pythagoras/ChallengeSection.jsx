@@ -25,7 +25,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
 
   // Function to generate new challenges
   const generateChallenges = () => {
-    const newChallenges = PythagorasGenerators.generateChallengeQuestions();
+    const newChallenges = [PythagorasGenerators.generateCoordinateChallenge()];
     setChallenges(newChallenges);
     setVisualizationKey(Date.now()); // Force visualization to re-render
   };

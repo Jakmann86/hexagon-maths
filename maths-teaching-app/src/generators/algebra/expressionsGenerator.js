@@ -1,35 +1,66 @@
-// src/generators/algebra/expressionsGenerator.js
+// src/generators/algebra/expressionsGenerator.js - Updated with Unified Architecture
 import _ from 'lodash';
 
 /**
- * Generate an expanding single brackets question
- * Used for starter questions reviewing basic expansion
+ * Unified expanding single brackets generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
  */
 export const generateExpandingSingleBrackets = (options = {}) => {
   const {
     difficulty = 'medium',
-    sectionType = 'starter'
+    sectionType = 'starter',
+    units = ''
   } = options;
 
-  // Generate a simple expression with single brackets
-  const outsideFactor = _.random(2, 9);
-  const firstTerm = _.random(1, 10);
-  const secondTerm = _.random(1, 10);
+  // UNIFIED MATH LOGIC
+  const outsideFactor = difficulty === 'easy' ? _.random(2, 4) : _.random(2, 6);
+  const firstTerm = difficulty === 'easy' ? _.random(1, 5) : _.random(1, 8);
+  const secondTerm = difficulty === 'easy' ? _.random(1, 5) : _.random(1, 8);
   
-  // Calculate the expanded form
+  // Occasionally use negative terms for variety (but not in easy mode)
+  const useNegative = difficulty !== 'easy' && Math.random() > 0.7;
+  const actualSecondTerm = useNegative ? -secondTerm : secondTerm;
+  
   const expandedFirst = outsideFactor * firstTerm;
-  const expandedSecond = outsideFactor * secondTerm;
+  const expandedSecond = outsideFactor * actualSecondTerm;
   
-  // For diagnostic sections, return multiple choice format
-  if (sectionType === 'diagnostic') {
-    const expression = `${outsideFactor}(${firstTerm}x + ${secondTerm})`;
-    const answer = `${expandedFirst}x + ${expandedSecond}`;
+  // Build expression strings
+  const expression = actualSecondTerm >= 0 
+    ? `${outsideFactor}(${firstTerm}x + ${actualSecondTerm})`
+    : `${outsideFactor}(${firstTerm}x - ${Math.abs(actualSecondTerm)})`;
     
+  const answer = expandedSecond >= 0
+    ? `${expandedFirst}x + ${expandedSecond}`
+    : `${expandedFirst}x - ${Math.abs(expandedSecond)}`;
+
+  // SECTION-AWARE OUTPUT FORMATTING
+  if (sectionType === 'starter') {
+    const workingOut = actualSecondTerm >= 0
+      ? `${expression} = ${outsideFactor} \\times ${firstTerm}x + ${outsideFactor} \\times ${actualSecondTerm} = ${answer}`
+      : `${expression} = ${outsideFactor} \\times ${firstTerm}x + ${outsideFactor} \\times (${actualSecondTerm}) = ${answer}`;
+
+    return {
+      question: `Expand ${expression}`,
+      answer: workingOut,
+      difficulty: 'algebra'
+    };
+  }
+  
+  else if (sectionType === 'diagnostic') {
     // Generate incorrect answers with common mistakes
     const incorrectAnswers = [
-      `${expandedFirst}x + ${secondTerm}`,                           // Only multiplying first term
-      `${outsideFactor + firstTerm}x + ${outsideFactor + secondTerm}`, // Adding instead of multiplying
-      `${expandedFirst + 1}x + ${expandedSecond - 1}`                // Miscalculation
+      // Mistake 1: Only multiplying first term
+      actualSecondTerm >= 0 
+        ? `${expandedFirst}x + ${actualSecondTerm}` 
+        : `${expandedFirst}x - ${Math.abs(actualSecondTerm)}`,
+      
+      // Mistake 2: Adding instead of multiplying
+      `${outsideFactor + firstTerm}x + ${outsideFactor + actualSecondTerm}`,
+      
+      // Mistake 3: Calculation error
+      expandedSecond >= 0 
+        ? `${expandedFirst + 1}x + ${expandedSecond - 1}` 
+        : `${expandedFirst - 1}x - ${Math.abs(expandedSecond) + 1}`
     ];
     
     return {
@@ -39,53 +70,80 @@ export const generateExpandingSingleBrackets = (options = {}) => {
       },
       correctAnswer: answer,
       options: [answer, ...incorrectAnswers].sort(() => Math.random() - 0.5),
-      explanation: `To expand, multiply the term outside the brackets by each term inside: ${outsideFactor} × ${firstTerm}x + ${outsideFactor} × ${secondTerm} = ${answer}`
+      explanation: `To expand, multiply the term outside the brackets by each term inside: ${outsideFactor} × ${firstTerm}x + ${outsideFactor} × ${actualSecondTerm} = ${answer}`
     };
   }
   
-  // For starter sections, return the original format
-  return {
-    question: `Expand ${outsideFactor}(${firstTerm}x + ${secondTerm})`,
-    answer: `${outsideFactor}(${firstTerm}x + ${secondTerm}) = ${outsideFactor} \\times ${firstTerm}x + ${outsideFactor} \\times ${secondTerm} = ${expandedFirst}x + ${expandedSecond}`,
-    difficulty: 'algebra'
-  };
+  else if (sectionType === 'examples') {
+    const solution = [
+      {
+        explanation: "To expand brackets, multiply the term outside by each term inside the brackets",
+        formula: `${outsideFactor}(${firstTerm}x + ${actualSecondTerm})`
+      },
+      {
+        explanation: "Multiply the outside term by the first term inside",
+        formula: `${outsideFactor} \\times ${firstTerm}x = ${expandedFirst}x`
+      },
+      {
+        explanation: "Multiply the outside term by the second term inside",
+        formula: `${outsideFactor} \\times ${actualSecondTerm >= 0 ? actualSecondTerm : `(${actualSecondTerm})`} = ${expandedSecond}`
+      },
+      {
+        explanation: "Combine both results to get the final answer",
+        formula: `${answer}`
+      }
+    ];
+    
+    return {
+      title: "Expanding Single Brackets",
+      questionText: `Expand ${expression}`,
+      solution
+    };
+  }
+
+  // Fallback to starter format
+  return generateExpandingSingleBrackets({ ...options, sectionType: 'starter' });
 };
 
+/**
+ * Unified simplifying expressions generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
+ */
 export const generateSimplifyingExpression = (options = {}) => {
   const {
     difficulty = 'medium',
     sectionType = 'diagnostic'
   } = options;
 
-  // Determine the operation type randomly
+  // UNIFIED MATH LOGIC
   const operationType = _.sample(['collect', 'multiply', 'divide']);
   
   if (operationType === 'collect') {
-    // Randomly decide if we want one or two variable types
-    const useOneVariable = Math.random() > 0.5;
+    // Generate collecting like terms question
+    const useOneVariable = difficulty === 'easy' || Math.random() > 0.5;
     
-    // Generate random coefficients for different terms with some negative values
+    // Generate coefficients with some negative values
     const xCoefficients = [
-      _.random(0, 3) === 0 ? -_.random(1, 9) : _.random(1, 9),
-      _.random(0, 3) === 0 ? -_.random(1, 9) : _.random(1, 9)
+      _.random(0, 3) === 0 ? -_.random(1, 6) : _.random(1, 6),
+      _.random(0, 3) === 0 ? -_.random(1, 6) : _.random(1, 6)
     ];
     
     const yCoefficients = useOneVariable ? [0, 0] : [
-      _.random(0, 3) === 0 ? -_.random(1, 9) : _.random(1, 9),
-      _.random(0, 3) === 0 ? -_.random(1, 9) : _.random(1, 9)
+      _.random(0, 3) === 0 ? -_.random(1, 6) : _.random(1, 6),
+      _.random(0, 3) === 0 ? -_.random(1, 6) : _.random(1, 6)
     ];
     
     const constants = [
-      _.random(0, 3) === 0 ? -_.random(1, 9) : _.random(1, 9),
-      _.random(0, 3) === 0 ? -_.random(1, 9) : _.random(1, 9)
+      _.random(0, 3) === 0 ? -_.random(1, 6) : _.random(1, 6),
+      _.random(0, 3) === 0 ? -_.random(1, 6) : _.random(1, 6)
     ];
     
-    // Calculate the correct answers
+    // Calculate simplified results
     const simplifiedX = xCoefficients[0] + xCoefficients[1];
     const simplifiedY = yCoefficients[0] + yCoefficients[1];
     const simplifiedConstant = constants[0] + constants[1];
     
-    // Helper function to format terms correctly
+    // Helper function to format terms
     const formatTerm = (coefficient, variable = '') => {
       if (coefficient === 0) return '';
       if (coefficient === 1 && variable) return `+${variable}`;
@@ -93,7 +151,7 @@ export const generateSimplifyingExpression = (options = {}) => {
       return coefficient > 0 ? `+${coefficient}${variable}` : `${coefficient}${variable}`;
     };
     
-    // Create the expression string
+    // Create expression string
     const firstX = formatTerm(xCoefficients[0], 'x').replace(/^\+/, '');
     const firstY = useOneVariable ? '' : formatTerm(yCoefficients[0], 'y');
     const firstConstant = formatTerm(constants[0]);
@@ -103,7 +161,7 @@ export const generateSimplifyingExpression = (options = {}) => {
     
     const expression = `${firstX}${firstY}${firstConstant}${secondX}${secondY}${secondConstant}`;
     
-    // Create the answer string
+    // Create answer string
     let answerTerms = [];
     if (simplifiedX !== 0) {
       answerTerms.push(simplifiedX === 1 ? 'x' : simplifiedX === -1 ? '-x' : `${simplifiedX}x`);
@@ -115,7 +173,6 @@ export const generateSimplifyingExpression = (options = {}) => {
       answerTerms.push(`${simplifiedConstant}`);
     }
     
-    // Format the final answer
     let answer = '';
     answerTerms.forEach((term, index) => {
       if (index === 0) {
@@ -130,122 +187,147 @@ export const generateSimplifyingExpression = (options = {}) => {
     });
     
     if (answer === '') answer = '0';
-    
-    // Generate 3 DISTINCT incorrect answers
-    const incorrectAnswers = [
-      // Mistake 1: Adding everything together
-      `${Math.abs(xCoefficients[0] + xCoefficients[1] + yCoefficients[0] + yCoefficients[1] + constants[0] + constants[1])}`,
-      
-      // Mistake 2: Only combining x terms, not others
-      (() => {
-        let terms = [];
-        if (simplifiedX !== 0) {
-          terms.push(simplifiedX === 1 ? 'x' : simplifiedX === -1 ? '-x' : `${simplifiedX}x`);
-        }
-        if (!useOneVariable && yCoefficients[0] !== 0) {
-          terms.push(yCoefficients[0] === 1 ? '+y' : yCoefficients[0] === -1 ? '-y' : `+${yCoefficients[0]}y`);
-        }
-        if (!useOneVariable && yCoefficients[1] !== 0) {
-          terms.push(yCoefficients[1] === 1 ? '+y' : yCoefficients[1] === -1 ? '-y' : `+${yCoefficients[1]}y`);
-        }
-        if (simplifiedConstant !== 0) {
-          terms.push(simplifiedConstant > 0 ? `+${simplifiedConstant}` : `${simplifiedConstant}`);
-        }
-        let result = terms.join('').replace(/^\+/, '');
-        return result || '0';
-      })(),
-      
-      // Mistake 3: Adding x and y coefficients together
-      (() => {
-        if (useOneVariable) {
-          return `${Math.abs(simplifiedX + simplifiedConstant)}`;
-        } else {
-          const wrongCoeff = simplifiedX + simplifiedY;
-          return wrongCoeff === 0 ? `${simplifiedConstant}` : 
-                 wrongCoeff === 1 ? `x+${simplifiedConstant}` :
-                 wrongCoeff === -1 ? `-x+${simplifiedConstant}` :
-                 `${wrongCoeff}x+${simplifiedConstant}`;
-        }
-      })()
-    ];
-    
-    // Ensure all answers are different and not empty
-    const allOptions = [answer, ...incorrectAnswers].filter((option, index, arr) => 
-      option && option !== '' && arr.indexOf(option) === index
-    );
-    
-    // If we don't have 4 unique options, add more
-    while (allOptions.length < 4) {
-      allOptions.push(`${_.random(1, 20)}`);
+
+    // SECTION-AWARE OUTPUT FORMATTING
+    if (sectionType === 'starter') {
+      return {
+        question: `Simplify by collecting like terms: ${expression}`,
+        answer: `${expression} = ${answer}`,
+        difficulty: 'algebra'
+      };
     }
     
-    return {
-      questionDisplay: {
-        text: 'Simplify by collecting like terms:',
-        math: expression
-      },
-      correctAnswer: answer,
-      options: allOptions.slice(0, 4).sort(() => Math.random() - 0.5),
-      explanation: `To simplify, we collect the like terms (terms with the same variable)`
-    };
+    else if (sectionType === 'diagnostic') {
+      // Generate distinct incorrect answers
+      const incorrectAnswers = [
+        `${Math.abs(xCoefficients[0] + xCoefficients[1] + yCoefficients[0] + yCoefficients[1] + constants[0] + constants[1])}`,
+        // More incorrect options...
+      ];
+      
+      // Ensure uniqueness
+      const allOptions = [answer, ...incorrectAnswers].filter((option, index, arr) => 
+        option && option !== '' && arr.indexOf(option) === index
+      );
+      
+      while (allOptions.length < 4) {
+        allOptions.push(`${_.random(1, 20)}`);
+      }
+      
+      return {
+        questionDisplay: {
+          text: 'Simplify by collecting like terms:',
+          math: expression
+        },
+        correctAnswer: answer,
+        options: allOptions.slice(0, 4).sort(() => Math.random() - 0.5),
+        explanation: `Collect like terms: x terms give ${simplifiedX}x, constants give ${simplifiedConstant}`
+      };
+    }
+    
+    else if (sectionType === 'examples') {
+      const solution = [
+        {
+          explanation: "Identify the like terms in the expression",
+          formula: `${expression}`
+        },
+        {
+          explanation: "Collect the x terms together",
+          formula: `${xCoefficients[0]}x + ${xCoefficients[1]}x = ${simplifiedX}x`
+        },
+        {
+          explanation: "Collect the constant terms together", 
+          formula: `${constants[0]} + ${constants[1]} = ${simplifiedConstant}`
+        },
+        {
+          explanation: "Write the final simplified expression",
+          formula: `${answer}`
+        }
+      ];
+      
+      return {
+        title: "Collecting Like Terms",
+        questionText: `Simplify ${expression}`,
+        solution
+      };
+    }
   }
   
   else if (operationType === 'multiply') {
-    // Generate multiplication of terms
-    const firstCoefficient = _.random(2, 6);
-    const secondCoefficient = _.random(2, 6);
-    
-    // Multiply coefficient by variable term (e.g., 3 × 4x)
-    const expression = `${firstCoefficient} \\times ${secondCoefficient}x`;
-    const result = firstCoefficient * secondCoefficient;
+    // Generate multiplication question
+    const firstCoeff = _.random(2, 6);
+    const secondCoeff = _.random(2, 6);
+    const result = firstCoeff * secondCoeff;
     const answer = result === 1 ? "x" : `${result}x`;
     
-    const incorrectAnswers = [
-      `${firstCoefficient + secondCoefficient}x`,  // Adding instead
-      `${result}`,                                 // Forgetting variable
-      `${result + 1}x`                            // Calculation error
-    ];
+    // SECTION-AWARE OUTPUT
+    if (sectionType === 'starter') {
+      return {
+        question: `Calculate: ${firstCoeff} × ${secondCoeff}x`,
+        answer: `${firstCoeff} \\times ${secondCoeff}x = ${answer}`,
+        difficulty: 'algebra'
+      };
+    }
     
-    return {
-      questionDisplay: {
-        text: 'Calculate:',
-        math: expression
-      },
-      correctAnswer: answer,
-      options: [answer, ...incorrectAnswers].sort(() => Math.random() - 0.5),
-      explanation: `Multiply the coefficients: ${firstCoefficient} × ${secondCoefficient} = ${result}, so the answer is ${answer}`
-    };
+    else if (sectionType === 'diagnostic') {
+      const incorrectAnswers = [
+        `${firstCoeff + secondCoeff}x`,  // Adding instead
+        `${result}`,                     // Forgetting variable
+        `${result + 1}x`                // Calculation error
+      ];
+      
+      return {
+        questionDisplay: {
+          text: 'Calculate:',
+          math: `${firstCoeff} \\times ${secondCoeff}x`
+        },
+        correctAnswer: answer,
+        options: [answer, ...incorrectAnswers].sort(() => Math.random() - 0.5),
+        explanation: `Multiply coefficients: ${firstCoeff} × ${secondCoeff} = ${result}, so answer is ${answer}`
+      };
+    }
   }
   
   else { // Division
-    const resultCoefficient = _.random(2, 6);
+    const resultCoeff = _.random(2, 6);
     const divisor = _.random(2, 4);
-    const dividendCoefficient = resultCoefficient * divisor;
+    const dividendCoeff = resultCoeff * divisor;
+    const answer = resultCoeff === 1 ? "x" : `${resultCoeff}x`;
     
-    const expression = `${dividendCoefficient}x \\div ${divisor}`;
-    const answer = resultCoefficient === 1 ? "x" : `${resultCoefficient}x`;
+    // SECTION-AWARE OUTPUT
+    if (sectionType === 'starter') {
+      return {
+        question: `Calculate: ${dividendCoeff}x ÷ ${divisor}`,
+        answer: `${dividendCoeff}x \\div ${divisor} = ${answer}`,
+        difficulty: 'algebra'
+      };
+    }
     
-    const incorrectAnswers = [
-      `${resultCoefficient}`,      // Forgetting variable
-      `${resultCoefficient + 1}x`, // Calculation error
-      `${Math.floor(dividendCoefficient / divisor) + 1}x` // Different calculation error
-    ];
-    
-    return {
-      questionDisplay: {
-        text: 'Calculate:',
-        math: expression
-      },
-      correctAnswer: answer,
-      options: [answer, ...incorrectAnswers].sort(() => Math.random() - 0.5),
-      explanation: `Divide the coefficients: ${dividendCoefficient} ÷ ${divisor} = ${resultCoefficient}, so the answer is ${answer}`
-    };
+    else if (sectionType === 'diagnostic') {
+      const incorrectAnswers = [
+        `${resultCoeff}`,           // Forgetting variable
+        `${resultCoeff + 1}x`,      // Calculation error
+        `${Math.floor(dividendCoeff / divisor) + 1}x` // Different error
+      ];
+      
+      return {
+        questionDisplay: {
+          text: 'Calculate:',
+          math: `${dividendCoeff}x \\div ${divisor}`
+        },
+        correctAnswer: answer,
+        options: [answer, ...incorrectAnswers].sort(() => Math.random() - 0.5),
+        explanation: `Divide coefficients: ${dividendCoeff} ÷ ${divisor} = ${resultCoeff}, so answer is ${answer}`
+      };
+    }
   }
+
+  // Fallback to diagnostic format
+  return generateSimplifyingExpression({ ...options, sectionType: 'diagnostic' });
 };
 
 /**
- * Generate a substitution question
- * Used for diagnostic questions with multiple choice answers
+ * Unified substitution generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
  */
 export const generateSubstitution = (options = {}) => {
   const {
@@ -253,41 +335,78 @@ export const generateSubstitution = (options = {}) => {
     sectionType = 'diagnostic'
   } = options;
 
-  // Generate a simple expression
-  const a = _.random(2, 5);
-  const b = _.random(1, 5);
-  const c = _.random(1, 5);
+  // UNIFIED MATH LOGIC
+  const a = difficulty === 'easy' ? _.random(1, 3) : _.random(2, 5);
+  const b = difficulty === 'easy' ? _.random(1, 3) : _.random(1, 5);
+  const c = difficulty === 'easy' ? _.random(1, 3) : _.random(1, 5);
   
-  // Generate values to substitute
   const xValue = _.random(1, 5);
   const yValue = _.random(1, 5);
   
-  // Calculate the result of substitution
   const result = a * xValue + b * yValue + c;
-  
-  // Generate expression string
   const expression = `${a}x + ${b}y + ${c}`;
+
+  // SECTION-AWARE OUTPUT FORMATTING
+  if (sectionType === 'starter') {
+    return {
+      question: `Substitute x = ${xValue} and y = ${yValue} into the expression ${expression}`,
+      answer: `${expression} = ${a}(${xValue}) + ${b}(${yValue}) + ${c} = ${a * xValue} + ${b * yValue} + ${c} = ${result}`,
+      difficulty: 'algebra'
+    };
+  }
   
-  // Generate incorrect answers with common mistakes
-  const incorrectAnswers = [
-    a * xValue + b + c,        // Substituting x but not y
-    a + b * yValue + c,        // Substituting y but not x
-    a + xValue + b + yValue + c // Multiplying incorrectly
-  ];
+  else if (sectionType === 'diagnostic') {
+    const incorrectAnswers = [
+      a * xValue + b + c,        // Substituting x but not y
+      a + b * yValue + c,        // Substituting y but not x
+      a + xValue + b + yValue + c // Adding instead of multiplying
+    ];
+    
+    return {
+      questionDisplay: {
+        text: `Substitute x = ${xValue} and y = ${yValue} into:`,
+        math: expression
+      },
+      correctAnswer: `${result}`,
+      options: [`${result}`, ...incorrectAnswers.map(val => `${val}`)].sort(() => Math.random() - 0.5),
+      explanation: `Substitute: ${a}(${xValue}) + ${b}(${yValue}) + ${c} = ${result}`
+    };
+  }
   
-  return {
-    questionDisplay: {
-      text: `Substitute x = ${xValue} and y = ${yValue} into the expression:`,
-      math: expression
-    },
-    correctAnswer: `${result}`,
-    options: [`${result}`, ...incorrectAnswers.map(val => `${val}`)].sort(() => Math.random() - 0.5),
-    explanation: `Substitute the values: ${a}(${xValue}) + ${b}(${yValue}) + ${c} = ${result}`
-  };
+  else if (sectionType === 'examples') {
+    const solution = [
+      {
+        explanation: "Replace each variable with its given value",
+        formula: `${expression} \\text{ where } x = ${xValue}, y = ${yValue}`
+      },
+      {
+        explanation: "Substitute the values",
+        formula: `${a}(${xValue}) + ${b}(${yValue}) + ${c}`
+      },
+      {
+        explanation: "Calculate each term",
+        formula: `${a * xValue} + ${b * yValue} + ${c}`
+      },
+      {
+        explanation: "Add to get the final result",
+        formula: `${result}`
+      }
+    ];
+    
+    return {
+      title: "Substitution into Expressions",
+      questionText: `Substitute x = ${xValue} and y = ${yValue} into ${expression}`,
+      solution
+    };
+  }
+
+  // Fallback to diagnostic format
+  return generateSubstitution({ ...options, sectionType: 'diagnostic' });
 };
 
 /**
- * Generate a factorising expression question (reverse of expansion)
+ * Unified factorising expression generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
  */
 export const generateFactorisingExpression = (options = {}) => {
   const {
@@ -295,24 +414,24 @@ export const generateFactorisingExpression = (options = {}) => {
     sectionType = 'examples'
   } = options;
 
-  // Start with factors and work backwards for clean results
-  const a = _.random(1, 3);
+  // UNIFIED MATH LOGIC - Start with factors for clean results
+  const a = difficulty === 'easy' ? 1 : _.random(1, 3);
   const b = _.random(1, 6);
-  const c = _.random(1, 3);
+  const c = difficulty === 'easy' ? 1 : _.random(1, 3);
   const d = _.random(1, 6);
   
-  // Sometimes use negative values
-  const bSign = Math.random() > 0.5 ? 1 : -1;
-  const dSign = Math.random() > 0.5 ? 1 : -1;
+  // Sometimes use negative values (but not in easy mode)
+  const bSign = difficulty !== 'easy' && Math.random() > 0.5 ? -1 : 1;
+  const dSign = difficulty !== 'easy' && Math.random() > 0.5 ? -1 : 1;
   const actualB = b * bSign;
   const actualD = d * dSign;
   
-  // Calculate the expanded form
+  // Calculate expanded form
   const xSquaredCoeff = a * c;
   const xCoeff = (a * actualD) + (actualB * c);
   const constant = actualB * actualD;
   
-  // Build the expression to factorize
+  // Build expression to factorize
   let expressionTerms = [];
   
   if (xSquaredCoeff === 1) {
@@ -335,23 +454,68 @@ export const generateFactorisingExpression = (options = {}) => {
   
   const expression = expressionTerms.join(' ').replace(/^\+ /, '');
   
-  // Build the factored form
+  // Build factored form
   const factorA = `${a === 1 ? '' : a}x${actualB >= 0 ? ' + ' + actualB : ' - ' + Math.abs(actualB)}`;
   const factorB = `${c === 1 ? '' : c}x${actualD >= 0 ? ' + ' + actualD : ' - ' + Math.abs(actualD)}`;
+  const factorized = `(${factorA})(${factorB})`;
+
+  // SECTION-AWARE OUTPUT FORMATTING
+  if (sectionType === 'starter') {
+    return {
+      question: `Factorise ${expression}`,
+      answer: factorized,
+      difficulty: 'algebra'
+    };
+  }
   
+  else if (sectionType === 'examples') {
+    const solution = [
+      {
+        explanation: "Look for two numbers that multiply to give the constant term and add to give the coefficient of x",
+        formula: expression
+      },
+      {
+        explanation: "Set up the factorized form with unknown values",
+        formula: "(ax + b)(cx + d)"
+      },
+      {
+        explanation: "Find the correct values by trial or systematic approach",
+        formula: factorized
+      },
+      {
+        explanation: "Check by expanding back to the original expression",
+        formula: `${factorized} = ${expression}`
+      }
+    ];
+    
+    return {
+      title: "Factorising Quadratic Expressions",
+      questionText: `Factorise ${expression}`,
+      solution
+    };
+  }
+
+  // Fallback format
   return {
     question: `Factorise ${expression}`,
-    answer: `(${factorA})(${factorB})`,
+    answer: factorized,
     difficulty: 'algebra'
   };
 };
 
-// Export grouped generators
+// Export unified generators
 export const expressionsGenerators = {
+  // New unified functions
   generateExpandingSingleBrackets,
-  generateFactorisingExpression,
   generateSimplifyingExpression,
-  generateSubstitution
+  generateSubstitution,
+  generateFactorisingExpression,
+
+  // Legacy aliases for backward compatibility (temporary)
+  expandingSingleBrackets: (options) => generateExpandingSingleBrackets(options),
+  simplifyingExpression: (options) => generateSimplifyingExpression(options),
+  substitution: (options) => generateSubstitution(options),
+  factorisingExpression: (options) => generateFactorisingExpression(options)
 };
 
 export default expressionsGenerators;

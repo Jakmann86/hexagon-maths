@@ -1,7 +1,7 @@
 // src/generators/geometry/pythagorasGenerators.js - Unified Architecture
 import _ from 'lodash';
 import { PYTHAGOREAN_TRIPLES, createPythagoreanTriangle, createIsoscelesTriangle } from '../../factories/triangleFactory';
-
+import { createDistanceProblem } from '../../factories/coordinateFactory';
 /**
  * Ensure all options are unique and randomize order
  */
@@ -47,11 +47,11 @@ export const generateFindHypotenuse = (options = {}) => {
   if (sectionType === 'examples') {
     // 50% Pythagorean triples, 50% non-Pythagorean for variety
     const usePythagoreanTriple = Math.random() > 0.5;
-    
+
     if (usePythagoreanTriple) {
       // Use Pythagorean triple for exact answers
-      const triples = difficulty === 'easy' 
-        ? PYTHAGOREAN_TRIPLES.slice(0, 2) 
+      const triples = difficulty === 'easy'
+        ? PYTHAGOREAN_TRIPLES.slice(0, 2)
         : PYTHAGOREAN_TRIPLES.slice(0, 5);
       const triple = seed ? triples[seed % triples.length] : _.sample(triples);
       [a, b, c] = triple;
@@ -68,8 +68,8 @@ export const generateFindHypotenuse = (options = {}) => {
     }
   } else {
     // Starter and diagnostic: always use Pythagorean triples for clean answers
-    const triples = difficulty === 'easy' 
-      ? PYTHAGOREAN_TRIPLES.slice(0, 2) 
+    const triples = difficulty === 'easy'
+      ? PYTHAGOREAN_TRIPLES.slice(0, 2)
       : PYTHAGOREAN_TRIPLES.slice(0, 4);
     const triple = seed ? triples[seed % triples.length] : _.sample(triples);
     [a, b, c] = triple;
@@ -216,11 +216,11 @@ export const generateFindMissingSide = (options = {}) => {
   if (sectionType === 'examples') {
     // 50% Pythagorean triples, 50% non-Pythagorean for variety
     const usePythagoreanTriple = Math.random() > 0.5;
-    
+
     if (usePythagoreanTriple) {
       // Use Pythagorean triple for exact answers
-      const triples = difficulty === 'easy' 
-        ? PYTHAGOREAN_TRIPLES.slice(0, 2) 
+      const triples = difficulty === 'easy'
+        ? PYTHAGOREAN_TRIPLES.slice(0, 2)
         : PYTHAGOREAN_TRIPLES.slice(0, 5);
       const triple = seed ? triples[seed % triples.length] : _.sample(triples);
       [a, b, c] = triple;
@@ -231,7 +231,7 @@ export const generateFindMissingSide = (options = {}) => {
       c = _.random(8, 15);
       const knownSide = _.random(3, Math.floor(c * 0.8)); // Ensure valid triangle
       legToFind = (seed % 2 === 0) ? 'base' : 'height';
-      
+
       if (legToFind === 'base') {
         b = knownSide;
         const exactA = Math.sqrt(c * c - b * b);
@@ -246,8 +246,8 @@ export const generateFindMissingSide = (options = {}) => {
     }
   } else {
     // Starter and diagnostic: always use Pythagorean triples
-    const triples = difficulty === 'easy' 
-      ? PYTHAGOREAN_TRIPLES.slice(0, 2) 
+    const triples = difficulty === 'easy'
+      ? PYTHAGOREAN_TRIPLES.slice(0, 2)
       : PYTHAGOREAN_TRIPLES.slice(0, 4);
     const triple = seed ? triples[seed % triples.length] : _.sample(triples);
     [a, b, c] = triple;
@@ -410,7 +410,7 @@ export const generateFindMissingSide = (options = {}) => {
  */
 export const generateIdentifyHypotenuse = (options = {}) => {
   const { units = 'cm' } = options;
-  
+
   // Choose a simple Pythagorean triple
   const triple = _.sample(PYTHAGOREAN_TRIPLES.slice(0, 3));
   const [a, b, c] = triple;
@@ -489,18 +489,13 @@ export const pythagorasGenerators = {
       dy = point2[1] - point1[1];
     } while (dx === 0 || dy === 0);
 
-    const exactDistance = Math.sqrt(dx * dx + dy * dy);
-    const distance = Math.round(exactDistance * 100) / 100;
-
-    const visualizationConfig = {
-      points: [point1, point2],
-      pointLabels: ['A', 'B'],
-      segments: [[0, 1]],
-      style: {
-        pointColors: ['#e74c3c', '#3498db'],
-        segmentColors: ['#9b59b6'],
-      }
-    };
+    // ✨ USE THE FACTORY instead of manually creating config
+    const visualizationConfig = createDistanceProblem({
+      point1,
+      point2,
+      sectionType: 'challenge',
+      showSolution: false  // Let UI control this via showAnswers
+    });
 
     const solution = [
       {
@@ -525,18 +520,19 @@ export const pythagorasGenerators = {
       },
       {
         explanation: "Take the square root to find the distance:",
-        formula: `d = ${distance}`
+        formula: `d = ${visualizationConfig.distance}`  // ✨ Use factory's calculated distance
       }
     ];
 
     return {
       title: "Finding Distance in the Coordinate Plane",
       questionText: `Find the distance between the points A(${point1[0]}, ${point1[1]}) and B(${point2[0]}, ${point2[1]}) on the coordinate plane.`,
-      visualizationConfig,
+      visualizationConfig,  // ✨ Now properly structured from factory
       solution,
-      dx,
-      dy,
-      distance
+      // ✨ Expose calculated values for the customizePythagorasGrid function
+      dx: visualizationConfig.dx,
+      dy: visualizationConfig.dy,
+      distance: visualizationConfig.distance
     };
   }
 };
