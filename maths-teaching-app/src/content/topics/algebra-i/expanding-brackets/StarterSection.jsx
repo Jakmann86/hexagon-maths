@@ -13,11 +13,11 @@ import _ from 'lodash';
  * Uses existing unified generators to create both side-finding and angle questions
  */
 const generateMixedSohcahtoaQuestion = () => {
-  // 70% chance of finding a side, 30% chance of calculator question
-  const findSide = Math.random() > 0.3;
+  // 50% chance of finding a side, 30% chance of finding angle, 20% chance of calculator
+  const randomChoice = Math.random();
   
-  if (findSide) {
-    // Use existing unified SOHCAHTOA generator for finding missing sides
+  if (randomChoice > 0.5) {
+    // Find missing side
     const generatedQuestion = SohcahtoaGenerators.generateFindMissingSideTrig({
       sectionType: 'starter',
       difficulty: 'easy'
@@ -34,8 +34,26 @@ const generateMixedSohcahtoaQuestion = () => {
         />
       )
     };
+  } else if (randomChoice > 0.2) {
+    // Find missing angle - NEW!
+    const generatedQuestion = SohcahtoaGenerators.generateFindMissingAngleTrig({
+      sectionType: 'starter',
+      difficulty: 'easy'
+    });
+    
+    return {
+      question: generatedQuestion.questionText || generatedQuestion.question,
+      answer: generatedQuestion.answer,
+      visualization: (
+        <RightTriangle 
+          {...generatedQuestion.visualization} 
+          sectionType="starter"
+          orientation="default"
+        />
+      )
+    };
   } else {
-    // Use existing unified calculator question generator
+    // Calculator question (unchanged)
     const generatedQuestion = SohcahtoaGenerators.generateTrigCalculator({
       sectionType: 'starter'
     });

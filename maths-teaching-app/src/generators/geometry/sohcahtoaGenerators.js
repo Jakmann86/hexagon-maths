@@ -1,4 +1,4 @@
-// src/generators/geometry/sohcahtoaGenerators.js - Unified Architecture
+// src/generators/geometry/sohcahtoaGenerators.js - Unified Architecture with Angle Finding
 import _ from 'lodash';
 import { createRightTriangle } from '../../factories/triangleFactory';
 
@@ -328,13 +328,13 @@ export const generateFindMissingSideTrig = (options = {}) => {
     orientationConfig.orientation = orientations[orientationIndex];
   }
 
-  // Create visualization
+  // Create visualization with ACTUAL angle value instead of θ
   const visualization = createRightTriangle({
     base,
     height,
     showRightAngle: true,
     showAngles: [true, false],
-    angleLabels: ['θ', ''],
+    angleLabels: [`${angle}°`, ''], // ← FIXED: Use actual angle value instead of θ
     labelStyle: "custom",
     labels,
     units,
@@ -344,7 +344,7 @@ export const generateFindMissingSideTrig = (options = {}) => {
 
   // SECTION-AWARE OUTPUT FORMATTING
   if (sectionType === 'starter') {
-    const questionText = `Find the missing side in this right-angled triangle. Angle θ = ${angle}°.`;
+    const questionText = `Find the missing side in this right-angled triangle. The angle is ${angle}°.`;
     
     return {
       question: questionText,
@@ -354,7 +354,7 @@ export const generateFindMissingSideTrig = (options = {}) => {
   }
 
   else if (sectionType === 'diagnostic') {
-    const questionText = `Find the missing side using trigonometry. Angle θ = ${angle}°.`;
+    const questionText = `Find the missing side using trigonometry. The angle is ${angle}°.`;
 
     // Generate distractors
     const distractors = [
@@ -376,7 +376,7 @@ export const generateFindMissingSideTrig = (options = {}) => {
   }
 
   else if (sectionType === 'examples') {
-    const questionText = `Find the missing side length in this right-angled triangle. Angle θ = ${angle}°.`;
+    const questionText = `Find the missing side length in this right-angled triangle. The angle is ${angle}°.`;
 
     // Create solution steps based on the chosen ratio
     let solution;
@@ -384,16 +384,16 @@ export const generateFindMissingSideTrig = (options = {}) => {
     if (chosenRatio === 'sine') {
       solution = [
         {
-          explanation: `Identify what we know: angle θ = ${angle}°, hypotenuse = ${knownSide} cm`,
-          formula: `\\theta = ${angle}°, \\text{ hypotenuse } = ${knownSide}\\text{ cm}`
+          explanation: `Identify what we know: angle = ${angle}°, hypotenuse = ${knownSide} cm`,
+          formula: `\\text{angle} = ${angle}°, \\text{ hypotenuse } = ${knownSide}\\text{ cm}`
         },
         {
           explanation: "We need to find the opposite side. Since we know the hypotenuse and need the opposite, we use sine",
-          formula: `\\sin(\\theta) = \\frac{\\text{opposite}}{\\text{hypotenuse}}`
+          formula: `\\sin(${angle}°) = \\frac{\\text{opposite}}{\\text{hypotenuse}}`
         },
         {
           explanation: "Rearrange to solve for the opposite side",
-          formula: `\\text{opposite} = \\text{hypotenuse} \\times \\sin(\\theta)`
+          formula: `\\text{opposite} = \\text{hypotenuse} \\times \\sin(${angle}°)`
         },
         {
           explanation: "Substitute the values",
@@ -407,16 +407,16 @@ export const generateFindMissingSideTrig = (options = {}) => {
     } else if (chosenRatio === 'cosine') {
       solution = [
         {
-          explanation: `Identify what we know: angle θ = ${angle}°, hypotenuse = ${knownSide} cm`,
-          formula: `\\theta = ${angle}°, \\text{ hypotenuse } = ${knownSide}\\text{ cm}`
+          explanation: `Identify what we know: angle = ${angle}°, hypotenuse = ${knownSide} cm`,
+          formula: `\\text{angle} = ${angle}°, \\text{ hypotenuse } = ${knownSide}\\text{ cm}`
         },
         {
           explanation: "We need to find the adjacent side. Since we know the hypotenuse and need the adjacent, we use cosine",
-          formula: `\\cos(\\theta) = \\frac{\\text{adjacent}}{\\text{hypotenuse}}`
+          formula: `\\cos(${angle}°) = \\frac{\\text{adjacent}}{\\text{hypotenuse}}`
         },
         {
           explanation: "Rearrange to solve for the adjacent side",
-          formula: `\\text{adjacent} = \\text{hypotenuse} \\times \\cos(\\theta)`
+          formula: `\\text{adjacent} = \\text{hypotenuse} \\times \\cos(${angle}°)`
         },
         {
           explanation: "Substitute the values",
@@ -434,16 +434,16 @@ export const generateFindMissingSideTrig = (options = {}) => {
       if (knowOpposite) {
         solution = [
           {
-            explanation: `Identify what we know: angle θ = ${angle}°, opposite side = ${knownSide} cm`,
-            formula: `\\theta = ${angle}°, \\text{ opposite } = ${knownSide}\\text{ cm}`
+            explanation: `Identify what we know: angle = ${angle}°, opposite side = ${knownSide} cm`,
+            formula: `\\text{angle} = ${angle}°, \\text{ opposite } = ${knownSide}\\text{ cm}`
           },
           {
             explanation: "We need to find the adjacent side. Since we know the opposite and need the adjacent, we use tangent",
-            formula: `\\tan(\\theta) = \\frac{\\text{opposite}}{\\text{adjacent}}`
+            formula: `\\tan(${angle}°) = \\frac{\\text{opposite}}{\\text{adjacent}}`
           },
           {
             explanation: "Rearrange to solve for the adjacent side",
-            formula: `\\text{adjacent} = \\frac{\\text{opposite}}{\\tan(\\theta)}`
+            formula: `\\text{adjacent} = \\frac{\\text{opposite}}{\\tan(${angle}°)}`
           },
           {
             explanation: "Substitute the values",
@@ -457,16 +457,16 @@ export const generateFindMissingSideTrig = (options = {}) => {
       } else {
         solution = [
           {
-            explanation: `Identify what we know: angle θ = ${angle}°, adjacent side = ${knownSide} cm`,
-            formula: `\\theta = ${angle}°, \\text{ adjacent } = ${knownSide}\\text{ cm}`
+            explanation: `Identify what we know: angle = ${angle}°, adjacent side = ${knownSide} cm`,
+            formula: `\\text{angle} = ${angle}°, \\text{ adjacent } = ${knownSide}\\text{ cm}`
           },
           {
             explanation: "We need to find the opposite side. Since we know the adjacent and need the opposite, we use tangent",
-            formula: `\\tan(\\theta) = \\frac{\\text{opposite}}{\\text{adjacent}}`
+            formula: `\\tan(${angle}°) = \\frac{\\text{opposite}}{\\text{adjacent}}`
           },
           {
             explanation: "Rearrange to solve for the opposite side",
-            formula: `\\text{opposite} = \\text{adjacent} \\times \\tan(\\theta)`
+            formula: `\\text{opposite} = \\text{adjacent} \\times \\tan(${angle}°)`
           },
           {
             explanation: "Substitute the values",
@@ -490,6 +490,219 @@ export const generateFindMissingSideTrig = (options = {}) => {
 
   // Fallback to diagnostic format
   return generateFindMissingSideTrig({ ...options, sectionType: 'diagnostic' });
+};
+
+/**
+ * NEW: Unified missing angle using inverse trigonometry generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
+ * Uses inverse trig functions (sin⁻¹, cos⁻¹, tan⁻¹)
+ */
+export const generateFindMissingAngleTrig = (options = {}) => {
+  const {
+    sectionType = 'examples',
+    difficulty = 'medium', 
+    seed = Date.now(),
+    units = 'cm',
+    trigRatio = null // Allow forcing specific ratio for examples
+  } = options;
+
+  // Choose common angles that give nice results
+  const targetAngles = [25, 30, 35, 40, 45, 50, 55, 60, 65];
+  const targetAngle = seed ? targetAngles[seed % targetAngles.length] : _.sample(targetAngles);
+
+  // Choose trig ratio - force specific one if provided, otherwise random
+  const ratios = ['sine', 'cosine', 'tangent'];
+  const chosenRatio = trigRatio || (seed ? ratios[seed % 3] : _.sample(ratios));
+
+  let base, height, labels, side1, side2, correctAngle;
+  correctAngle = targetAngle;
+
+  // Generate triangle based on the chosen ratio
+  if (chosenRatio === 'sine') {
+    // sin⁻¹(opposite/hypotenuse) = angle
+    const hypotenuse = seed ? 8 + (seed % 5) : _.random(8, 12);
+    const opposite = Math.round(hypotenuse * Math.sin(targetAngle * Math.PI / 180) * 10) / 10;
+    const adjacent = Math.round(Math.sqrt(hypotenuse * hypotenuse - opposite * opposite) * 10) / 10;
+
+    base = adjacent;
+    height = opposite;
+    side1 = opposite;
+    side2 = hypotenuse;
+
+    // Show opposite and hypotenuse, find angle
+    labels = [`${opposite} cm`, null, `${hypotenuse} cm`];
+
+  } else if (chosenRatio === 'cosine') {
+    // cos⁻¹(adjacent/hypotenuse) = angle
+    const hypotenuse = seed ? 8 + (seed % 5) : _.random(8, 12);
+    const adjacent = Math.round(hypotenuse * Math.cos(targetAngle * Math.PI / 180) * 10) / 10;
+    const opposite = Math.round(Math.sqrt(hypotenuse * hypotenuse - adjacent * adjacent) * 10) / 10;
+
+    base = adjacent;
+    height = opposite;
+    side1 = adjacent;
+    side2 = hypotenuse;
+
+    // Show adjacent and hypotenuse, find angle
+    labels = [null, `${adjacent} cm`, `${hypotenuse} cm`];
+
+  } else {
+    // tan⁻¹(opposite/adjacent) = angle
+    const adjacent = seed ? 5 + (seed % 6) : _.random(5, 10);
+    const opposite = Math.round(adjacent * Math.tan(targetAngle * Math.PI / 180) * 10) / 10;
+
+    base = adjacent;
+    height = opposite;
+    side1 = opposite;
+    side2 = adjacent;
+
+    // Show opposite and adjacent, find angle
+    labels = [`${opposite} cm`, `${adjacent} cm`, null];
+  }
+
+  // Generate orientation variety for all sections EXCEPT starter
+  let orientationConfig = {};
+  if (sectionType !== 'starter') {
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    orientationConfig.orientation = orientations[orientationIndex];
+  }
+
+  // Create visualization with missing angle marked as ?
+  const visualization = createRightTriangle({
+    base,
+    height,
+    showRightAngle: true,
+    showAngles: [true, false],
+    angleLabels: ['?', ''], // Show ? for the missing angle
+    labelStyle: "custom",
+    labels,
+    units,
+    sectionType,
+    ...orientationConfig
+  });
+
+  // SECTION-AWARE OUTPUT FORMATTING
+  if (sectionType === 'starter') {
+    const questionText = `Find the missing angle in this right-angled triangle.`;
+    
+    return {
+      question: questionText,
+      answer: `\\text{Using inverse ${chosenRatio}: angle} = ${correctAngle}°`,
+      visualization
+    };
+  }
+
+  else if (sectionType === 'diagnostic') {
+    const questionText = `Find the missing angle using inverse trigonometry.`;
+
+    // Generate distractors
+    const distractors = [
+      Math.round(correctAngle + _.random(5, 15)),
+      Math.round(correctAngle - _.random(5, 15)),
+      Math.round(90 - correctAngle) // Complementary angle mistake
+    ].filter(angle => angle > 0 && angle < 90);
+
+    return {
+      questionDisplay: { text: questionText },
+      correctAnswer: `${correctAngle}°`,
+      options: generateUniqueOptions([
+        `${correctAngle}°`,
+        ...distractors.map(d => `${d}°`)
+      ]),
+      explanation: `Use inverse ${chosenRatio} to find the missing angle: ${correctAngle}°`,
+      visualization
+    };
+  }
+
+  else if (sectionType === 'examples') {
+    const questionText = `Find the missing angle in this right-angled triangle.`;
+
+    // Create solution steps based on the chosen ratio
+    let solution;
+    
+    if (chosenRatio === 'sine') {
+      solution = [
+        {
+          explanation: `Identify what we know: opposite = ${side1} cm, hypotenuse = ${side2} cm`,
+          formula: `\\text{opposite} = ${side1}\\text{ cm}, \\text{ hypotenuse } = ${side2}\\text{ cm}`
+        },
+        {
+          explanation: "Since we know the opposite and hypotenuse, we use sine",
+          formula: `\\sin(\\text{angle}) = \\frac{\\text{opposite}}{\\text{hypotenuse}}`
+        },
+        {
+          explanation: "Substitute the values",
+          formula: `\\sin(\\text{angle}) = \\frac{${side1}}{${side2}}`
+        },
+        {
+          explanation: "Use inverse sine to find the angle",
+          formula: `\\text{angle} = \\sin^{-1}\\left(\\frac{${side1}}{${side2}}\\right)`
+        },
+        {
+          explanation: "Calculate using a calculator",
+          formula: `\\text{angle} = ${correctAngle}°`
+        }
+      ];
+    } else if (chosenRatio === 'cosine') {
+      solution = [
+        {
+          explanation: `Identify what we know: adjacent = ${side1} cm, hypotenuse = ${side2} cm`,
+          formula: `\\text{adjacent} = ${side1}\\text{ cm}, \\text{ hypotenuse } = ${side2}\\text{ cm}`
+        },
+        {
+          explanation: "Since we know the adjacent and hypotenuse, we use cosine",
+          formula: `\\cos(\\text{angle}) = \\frac{\\text{adjacent}}{\\text{hypotenuse}}`
+        },
+        {
+          explanation: "Substitute the values",
+          formula: `\\cos(\\text{angle}) = \\frac{${side1}}{${side2}}`
+        },
+        {
+          explanation: "Use inverse cosine to find the angle",
+          formula: `\\text{angle} = \\cos^{-1}\\left(\\frac{${side1}}{${side2}}\\right)`
+        },
+        {
+          explanation: "Calculate using a calculator",
+          formula: `\\text{angle} = ${correctAngle}°`
+        }
+      ];
+    } else {
+      // tangent
+      solution = [
+        {
+          explanation: `Identify what we know: opposite = ${side1} cm, adjacent = ${side2} cm`,
+          formula: `\\text{opposite} = ${side1}\\text{ cm}, \\text{ adjacent } = ${side2}\\text{ cm}`
+        },
+        {
+          explanation: "Since we know the opposite and adjacent, we use tangent",
+          formula: `\\tan(\\text{angle}) = \\frac{\\text{opposite}}{\\text{adjacent}}`
+        },
+        {
+          explanation: "Substitute the values",
+          formula: `\\tan(\\text{angle}) = \\frac{${side1}}{${side2}}`
+        },
+        {
+          explanation: "Use inverse tangent to find the angle",
+          formula: `\\text{angle} = \\tan^{-1}\\left(\\frac{${side1}}{${side2}}\\right)`
+        },
+        {
+          explanation: "Calculate using a calculator",
+          formula: `\\text{angle} = ${correctAngle}°`
+        }
+      ];
+    }
+
+    return {
+      title: `Using inverse ${chosenRatio} to find a missing angle`,
+      questionText,
+      visualization,
+      solution
+    };
+  }
+
+  // Fallback to diagnostic format
+  return generateFindMissingAngleTrig({ ...options, sectionType: 'diagnostic' });
 };
 
 /**
@@ -622,20 +835,32 @@ export const sohcahtoaGenerators = {
   generateTrigCalculator,
   generateTriangleLabeling,
   generateFindMissingSideTrig,
+  generateFindMissingAngleTrig, // ← NEW angle finding generator
   generateExactTrigValues,
 
   // Legacy aliases for backward compatibility (temporary)
   generateTrigCalculatorQuestion: (options) => generateTrigCalculator(options),
   generateTriangleLabelingQuestion: (options) => generateTriangleLabeling(options),
 
-  // Helper to generate all examples
+  // Helper to generate side-finding examples (SOHCAHTOA1)
   generateExampleQuestions: () => {
     const seed = Date.now();
     
     return [
-      generateFindMissingSideTrig({ seed, trigRatio: 'tangent' }),
-      generateFindMissingSideTrig({ seed: seed + 1000, trigRatio: 'sine' }),
-      generateExactTrigValues({ seed: seed + 2000 })
+      generateFindMissingSideTrig({ seed, trigRatio: 'sine' }),
+      generateFindMissingSideTrig({ seed: seed + 1000, trigRatio: 'cosine' }),
+      generateFindMissingSideTrig({ seed: seed + 2000, trigRatio: 'tangent' })
+    ];
+  },
+
+  // NEW: Helper to generate angle-finding examples (SOHCAHTOA2)
+  generateAngleExampleQuestions: () => {
+    const seed = Date.now();
+    
+    return [
+      generateFindMissingAngleTrig({ seed, trigRatio: 'sine' }),
+      generateFindMissingAngleTrig({ seed: seed + 1000, trigRatio: 'cosine' }),
+      generateFindMissingAngleTrig({ seed: seed + 2000, trigRatio: 'tangent' })
     ];
   }
 };

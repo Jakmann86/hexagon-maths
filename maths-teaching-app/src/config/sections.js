@@ -21,7 +21,8 @@ export default {
       rightAngleSize: 0.3,
       fixedDimensions: {
         triangleBase: 1.8,
-        triangleHeight: 1.5
+        triangleHeight: 1.5,
+        squareSide: 2.0
       }
     },
     diagnostic: {
