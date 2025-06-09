@@ -465,17 +465,187 @@ export const generateIdentifyHypotenuse = (options = {}) => {
   };
 };
 
+/**
+ * Unified isosceles triangle area question generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
+ * Uses Pythagoras to find height, then calculates area
+ */
+export const generateIsoscelesArea = (options = {}) => {
+  const {
+    difficulty = 'medium',
+    sectionType = 'starter',
+    seed = Date.now(),
+    units = 'cm'
+  } = options;
+
+  // Generate reasonable dimensions for an isosceles triangle
+  let base, legLength, height, area;
+  
+  if (difficulty === 'easy') {
+    base = _.random(6, 10);
+    legLength = _.random(5, 7);
+  } else if (difficulty === 'medium') {
+    base = _.random(8, 14);
+    legLength = _.random(6, 9);
+  } else {
+    base = _.random(10, 16);
+    legLength = _.random(7, 12);
+  }
+
+  // Calculate height using Pythagoras (h² + (base/2)² = leg²)
+  const halfBase = base / 2;
+  const exactHeight = Math.sqrt(legLength * legLength - halfBase * halfBase);
+  height = Math.round(exactHeight * 100) / 100;
+  
+  // Calculate area
+  const exactArea = (base * height) / 2;
+  area = Math.round(exactArea * 100) / 100;
+
+  // Generate orientation variety for all sections EXCEPT starter
+  let orientationConfig = {};
+  if (sectionType !== 'starter') {
+    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
+    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
+    orientationConfig.orientation = orientations[orientationIndex];
+  }
+
+  // SECTION-AWARE OUTPUT FORMATTING
+  if (sectionType === 'starter') {
+    return {
+      question: `Find the area of this isosceles triangle with base ${base} ${units} and equal sides ${legLength} ${units}.`,
+      answer: `\\text{First find height using Pythagoras:}\\\\
+               h^2 + ${halfBase}^2 = ${legLength}^2\\\\
+               h^2 = ${legLength * legLength} - ${halfBase * halfBase} = ${legLength * legLength - halfBase * halfBase}\\\\
+               h = \\sqrt{${legLength * legLength - halfBase * halfBase}} = ${height}\\text{ ${units}}\\\\
+               \\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${area}\\text{ ${units}}^2`,
+      visualization: createIsoscelesTriangle({
+        base,
+        height,
+        showEqualSides: true,
+        showHeight: true,
+        labelStyle: "custom",
+        labels: [`${base} ${units}`, `${legLength} ${units}`, `${legLength} ${units}`],
+        units,
+        sectionType: 'starter',
+        style: {
+          fillColor: '#2ecc71',
+          fillOpacity: 0.2
+        }
+      })
+    };
+  }
+
+  else if (sectionType === 'diagnostic') {
+    // Generate distractors
+    const distractors = [
+      Math.round((base * legLength) / 2), // Using leg instead of height
+      Math.round(base * height), // Forgetting the 1/2
+      Math.round((base + height) / 2) // Adding instead of multiplying
+    ];
+
+    return {
+      questionDisplay: {
+        text: `Find the area of this isosceles triangle with base ${base} ${units} and equal sides ${legLength} ${units}.`
+      },
+      correctAnswer: `${area}\\text{ ${units}}^2`,
+      options: generateUniqueOptions([
+        `${area}\\text{ ${units}}^2`,
+        ...distractors.map(d => `${d}\\text{ ${units}}^2`)
+      ]),
+      explanation: `First find height: h = √(${legLength}² - ${halfBase}²) = ${height} ${units}. Then Area = ½ × ${base} × ${height} = ${area} ${units}²`,
+      visualization: createIsoscelesTriangle({
+        base,
+        height,
+        showEqualSides: true,
+        showHeight: true,
+        labelStyle: "custom",
+        labels: [`${base} ${units}`, `${legLength} ${units}`, `${legLength} ${units}`],
+        ...orientationConfig,
+        units,
+        sectionType: 'diagnostic',
+        style: {
+          fillColor: '#2ecc71',
+          fillOpacity: 0.2
+        }
+      })
+    };
+  }
+
+  else if (sectionType === 'examples') {
+    const solution = [
+      {
+        explanation: "To find the area of an isosceles triangle, we first need to find the height using Pythagoras' theorem",
+        formula: "h^2 + \\left(\\frac{\\text{base}}{2}\\right)^2 = \\text{leg}^2"
+      },
+      {
+        explanation: "Substitute the known values",
+        formula: `h^2 + \\left(\\frac{${base}}{2}\\right)^2 = ${legLength}^2`
+      },
+      {
+        explanation: "Simplify the base division",
+        formula: `h^2 + ${halfBase}^2 = ${legLength}^2`
+      },
+      {
+        explanation: "Calculate the squares",
+        formula: `h^2 + ${halfBase * halfBase} = ${legLength * legLength}`
+      },
+      {
+        explanation: "Rearrange to find h²",
+        formula: `h^2 = ${legLength * legLength} - ${halfBase * halfBase} = ${legLength * legLength - halfBase * halfBase}`
+      },
+      {
+        explanation: "Take the square root to find the height",
+        formula: `h = \\sqrt{${legLength * legLength - halfBase * halfBase}} = ${height}\\text{ ${units}}`
+      },
+      {
+        explanation: "Now calculate the area using the triangle area formula",
+        formula: `\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}`
+      },
+      {
+        explanation: "Substitute the values",
+        formula: `\\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${area}\\text{ ${units}}^2`
+      }
+    ];
+
+    return {
+      title: "Finding Area of Isosceles Triangle",
+      questionText: `Find the area of this isosceles triangle with base ${base} ${units} and equal sides ${legLength} ${units}.`,
+      visualization: createIsoscelesTriangle({
+        base,
+        height,
+        showEqualSides: true,
+        showHeight: false, // Will be toggled via interactive state
+        labelStyle: "custom",
+        labels: [`${base} ${units}`, `${legLength} ${units}`, `${legLength} ${units}`],
+        ...orientationConfig,
+        units,
+        sectionType: 'examples',
+        style: {
+          fillColor: '#2ecc71',
+          fillOpacity: 0.2
+        }
+      }),
+      solution
+    };
+  }
+
+  // Fallback to diagnostic format
+  return generateIsoscelesArea({ ...options, sectionType: 'diagnostic' });
+};
+
 // Export unified generators
 export const pythagorasGenerators = {
   // New unified functions
   generateFindHypotenuse,
   generateFindMissingSide,
   generateIdentifyHypotenuse,
+  generateIsoscelesArea,
 
   // Legacy aliases for backward compatibility (temporary)
   findHypotenuse: (options) => generateFindHypotenuse(options),
   findMissingSide: (options) => generateFindMissingSide(options),
   identifyHypotenuse: (options) => generateIdentifyHypotenuse(options),
+  isoscelesArea: (options) => generateIsoscelesArea(options),
 
   // Coordinate challenge for challenge section
   generateCoordinateChallenge: () => {

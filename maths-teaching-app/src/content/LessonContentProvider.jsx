@@ -8,6 +8,8 @@ import { ChallengeSection as PythagorasChallenge } from './topics/trigonometry-i
 import { StarterSection as SohcahtoaStarter } from './topics/trigonometry-i/sohcahtoa1';
 import { DiagnosticSection as SohcahtoaDiagnostic } from './topics/trigonometry-i/sohcahtoa1';
 import { ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
+import { StarterSection as Sohcahtoa2Starter } from './topics/trigonometry-i/sohcahtoa2';
+import { ExamplesSection as Sohcahtoa2Examples } from './topics/trigonometry-i/sohcahtoa2';
 import { StarterSection as AlgebraExpandingStarter } from './topics/algebra-i/expanding-brackets';
 import { DiagnosticSection as AlgebraExpandingDiagnostic } from './topics/algebra-i/expanding-brackets';
 import PlaceholderSection from '../components/sections/PlaceholderSection';
@@ -83,10 +85,23 @@ const LessonContentProvider = ({
     }
     // Lesson 3: SOHCAHTOA - Finding Angles
     else if (currentLessonId === 3) {
-      return <PlaceholderSection
-        sectionName={`SOHCAHTOA Lesson ${currentLessonId} - ${currentSection}`}
-        message="This lesson will be migrated to the new architecture soon."
-      />;
+      switch (currentSection) {
+        case 'starter':
+          return <Sohcahtoa2Starter
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
+        case 'diagnostic':
+          return <PlaceholderSection sectionName="Diagnostic" />;
+        case 'learn':
+          return <PlaceholderSection sectionName="Learn" />;
+        case 'examples':
+          return <PlaceholderSection sectionName="Examples" />;
+        case 'challenge':
+          return <PlaceholderSection sectionName="Challenge" />;
+        default:
+          return <PlaceholderSection sectionName="Unknown" message="Please select a valid section." />;
+      }
     }
     // Lesson 4: 3D Pythagoras & Applications
     else if (currentLessonId === 4) {

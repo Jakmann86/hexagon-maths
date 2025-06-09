@@ -1,8 +1,9 @@
-// src/components/math/shapes/triangles/IsoscelesTriangle.jsx - updated for compatibility
+// src/components/math/shapes/triangles/IsoscelesTriangle.jsx - updated for consistent positioning
 import React, { useMemo } from 'react';
 import BaseShape from '../base/BaseShape';
 import useShapeConfiguration from '../base/useShapeConfiguration';
 import { STANDARD_SHAPES } from '../../../../config/standardShapes';
+import { sections } from '../../../../config';
 
 /**
  * IsoscelesTriangle - Enhanced component with integrated label positioning
@@ -240,44 +241,47 @@ const IsoscelesTriangle = ({
         strokeWidth = 2
       } = config.style;
 
-      // Define the triangle points based on orientation
+      // FIXED DIMENSIONS FOR ALL TRIANGLES - same as RightTriangle
+      // This ensures consistent visualization while allowing labels to show actual values
+      const sectionConfig = sections.boardConfig[sectionType] || sections.boardConfig.default;
+      const fixedBase = sectionConfig.fixedDimensions.triangleBase;
+      const fixedHeight = sectionConfig.fixedDimensions.triangleHeight;
+
+      const triangleOffset = sectionConfig.triangleOffset || { x: 0, y: 0 };
+
+      // Define the triangle points based on orientation with FIXED dimensions and offset
       let points;
-
-      // Use fixed proportions for visualization consistency
-      const fixedBase = 3; 
-      const fixedHeight = 2.5;
-
       switch (resolvedOrientation) {
         case 'rotate90': // Apex on left
           points = [
-            [0, fixedBase / 2],          // Apex on left side
-            [fixedHeight, 0],            // Bottom right
-            [fixedHeight, fixedBase]          // Top right
+            [0 + triangleOffset.x, fixedBase / 2 + triangleOffset.y],          // Apex on left side
+            [fixedHeight + triangleOffset.x, 0 + triangleOffset.y],            // Bottom right
+            [fixedHeight + triangleOffset.x, fixedBase + triangleOffset.y]          // Top right
           ];
           break;
 
         case 'rotate180': // Apex on bottom
           points = [
-            [fixedBase / 2, 0],          // Apex on bottom
-            [fixedBase, fixedHeight],         // Top right
-            [0, fixedHeight]             // Top left
+            [fixedBase / 2 + triangleOffset.x, 0 + triangleOffset.y],          // Apex on bottom
+            [fixedBase + triangleOffset.x, fixedHeight + triangleOffset.y],         // Top right
+            [0 + triangleOffset.x, fixedHeight + triangleOffset.y]             // Top left
           ];
           break;
 
         case 'rotate270': // Apex on right
           points = [
-            [fixedHeight, fixedBase / 2],     // Apex on right side
-            [0, fixedBase],              // Top left
-            [0, 0]                  // Bottom left
+            [fixedHeight + triangleOffset.x, fixedBase / 2 + triangleOffset.y],     // Apex on right side
+            [0 + triangleOffset.x, fixedBase + triangleOffset.y],              // Top left
+            [0 + triangleOffset.x, 0 + triangleOffset.y]                  // Bottom left
           ];
           break;
 
         case 'default': // Apex on top
         default:
           points = [
-            [fixedBase / 2, fixedHeight],     // Apex on top
-            [0, 0],                 // Bottom left
-            [fixedBase, 0]               // Bottom right
+            [fixedBase / 2 + triangleOffset.x, fixedHeight + triangleOffset.y],     // Apex on top
+            [0 + triangleOffset.x, 0 + triangleOffset.y],                 // Bottom left
+            [fixedBase + triangleOffset.x, 0 + triangleOffset.y]               // Bottom right
           ];
           break;
       }
@@ -492,16 +496,16 @@ const IsoscelesTriangle = ({
    * Calculate appropriate bounding box based on triangle dimensions
    */
   const calculateBoundingBox = () => {
-    // Use standard shape dimensions if available
-    const standardShape = STANDARD_SHAPES.isoscelesTriangle;
+    // Get section-specific config (with fallback) - same as RightTriangle
+    const sectionConfig = sections.boardConfig[sectionType] || sections.boardConfig.default;
 
-    // If we have standard dimensions, use them for consistent bounding box
-    if (standardShape && standardShape.boundingBox) {
-      return standardShape.boundingBox;
+    // Use section-specific boundingBox if available
+    if (sectionConfig && sectionConfig.boundingBox) {
+      return sectionConfig.boundingBox;
     }
 
     // Otherwise calculate based on dimensions with padding
-    const padding = 2;
+    const padding = sectionConfig?.padding || 3;
     return [-padding, 5 + padding, 5 + padding, -padding];
   };
 
