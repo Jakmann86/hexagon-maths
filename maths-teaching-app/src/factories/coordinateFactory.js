@@ -80,6 +80,7 @@ export const createDistanceProblem = ({
     pointLabels: ['A', 'B'],
     segments: [[0, 1]], // Connect points A and B
     sectionType,
+    gridSize: 8,
     // Override with colors for Pythagoras challenge
     style: {
       pointColors: ['#e74c3c', '#3498db'], // Red for A, Blue for B
@@ -98,6 +99,7 @@ export const createDistanceProblem = ({
     showSolution,
     showRightTriangle,
     distanceProblem: true,
+    boundingBox: [-7, 7, 7, -7],
     // Add calculated values
     dx,
     dy,

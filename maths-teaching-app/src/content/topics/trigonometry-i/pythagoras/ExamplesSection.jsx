@@ -45,28 +45,18 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
         units: 'cm'
       });
       
-      // Note: Keep the legacy isoscelesArea for now since it's not yet unified
-      // TODO: Create unified isosceles generator in future iteration
-      const isoscelesExample = {
-        title: "Finding Area of Isosceles Triangle",
-        questionText: "Find the area of this isosceles triangle using Pythagoras' theorem.",
-        solution: [
-          {
-            explanation: "This is a placeholder for the isosceles triangle example.",
-            formula: "\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}"
-          }
-        ],
-        visualization: {
-          base: 8,
-          height: 4,
-          showEqualSides: true,
-          showHeight: false,
-          labelStyle: "custom",
-          labels: ["8 cm", "5 cm", "5 cm"],
-          units: 'cm',
-          sectionType: 'examples'
-        }
-      };
+      // *** FIXED: Use proper isosceles generator instead of hard-coded placeholder ***
+      const isoscelesExample = pythagorasGenerators.generateIsoscelesArea({
+        seed: seed + 2000, // Offset to ensure different questions
+        sectionType: 'examples',
+        difficulty: 'medium',
+        units: 'cm'
+      });
+      
+      // *** FORCE DEFAULT ORIENTATION for consistent display in examples ***
+      if (isoscelesExample.visualization) {
+        isoscelesExample.visualization.orientation = 'default';
+      }
       
       // Create examples array with configuration objects (not components yet)
       const exampleItems = [
@@ -84,6 +74,7 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
           visualizationConfig: missingSideExample.visualization
         },
         {
+          // *** FIXED: Use generated example instead of hard-coded ***
           title: isoscelesExample.title,
           question: isoscelesExample.questionText,
           steps: isoscelesExample.solution,

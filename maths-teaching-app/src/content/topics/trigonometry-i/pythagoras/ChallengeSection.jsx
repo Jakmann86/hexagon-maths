@@ -128,7 +128,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
       <CoordinateGrid
         {...visualizationConfig}
         sectionType="challenge"
-        containerHeight={350}
+        containerHeight={420}  // ← INCREASED from 350 to 420
         onBoardCreated={onBoardCreated}
         key={visualizationKey}
       />
@@ -210,9 +210,9 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
               </div>
 
               {/* Coordinate Grid Visualization */}
-              <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '400px' }}>
+              <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '460px' }}>  {/* ← INCREASED from 400px to 460px */}
                 {renderVisualization(currentChallenge)}
-              </div>
+              </div>F
 
               {/* Solution Steps - only visible when showAnswers is true */}
               {showAnswers && currentChallenge.solution && (

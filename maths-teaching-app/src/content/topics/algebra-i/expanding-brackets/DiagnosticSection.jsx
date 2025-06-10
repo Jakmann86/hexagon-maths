@@ -1,4 +1,4 @@
-// src/content/topics/algebra-i/expanding-brackets/DiagnosticSection.jsx
+// src/content/topics/algebra-i/expanding-brackets/DiagnosticSection.jsx - Updated
 import React from 'react';
 import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSectionBase';
 import { expressionsGenerators } from '../../../../generators/algebra/expressionsGenerator';
@@ -15,9 +15,9 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
                 sectionType: 'diagnostic'
             })
         },
-        substitution: {
-            title: 'Substitution',
-            generator: () => expressionsGenerators.generateSubstitution({
+        distributiveLaw: {
+            title: 'Distributive Law',
+            generator: () => expressionsGenerators.generateDistributiveLaw({
                 sectionType: 'diagnostic'
             })
         },

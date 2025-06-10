@@ -230,12 +230,30 @@ const DiagnosticSectionBase = ({
             <div className="space-y-6 w-full max-w-2xl mx-auto">
               {/* Question Display */}
               <div className="text-lg font-medium text-center text-gray-800 pb-4">
-                <ContentRenderer
-                  content={currentQuestion.questionDisplay}
-                  sectionType={themeKey}
-                  size="large"
-                  center={true}
-                />
+                {/* Handle object format with separate text and math */}
+                {currentQuestion.questionDisplay && typeof currentQuestion.questionDisplay === 'object' && currentQuestion.questionDisplay.text ? (
+                  <div className="space-y-3">
+                    {/* Descriptive text above */}
+                    <div className="text-gray-700">
+                      {currentQuestion.questionDisplay.text}
+                    </div>
+                    {/* Math expression below */}
+                    <ContentRenderer
+                      content={currentQuestion.questionDisplay.math}
+                      sectionType={themeKey}
+                      size="large"
+                      center={true}
+                    />
+                  </div>
+                ) : (
+                  /* Fallback for simple string format */
+                  <ContentRenderer
+                    content={currentQuestion.questionDisplay}
+                    sectionType={themeKey}
+                    size="large"
+                    center={true}
+                  />
+                )}
               </div>
 
               {/* Visualization */}

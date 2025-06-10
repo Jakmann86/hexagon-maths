@@ -87,7 +87,7 @@ const ContentRenderer = ({
     debugLog('Analyzing string content for auto-detection');
     const detectionResult = analyzeContent(content.toString());
     debugLog('Detection result', detectionResult);
-    
+
     return renderBasedOnDetection(content, detectionResult);
   }
 
@@ -126,7 +126,7 @@ const ContentRenderer = ({
    */
   function renderMixedContent(mixedContent) {
     const { text = '', math = '', layout = 'horizontal' } = mixedContent;
-    
+
     if (layout === 'vertical') {
       return (
         <div className={classNames('flex flex-col items-center gap-3', className)}>
@@ -148,6 +148,22 @@ const ContentRenderer = ({
    * Render as mathematical expression using MathDisplay
    */
   function renderMath(mathContent) {
+    // Preprocess math content for better LaTeX rendering
+    let processed = mathContent;
+
+    if (typeof processed === 'string') {
+      // Convert multiplication symbols and expressions
+      processed = processed.replace(/×/g, '\\times');
+      processed = processed.replace(/\s*\*\s*/g, ' \\times ');
+      processed = processed.replace(/(\d+)\s+times\s+(\d+)/gi, '$1 \\times $2');
+      processed = processed.replace(/(\d+)\s+x\s+(\d+)/gi, '$1 \\times $2');
+
+      // Handle proper spacing around operators
+      processed = processed.replace(/\s*\+\s*/g, ' + ');
+      processed = processed.replace(/\s*-\s*/g, ' - ');
+      processed = processed.replace(/\s*=\s*/g, ' = ');
+    }
+
     const mergedMathOptions = {
       size,
       center,
@@ -156,7 +172,7 @@ const ContentRenderer = ({
 
     return (
       <div className={classNames(className, { 'text-center': center })}>
-        <MathDisplay math={mathContent} {...mergedMathOptions} />
+        <MathDisplay math={processed} {...mergedMathOptions} />
       </div>
     );
   }
@@ -192,9 +208,9 @@ const ContentRenderer = ({
    */
   function renderHTML(htmlContent) {
     return (
-      <div 
+      <div
         className={classNames(className, { 'text-center': center })}
-        dangerouslySetInnerHTML={{ __html: htmlContent }} 
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
     );
   }
@@ -204,9 +220,9 @@ const ContentRenderer = ({
    */
   function renderBasedOnDetection(content, detectionResult) {
     const { shouldRenderAsMath, confidence, reasons } = detectionResult;
-    
+
     debugLog('Rendering decision', { shouldRenderAsMath, confidence, reasons });
-    
+
     if (shouldRenderAsMath) {
       return renderMath(content);
     } else {
@@ -223,7 +239,7 @@ const ContentRenderer = ({
     const trimmedText = text.trim();
     let score = 0;
     const reasons = [];
-    
+
     // Custom detection rules override
     const rules = {
       forceText: [], // Patterns that force text rendering
@@ -237,7 +253,7 @@ const ContentRenderer = ({
     if (rules.forceText.some(pattern => pattern.test(trimmedText))) {
       return { shouldRenderAsMath: false, confidence: 1.0, reasons: ['Force text override'] };
     }
-    
+
     if (rules.forceMath.some(pattern => pattern.test(trimmedText))) {
       return { shouldRenderAsMath: true, confidence: 1.0, reasons: ['Force math override'] };
     }
@@ -259,6 +275,9 @@ const ContentRenderer = ({
       { pattern: /\$/, score: 90, reason: 'Math delimiters' },
       { pattern: /^\d+(\.\d+)?$/, score: 80, reason: 'Pure number' },
       { pattern: /^\d+(\.\d+)?\s*(cm|m|mm|km|ft|in|°|degrees)(\^?\d+)?$/i, score: 85, reason: 'Number with units' },
+      { pattern: /×/, score: 70, reason: 'Multiplication symbol' },
+      { pattern: /\\times/, score: 70, reason: 'LaTeX times' },
+      { pattern: /\d+\s+(times|x)\s+\d+/i, score: 75, reason: 'Multiplication expression' },
       { pattern: /[+\-*/=<>^_{}]/, score: 25, reason: 'Math operators' },
       { pattern: /\\text\{/, score: 60, reason: 'LaTeX text command' },
       { pattern: /\\frac\{/, score: 70, reason: 'Fraction' },
@@ -306,7 +325,7 @@ const ContentRenderer = ({
 
     // Calculate confidence based on score magnitude
     const confidence = Math.min(Math.abs(score) / 100, 1.0);
-    
+
     // Determine final decision
     const shouldRenderAsMath = score > 0;
 
@@ -331,7 +350,7 @@ const ContentRenderer = ({
   function getFontClasses() {
     const fontMap = {
       normal: 'font-normal',
-      medium: 'font-medium', 
+      medium: 'font-medium',
       semibold: 'font-semibold',
       bold: 'font-bold'
     };
