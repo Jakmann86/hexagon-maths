@@ -1,4 +1,4 @@
-// src/content/LessonContentProvider.jsx - Updated for Algebra I Learn Section
+// src/content/LessonContentProvider.jsx - Fixed SOHCAHTOA2 Examples routing
 import React from 'react';
 import { StarterSection as PythagorasStarter } from './topics/trigonometry-i/pythagoras';
 import { DiagnosticSection as PythagorasDiagnostic } from './topics/trigonometry-i/pythagoras';
@@ -10,15 +10,15 @@ import { DiagnosticSection as SohcahtoaDiagnostic } from './topics/trigonometry-
 import { LearnSection as SohcahtoaLearn } from './topics/trigonometry-i/sohcahtoa1';
 import { ExamplesSection as SohcahtoaExamples } from './topics/trigonometry-i/sohcahtoa1';
 import { StarterSection as Sohcahtoa2Starter } from './topics/trigonometry-i/sohcahtoa2';
-import { ExamplesSection as Sohcahtoa2Examples } from './topics/trigonometry-i/sohcahtoa2';
+import { ExamplesSection as Sohcahtoa2Examples } from './topics/trigonometry-i/sohcahtoa2'; // ← This import exists
 import { StarterSection as AlgebraExpandingStarter } from './topics/algebra-i/expanding-brackets';
 import { DiagnosticSection as AlgebraExpandingDiagnostic } from './topics/algebra-i/expanding-brackets';
-import { LearnSection as AlgebraExpandingLearn } from './topics/algebra-i/expanding-brackets'; // NEW IMPORT
+import { LearnSection as AlgebraExpandingLearn } from './topics/algebra-i/expanding-brackets';
 import PlaceholderSection from '../components/sections/PlaceholderSection';
 
 /**
  * Component that renders the appropriate lesson section based on topic, lesson ID, and section
- * Now includes Algebra I Expanding Brackets Learn section
+ * Now includes properly hooked up SOHCAHTOA2 Examples section
  */
 const LessonContentProvider = ({
   currentTopic,
@@ -101,7 +101,10 @@ const LessonContentProvider = ({
         case 'learn':
           return <PlaceholderSection sectionName="Learn" />;
         case 'examples':
-          return <PlaceholderSection sectionName="Examples" />;
+          return <Sohcahtoa2Examples // ← FIXED: Now uses the actual component instead of placeholder
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
         case 'challenge':
           return <PlaceholderSection sectionName="Challenge" />;
         default:
@@ -142,7 +145,7 @@ const LessonContentProvider = ({
             currentLessonId={currentLessonId}
           />;
         case 'learn':
-          return <AlgebraExpandingLearn // ← UPDATED: Now uses the actual Learn component
+          return <AlgebraExpandingLearn
             currentTopic={currentTopic}
             currentLessonId={currentLessonId}
           />;

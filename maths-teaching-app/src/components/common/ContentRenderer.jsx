@@ -260,6 +260,7 @@ const ContentRenderer = ({
 
     // 1. Text indicators (negative scores - prefer text)
     const textIndicators = [
+      { pattern: /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F100}-\u{1F1FF}]|[\u{1F200}-\u{1F2FF}]/u, score: -200, reason: 'Contains emoji - force text' },
       { pattern: /^(none|all|true|false|yes|no|try|error)/i, score: -100, reason: 'Common text options' },
       { pattern: /(none of these|all of these|not possible|cannot|impossible)/i, score: -100, reason: 'Text phrases' },
       { pattern: /[a-zA-Z]{3,}/, score: -20, reason: 'Contains words' },
