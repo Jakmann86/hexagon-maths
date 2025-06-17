@@ -1,33 +1,40 @@
-// src/generators/puzzles/symbolPuzzleGenerators.js
+// src/generators/puzzles/symbolPuzzleGenerators.js - Enhanced with compatibility
 
 import _ from 'lodash';
 import { 
   getCurrentTheme, 
   getWeeklyTheme, 
   selectRandomSymbols, 
-  getThemeDisplayName 
+  getThemeDisplayName,
+  detectBrowserCompatibility,
+  getRandomTheme
 } from './symbolThemes.js';
 
 /**
- * Generate a Product-Sum puzzle (Type 1)
- * Format: 🍎 × 🍌 = 12, 🍎 + 🍌 = 7, solve for 🍎 and 🍌
+ * Enhanced symbol puzzle generator with automatic compatibility detection
  * 
  * @param {Object} options - Configuration options
- * @param {string} options.theme - Theme name (auto-selects if not provided)
+ * @param {string} options.theme - Theme name (auto-selects safe theme if not provided)
  * @param {number} options.weekNumber - Week number for theme selection
  * @param {string} options.difficulty - 'easy', 'medium', 'hard'
+ * @param {boolean} options.safeMode - Force safe mode (auto-detected if not specified)
  * @param {boolean} options.allowNegatives - Allow negative solutions
  * @returns {Object} Puzzle configuration object
  */
 export const generateProductSumPuzzle = (options = {}) => {
+  // Detect browser compatibility and enable safe mode if needed
+  const browserInfo = detectBrowserCompatibility();
+  const autoSafeMode = browserInfo.recommendSafeMode;
+  
   const {
-    theme = options.weekNumber ? getWeeklyTheme(options.weekNumber) : getCurrentTheme(),
+    theme = getCompatibleTheme(options.weekNumber, autoSafeMode || options.safeMode),
     difficulty = 'medium',
+    safeMode = autoSafeMode,
     allowNegatives = difficulty === 'hard'
   } = options;
 
-  // Select two symbols for the puzzle
-  const [symbol1, symbol2] = selectRandomSymbols(theme, 2);
+  // Select two symbols for the puzzle using safe mode if needed
+  const [symbol1, symbol2] = selectRandomSymbols(theme, 2, safeMode);
 
   // Generate integer solutions based on difficulty
   let a, b, product, sum;
@@ -110,30 +117,28 @@ export const generateProductSumPuzzle = (options = {}) => {
       theme: theme,
       themeDisplayName: getThemeDisplayName(theme),
       solutions: { [symbol1]: a, [symbol2]: b },
-      difficulty: difficulty
+      difficulty: difficulty,
+      compatibilityMode: safeMode // Add flag to indicate compatibility mode
     },
     difficulty: 'puzzle'
   };
 };
 
 /**
- * Generate a Sequential Chain Solving puzzle (Type 2)
- * Format: 🍎🍎🍎🍎🍎 = 25, 🍎 × 🍌 = 45, 🍊 ÷ 🍌 = 12, find 🍊
- * 
- * @param {Object} options - Configuration options
- * @param {string} options.theme - Theme name (auto-selects if not provided)
- * @param {number} options.weekNumber - Week number for theme selection
- * @param {string} options.difficulty - 'easy', 'medium', 'hard'
- * @returns {Object} Puzzle configuration object
+ * Enhanced chain solving puzzle with compatibility
  */
 export const generateChainSolvingPuzzle = (options = {}) => {
+  const browserInfo = detectBrowserCompatibility();
+  const autoSafeMode = browserInfo.recommendSafeMode;
+  
   const {
-    theme = options.weekNumber ? getWeeklyTheme(options.weekNumber) : getCurrentTheme(),
-    difficulty = 'medium'
+    theme = getCompatibleTheme(options.weekNumber, autoSafeMode || options.safeMode),
+    difficulty = 'medium',
+    safeMode = autoSafeMode
   } = options;
 
-  // Select three symbols for the puzzle
-  const [symbol1, symbol2, symbol3] = selectRandomSymbols(theme, 3);
+  // Select three symbols for the puzzle using safe mode if needed
+  const [symbol1, symbol2, symbol3] = selectRandomSymbols(theme, 3, safeMode);
 
   // Start with the first symbol value
   let value1, coefficient1, value2, value3;
@@ -153,7 +158,6 @@ export const generateChainSolvingPuzzle = (options = {}) => {
   const total1 = coefficient1 * value1;
   
   // Second equation: symbol1 × symbol2 = product
-  // Choose value2 that gives a reasonable product
   const productOptions = [6, 8, 10, 12, 15, 18, 20, 24, 30, 36, 42, 48];
   const validProducts = productOptions.filter(p => p % value1 === 0 && p / value1 <= 12);
   const product = _.sample(validProducts) || (value1 * _.random(3, 8));
@@ -205,45 +209,41 @@ export const generateChainSolvingPuzzle = (options = {}) => {
         [symbol3]: value3 
       },
       targetSymbol: symbol3,
-      difficulty: difficulty
+      difficulty: difficulty,
+      compatibilityMode: safeMode
     },
     difficulty: 'puzzle'
   };
 };
 
 /**
- * Generate a Simultaneous Equations puzzle (Type 3)
- * Format: 🍎🍎🍎 + 🍌🍌🍌🍌 = 29, 🍎🍎🍎 + 🍌🍌🍌🍌🍌🍌 = 39
- * 
- * @param {Object} options - Configuration options
- * @param {string} options.theme - Theme name (auto-selects if not provided)
- * @param {number} options.weekNumber - Week number for theme selection
- * @param {string} options.difficulty - 'easy', 'medium', 'hard'
- * @returns {Object} Puzzle configuration object
+ * Enhanced simultaneous equations puzzle with compatibility
  */
 export const generateSimultaneousPuzzle = (options = {}) => {
+  const browserInfo = detectBrowserCompatibility();
+  const autoSafeMode = browserInfo.recommendSafeMode;
+  
   const {
-    theme = options.weekNumber ? getWeeklyTheme(options.weekNumber) : getCurrentTheme(),
-    difficulty = 'medium'
+    theme = getCompatibleTheme(options.weekNumber, autoSafeMode || options.safeMode),
+    difficulty = 'medium',
+    safeMode = autoSafeMode
   } = options;
 
-  // Select two symbols for the puzzle
-  const [symbol1, symbol2] = selectRandomSymbols(theme, 2);
+  // Select two symbols for the puzzle using safe mode if needed
+  const [symbol1, symbol2] = selectRandomSymbols(theme, 2, safeMode);
 
   // Generate coefficients and values based on difficulty
   let coeff1a, coeff1b, coeff2a, coeff2b, value1, value2;
   
   if (difficulty === 'easy') {
-    // Easy: Small coefficients (2-4)
     coeff1a = _.random(2, 4);
     coeff1b = _.random(2, 4);
-    coeff2a = coeff1a; // Same coefficient for first symbol
-    coeff2b = coeff1b + _.random(1, 2); // Different for second symbol
+    coeff2a = coeff1a;
+    coeff2b = coeff1b + _.random(1, 2);
     
     value1 = _.random(2, 6);
     value2 = _.random(2, 6);
   } else if (difficulty === 'medium') {
-    // Medium: Moderate coefficients (2-5)
     coeff1a = _.random(2, 5);
     coeff1b = _.random(3, 6);
     coeff2a = coeff1a;
@@ -252,7 +252,6 @@ export const generateSimultaneousPuzzle = (options = {}) => {
     value1 = _.random(3, 8);
     value2 = _.random(2, 7);
   } else {
-    // Hard: Larger coefficients (3-7)
     coeff1a = _.random(3, 7);
     coeff1b = _.random(3, 7);
     coeff2a = coeff1a;
@@ -314,20 +313,45 @@ export const generateSimultaneousPuzzle = (options = {}) => {
         equation1: [coeff1a, coeff1b],
         equation2: [coeff2a, coeff2b]
       },
-      difficulty: difficulty
+      difficulty: difficulty,
+      compatibilityMode: safeMode
     },
     difficulty: 'puzzle'
   };
 };
 
 /**
- * Generate a random symbol puzzle (selects from all three types)
+ * Helper function to get a compatible theme
+ * @param {number} weekNumber - Week number for selection
+ * @param {boolean} safeMode - Force safe mode
+ * @returns {string} Compatible theme name
+ */
+const getCompatibleTheme = (weekNumber, safeMode = false) => {
+  if (safeMode) {
+    // Force high-compatibility themes
+    const safeThemes = ['fruit', 'animals', 'sports', 'food', 'shapesBasic'];
+    if (weekNumber) {
+      return safeThemes[(weekNumber - 1) % safeThemes.length];
+    }
+    return getRandomTheme(true); // true = safe mode
+  }
+  
+  // Normal theme selection
+  if (weekNumber) {
+    return getWeeklyTheme(weekNumber);
+  }
+  return getCurrentTheme();
+};
+
+/**
+ * Generate a random symbol puzzle with automatic compatibility detection
  * 
  * @param {Object} options - Configuration options
- * @param {string} options.theme - Theme name (auto-selects if not provided)
+ * @param {string} options.theme - Theme name (auto-selects safe theme if not provided)
  * @param {number} options.weekNumber - Week number for theme selection
  * @param {string} options.difficulty - 'easy', 'medium', 'hard'
  * @param {string[]} options.excludeTypes - Puzzle types to exclude
+ * @param {boolean} options.safeMode - Force safe mode (auto-detected if not specified)
  * @returns {Object} Puzzle configuration object
  */
 export const generateSymbolPuzzle = (options = {}) => {
@@ -362,22 +386,27 @@ export const generateSymbolPuzzle = (options = {}) => {
 };
 
 /**
- * Generate a sequence of symbol puzzles with increasing difficulty
- * Useful for creating a full set of starter questions
+ * Generate a sequence of symbol puzzles with compatibility awareness
  * 
  * @param {Object} options - Configuration options
  * @param {number} options.count - Number of puzzles to generate (default: 4)
- * @param {string} options.theme - Theme name (auto-selects if not provided)
+ * @param {string} options.theme - Theme name (auto-selects safe theme if not provided)
  * @param {number} options.weekNumber - Week number for theme selection
+ * @param {boolean} options.safeMode - Force safe mode (auto-detected if not specified)
  * @returns {Object[]} Array of puzzle configuration objects
  */
 export const generateSymbolPuzzleSequence = (options = {}) => {
   const {
     count = 4,
-    theme = options.weekNumber ? getWeeklyTheme(options.weekNumber) : getCurrentTheme(),
-    weekNumber
+    weekNumber,
+    safeMode
   } = options;
 
+  const browserInfo = detectBrowserCompatibility();
+  const autoSafeMode = browserInfo.recommendSafeMode;
+  const useSafeMode = safeMode !== undefined ? safeMode : autoSafeMode;
+
+  const theme = getCompatibleTheme(weekNumber, useSafeMode);
   const puzzles = [];
   const difficulties = ['easy', 'medium', 'hard'];
   const types = ['productSum', 'chainSolving', 'simultaneous'];
@@ -386,19 +415,26 @@ export const generateSymbolPuzzleSequence = (options = {}) => {
     const difficulty = difficulties[i % difficulties.length];
     const type = types[i % types.length];
     
+    const puzzleOptions = {
+      theme,
+      weekNumber,
+      difficulty,
+      safeMode: useSafeMode
+    };
+    
     let puzzle;
     switch (type) {
       case 'productSum':
-        puzzle = generateProductSumPuzzle({ theme, weekNumber, difficulty });
+        puzzle = generateProductSumPuzzle(puzzleOptions);
         break;
       case 'chainSolving':
-        puzzle = generateChainSolvingPuzzle({ theme, weekNumber, difficulty });
+        puzzle = generateChainSolvingPuzzle(puzzleOptions);
         break;
       case 'simultaneous':
-        puzzle = generateSimultaneousPuzzle({ theme, weekNumber, difficulty });
+        puzzle = generateSimultaneousPuzzle(puzzleOptions);
         break;
       default:
-        puzzle = generateProductSumPuzzle({ theme, weekNumber, difficulty });
+        puzzle = generateProductSumPuzzle(puzzleOptions);
     }
     
     puzzles.push(puzzle);
@@ -407,13 +443,35 @@ export const generateSymbolPuzzleSequence = (options = {}) => {
   return puzzles;
 };
 
-// Export all generators
+/**
+ * Debug function to test symbol rendering in current browser
+ * @param {string} themeName - Theme to test
+ * @returns {Object} Test results
+ */
+export const testSymbolRendering = (themeName = 'shapes') => {
+  const browserInfo = detectBrowserCompatibility();
+  const symbols = selectRandomSymbols(themeName, 6, false); // Test without safe mode
+  const safeSymbols = selectRandomSymbols(themeName, 6, true); // Test with safe mode
+  
+  return {
+    browserInfo,
+    originalSymbols: symbols,
+    safeSymbols: safeSymbols,
+    recommendation: browserInfo.recommendSafeMode ? 
+      'Use safe mode for better compatibility' : 
+      'All symbols should render correctly'
+  };
+};
+
+// Export all generators with enhanced compatibility
 export const symbolPuzzleGenerators = {
   generateProductSumPuzzle,
   generateChainSolvingPuzzle,
   generateSimultaneousPuzzle,
   generateSymbolPuzzle,
-  generateSymbolPuzzleSequence
+  generateSymbolPuzzleSequence,
+  testSymbolRendering,
+  getCompatibleTheme
 };
 
 export default symbolPuzzleGenerators;

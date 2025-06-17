@@ -10,27 +10,50 @@ import { symbolPuzzleGenerators } from '../../../../generators/puzzles/symbolPuz
 import SymbolPuzzleDisplay from '../../../../components/math/puzzles/SymbolPuzzleDisplay';
 
 /**
- * Generate a mixed SOHCAHTOA find side question for "Last Lesson"
- * Uses existing unified generators to create side-finding questions
+ * Generate a SOHCAHTOA side-finding question for "Last Lesson"
+ * Mixed questions using sin/cos/tan to find sides
  */
 const generateSohcahtoaSideQuestion = () => {
-    const question = sohcahtoaGenerators.generateFindMissingSideTrig({
-        sectionType: 'starter',
-        difficulty: 'easy',
-        units: 'cm'
+  // 50% chance of finding a side, 50% chance of finding angle (since this is transition to angle lesson)
+  const findAngle = Math.random() > 0.5;
+  
+  if (findAngle) {
+    // Generate angle-finding question (preview of this lesson)
+    const generatedQuestion = sohcahtoaGenerators.generateFindMissingAngleTrig({
+      sectionType: 'starter',
+      difficulty: 'easy'
     });
-
+    
     return {
-        question: question.questionText || question.question,
-        answer: question.answer,
-        visualization: (
-            <RightTriangle
-                {...question.visualization}
-                sectionType="starter"
-                orientation="default"
-            />
-        )
+      question: generatedQuestion.questionText || generatedQuestion.question,
+      answer: generatedQuestion.answer,
+      visualization: (
+        <RightTriangle 
+          {...generatedQuestion.visualization} 
+          sectionType="starter"
+          orientation="default"
+        />
+      )
     };
+  } else {
+    // Generate side-finding question (review of last lesson)
+    const generatedQuestion = sohcahtoaGenerators.generateFindMissingSideTrig({
+      sectionType: 'starter',
+      difficulty: 'easy'
+    });
+    
+    return {
+      question: generatedQuestion.questionText || generatedQuestion.question,
+      answer: generatedQuestion.answer,
+      visualization: (
+        <RightTriangle 
+          {...generatedQuestion.visualization} 
+          sectionType="starter"
+          orientation="default"
+        />
+      )
+    };
+  }
 };
 
 /**
@@ -38,92 +61,103 @@ const generateSohcahtoaSideQuestion = () => {
  * Uses existing unified generators to create both hypotenuse and side-finding questions
  */
 const generateMixedPythagorasQuestion = () => {
-    // Randomly decide whether to find the hypotenuse or a leg
-    const findHypotenuse = Math.random() > 0.5;
-
-    if (findHypotenuse) {
-        const question = pythagorasGenerators.generateFindHypotenuse({
-            sectionType: 'starter',
-            difficulty: 'easy',
-            units: 'cm'
-        });
-
-        return {
-            question: question.questionText || question.question,
-            answer: question.answer,
-            visualization: (
-                <RightTriangle
-                    {...question.visualization}
-                    sectionType="starter"
-                    orientation="default"
-                />
-            )
-        };
-    } else {
-        const question = pythagorasGenerators.generateFindMissingSide({
-            sectionType: 'starter',
-            difficulty: 'easy',
-            units: 'cm'
-        });
-
-        return {
-            question: question.questionText || question.question,
-            answer: question.answer,
-            visualization: (
-                <RightTriangle
-                    {...question.visualization}
-                    sectionType="starter"
-                    orientation="default"
-                />
-            )
-        };
-    }
+  // Randomly decide whether to find the hypotenuse or a leg
+  const findHypotenuse = Math.random() > 0.5;
+  
+  if (findHypotenuse) {
+    const generatedQuestion = pythagorasGenerators.generateFindHypotenuse({
+      sectionType: 'starter',
+      difficulty: 'easy'
+    });
+    
+    return {
+      question: generatedQuestion.questionText || generatedQuestion.question,
+      answer: generatedQuestion.answer,
+      visualization: (
+        <RightTriangle 
+          {...generatedQuestion.visualization} 
+          sectionType="starter"
+          orientation="default"
+        />
+      )
+    };
+  } else {
+    const generatedQuestion = pythagorasGenerators.generateFindMissingSide({
+      sectionType: 'starter',
+      difficulty: 'easy'
+    });
+    
+    return {
+      question: generatedQuestion.questionText || generatedQuestion.question,
+      answer: generatedQuestion.answer,
+      visualization: (
+        <RightTriangle 
+          {...generatedQuestion.visualization} 
+          sectionType="starter"
+          orientation="default"
+        />
+      )
+    };
+  }
 };
 
 /**
- * Generate an isosceles triangle area question for "Last Topic"
- * Uses the unified generator from pythagorasGenerators
+ * Generate isosceles triangle area question for "Last Topic"
+ * Uses Pythagoras to find height, then calculates area
  */
 const generateIsoscelesAreaQuestion = () => {
-    const question = pythagorasGenerators.generateIsoscelesArea({
-        sectionType: 'starter',
-        difficulty: 'easy',
-        units: 'cm'
-    });
-
-    return {
-        question: question.question,
-        answer: question.answer,
-        visualization: (
-            <IsoscelesTriangle
-                {...question.visualization}
-                showHeight={false}  // ← Add this line to hide the height
-                sectionType="starter"
-                orientation="default"
-            />
-        )
-    };
+  const generatedQuestion = pythagorasGenerators.generateIsoscelesArea({
+    sectionType: 'starter',
+    difficulty: 'easy'
+  });
+  
+  return {
+    question: generatedQuestion.questionText || generatedQuestion.question,
+    answer: generatedQuestion.answer,
+    visualization: (
+      <IsoscelesTriangle 
+        {...generatedQuestion.visualization} 
+        sectionType="starter"
+        orientation="default"
+      />
+    )
+  };
 };
 
 /**
  * Generate a Type 2 Chain Solving symbol puzzle for "Last Year"
+ * Modified to properly handle emoji rendering
  */
 const generateSymbolChainPuzzle = () => {
     const puzzle = symbolPuzzleGenerators.generateChainSolvingPuzzle({
         sectionType: 'starter',
         difficulty: 'easy'
     });
-
+    
+    // Create a special wrapper for the puzzle to signal special handling
     return {
+        // Add a special flag to indicate this is a symbol puzzle
+        isSymbolPuzzle: true,
+        
+        // Use raw text for question to prevent ContentRenderer from processing emojis
         question: puzzle.question,
+        
+        // Use raw text for answer
         answer: puzzle.answer,
+        
+        // Keep difficulty marker
+        difficulty: 'puzzle',
+        
+        // Store the puzzle display data directly
+        puzzleDisplay: puzzle.puzzleDisplay,
+        
+        // Create the visualization component directly
         visualization: (
-            <SymbolPuzzleDisplay
+            <SymbolPuzzleDisplay 
                 puzzleDisplay={puzzle.puzzleDisplay}
                 containerHeight="120px"
             />
-        ),
-        difficulty: 'puzzle'
+        )
     };
 };
 
@@ -147,22 +181,29 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
         generateSymbolChainPuzzle
     ];
 
-    // Custom rendering function for question visualizations
+    // Enhanced custom rendering function for question visualizations
     const renderQuestionContent = (questionData, questionType) => {
-
-        if (questionData.puzzleDisplay) {
+        // Special handling for symbol puzzles
+        if (questionData.isSymbolPuzzle || questionData.puzzleDisplay) {
             return (
                 <div className="w-full h-full flex items-center justify-center">
-                    <SymbolPuzzleDisplay puzzleDisplay={questionData.puzzleDisplay} />
+                    {/* Directly render the pre-built component or create one */}
+                    {React.isValidElement(questionData.visualization) 
+                        ? questionData.visualization
+                        : <SymbolPuzzleDisplay 
+                            puzzleDisplay={questionData.puzzleDisplay}
+                            containerHeight="120px"
+                          />
+                    }
                 </div>
             );
         }
-        // If there's no visualization data, return null
+        
+        // Standard rendering for other visualization types
         if (!questionData.visualization) return null;
 
         // If the visualization is already a React element (Pattern 2 conversion)
         if (React.isValidElement(questionData.visualization)) {
-            // Default rendering for components
             return (
                 <div className="w-full h-full flex items-center justify-center">
                     {questionData.visualization}

@@ -4,10 +4,11 @@ import { RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import ContentRenderer from '../common/ContentRenderer';
 import { useUI } from '../../context/UIContext';
+import SymbolPuzzleDisplay from '../math/puzzles/SymbolPuzzleDisplay';
 
 /**
  * QuestionDisplay component renders a single question card
- * Cleaned up for Pattern 2 architecture
+ * Enhanced to handle symbol puzzles properly
  */
 const QuestionDisplay = memo(({
     type,
@@ -23,7 +24,17 @@ const QuestionDisplay = memo(({
         lastYear: 'bg-orange-100 hover:bg-orange-200 border-orange-300'
     };
 
+    // === DEBUG LOGS START ===
+    console.log("=== QuestionDisplay Debug ===");
+    console.log("data:", data);
+    console.log("data.isSymbolPuzzle:", data?.isSymbolPuzzle);
+    console.log("data.puzzleDisplay:", data?.puzzleDisplay);
+    console.log("isSymbolPuzzle calculation:", data?.isSymbolPuzzle || data?.puzzleDisplay);
+    console.log("Taking plain text path:", data?.isSymbolPuzzle || data?.puzzleDisplay);
+    // === DEBUG LOGS END ===
+
     const isPuzzle = data?.difficulty === 'puzzle' || type === 'lastYear';
+    const isSymbolPuzzle = data?.isSymbolPuzzle || data?.puzzleDisplay;
 
     // Early return if no question data
     if (!data) {
@@ -51,23 +62,31 @@ const QuestionDisplay = memo(({
                 </h3>
 
                 <div className="flex-grow space-y-4">
-                    {/* Question Text */}
+                    {/* Question Text - Special handling for symbol puzzles */}
                     <div>
-                        <ContentRenderer
-                            content={data.question}
-                            sectionType="starter"
-                            size="normal"
-                            color="default"
-                            fontWeight="normal"
-                        />
-                    </div>
+                        {isSymbolPuzzle ? (
+                            <div className="text-gray-700 text-base leading-relaxed">
+                                {data.question}
+                            </div>
+                        ) : (
+                            <ContentRenderer
+                                content={data.question}
+                                sectionType="starter"
+                                size="normal"
+                                color="default"
+                                fontWeight="normal"
+                            />
+                        )}
+                    </div>F
 
                     {/* Visualization Container - Consistent height for all questions */}
                     <div className="visualization-container h-[120px] w-full flex justify-center items-center">
                         {data.visualization && (
                             renderQuestionContent ?
                                 renderQuestionContent(data, type) :
-                                <ContentRenderer content={data.visualization} />
+                                (isSymbolPuzzle && data.puzzleDisplay ?
+                                    <SymbolPuzzleDisplay puzzleDisplay={data.puzzleDisplay} containerHeight="120px" /> :
+                                    <ContentRenderer content={data.visualization} />)
                         )}
                     </div>
                 </div>
@@ -84,18 +103,25 @@ const QuestionDisplay = memo(({
                             style={{ maxHeight: '100px' }}
                             onClick={(e) => e.stopPropagation()} // ← DOUBLE PREVENTION
                         >
-                            <ContentRenderer
-                                content={data.answer}
-                                sectionType="starter"
-                                size="normal"
-                                color="default"
-                                fontWeight="normal"
-                                type={isPuzzle || data.difficulty === 'text' ? 'text' : 'auto'}
-                                textOptions={{
-                                    className: isPuzzle ? 'whitespace-pre-wrap text-gray-700 text-sm leading-relaxed' : 'text-gray-700'
-                                }}
-                                mathOptions={{ displayMode: true }}
-                            />
+                            {/* Special handling for symbol puzzle answers */}
+                            {isSymbolPuzzle ? (
+                                <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
+                                    {data.answer}
+                                </div>
+                            ) : (
+                                <ContentRenderer
+                                    content={data.answer}
+                                    sectionType="starter"
+                                    size="normal"
+                                    color="default"
+                                    fontWeight="normal"
+                                    type={isPuzzle || data.difficulty === 'text' ? 'text' : 'auto'}
+                                    textOptions={{
+                                        className: isPuzzle ? 'whitespace-pre-wrap text-gray-700 text-sm leading-relaxed' : 'text-gray-700'
+                                    }}
+                                    mathOptions={{ displayMode: true }}
+                                />
+                            )}
                         </div>
                     </div>
                 )}
@@ -108,7 +134,7 @@ QuestionDisplay.displayName = 'QuestionDisplay';
 
 /**
  * StarterSectionBase - Main component to display starter questions
- * Cleaned up and optimized for Pattern 2 architecture
+ * Enhanced to handle symbol puzzles properly
  */
 const StarterSectionBase = ({
     questionGenerators = [],
