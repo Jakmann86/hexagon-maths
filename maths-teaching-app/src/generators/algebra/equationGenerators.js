@@ -1,4 +1,4 @@
-// src/generators/algebra/equationGenerators.js
+// src/generators/algebra/equationGenerators.js - Enhanced with Phase 1 additions
 import _ from 'lodash';
 
 /**
@@ -127,6 +127,7 @@ Answer: ${originalNumber}`;
 /**
  * Generate a simple linear equation with x on both sides
  * For diagnostic or practice questions
+ * IMPROVED: Better error handling to avoid infinite recursion
  */
 export const generateLinearEquationBothSides = (options = {}) => {
     const {
@@ -134,18 +135,34 @@ export const generateLinearEquationBothSides = (options = {}) => {
         sectionType = 'diagnostic'
     } = options;
 
-    // Generate coefficients to ensure integer solution
-    const leftCoeff = _.random(2, 8);
-    const rightCoeff = _.random(1, leftCoeff - 1); // Ensure leftCoeff > rightCoeff
-    const leftConstant = _.random(1, 10);
-    const rightConstant = _.random(leftConstant + 1, 20); // Ensure positive solution
-    
-    // Calculate solution: (rightConstant - leftConstant) / (leftCoeff - rightCoeff)
-    const solution = (rightConstant - leftConstant) / (leftCoeff - rightCoeff);
-    
-    // Only generate if solution is a positive integer
-    if (solution <= 0 || solution !== Math.floor(solution)) {
-        return generateLinearEquationBothSides(options); // Regenerate if not integer
+    let attempts = 0;
+    let solution, leftCoeff, rightCoeff, leftConstant, rightConstant;
+
+    // Try up to 10 times to generate a valid equation
+    while (attempts < 10) {
+        // Generate coefficients to ensure integer solution
+        leftCoeff = _.random(2, 8);
+        rightCoeff = _.random(1, leftCoeff - 1); // Ensure leftCoeff > rightCoeff
+        leftConstant = _.random(1, 10);
+        rightConstant = _.random(leftConstant + 1, 20); // Ensure positive solution
+        
+        // Calculate solution: (rightConstant - leftConstant) / (leftCoeff - rightCoeff)
+        solution = (rightConstant - leftConstant) / (leftCoeff - rightCoeff);
+        
+        // Check if solution is a positive integer
+        if (solution > 0 && solution === Math.floor(solution) && solution <= 20) {
+            break; // Valid solution found
+        }
+        attempts++;
+    }
+
+    // Fallback to simple values if no valid solution found
+    if (attempts >= 10) {
+        leftCoeff = 5;
+        rightCoeff = 2;
+        leftConstant = 3;
+        rightConstant = 12;
+        solution = 3; // Manual calculation: (12-3)/(5-2) = 3
     }
     
     return {
@@ -159,7 +176,7 @@ export const generateLinearEquationBothSides = (options = {}) => {
             `${solution}`,
             `${solution + 1}`,
             `${solution - 1}`,
-            `${Math.floor(solution / 2)}`
+            `${Math.max(1, Math.floor(solution / 2))}`
         ].sort(() => Math.random() - 0.5),
         explanation: `Collect x terms: ${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}
                      Simplify: ${leftCoeff - rightCoeff}x = ${rightConstant - leftConstant}
@@ -181,15 +198,512 @@ export const generateLinearEquationBothSides = (options = {}) => {
     };
 };
 
+/**
+ * NEW: Generate simple rearrangement equations
+ * Handles equations like x + a = b, ax = c, etc.
+ * Section-aware output for starter, diagnostic, examples
+ */
+export const generateSimpleRearrangement = (options = {}) => {
+    const {
+        difficulty = 'medium',
+        sectionType = 'diagnostic'
+    } = options;
+
+    // Generate different types of simple rearrangement
+    const equationTypes = ['addition', 'subtraction', 'multiplication', 'division'];
+    const equationType = difficulty === 'easy' ? 
+        _.sample(['addition', 'multiplication']) : 
+        _.sample(equationTypes);
+
+    let equation, solution, workingSteps;
+
+    if (equationType === 'addition') {
+        // x + a = b
+        const a = _.random(2, 15);
+        const b = _.random(a + 1, 25);
+        solution = b - a;
+        equation = `x + ${a} = ${b}`;
+        workingSteps = [
+            `x + ${a} = ${b}`,
+            `x = ${b} - ${a}`,
+            `x = ${solution}`
+        ];
+    } 
+    else if (equationType === 'subtraction') {
+        // x - a = b
+        const a = _.random(2, 10);
+        const b = _.random(1, 15);
+        solution = a + b;
+        equation = `x - ${a} = ${b}`;
+        workingSteps = [
+            `x - ${a} = ${b}`,
+            `x = ${b} + ${a}`,
+            `x = ${solution}`
+        ];
+    }
+    else if (equationType === 'multiplication') {
+        // ax = b
+        const a = _.random(2, 8);
+        const quotient = _.random(2, 12);
+        const b = a * quotient;
+        solution = quotient;
+        equation = `${a}x = ${b}`;
+        workingSteps = [
+            `${a}x = ${b}`,
+            `x = ${b} \\div ${a}`,
+            `x = ${solution}`
+        ];
+    }
+    else { // division
+        // x/a = b
+        const a = _.random(2, 8);
+        const b = _.random(2, 10);
+        solution = a * b;
+        equation = `\\frac{x}{${a}} = ${b}`;
+        workingSteps = [
+            `\\frac{x}{${a}} = ${b}`,
+            `x = ${b} \\times ${a}`,
+            `x = ${solution}`
+        ];
+    }
+
+    // Section-aware output
+    if (sectionType === 'starter') {
+        return {
+            question: `Solve: ${equation}`,
+            answer: workingSteps.join('\\\\'),
+            difficulty: 'algebra'
+        };
+    }
+    
+    else if (sectionType === 'diagnostic') {
+        const incorrectOptions = [];
+        
+        // Generate misconception-based distractors
+        if (equationType === 'addition') {
+            incorrectOptions.push(`${solution + 2 * parseInt(equation.match(/\+ (\d+)/)[1])}`); // Added instead of subtracted
+            incorrectOptions.push(`${solution - 2}`); // Arithmetic error
+            incorrectOptions.push(`${parseInt(equation.match(/= (\d+)/)[1])}`); // Didn't solve, just copied answer
+        } else if (equationType === 'multiplication') {
+            incorrectOptions.push(`${solution * 2}`); // Multiplied instead of divided
+            incorrectOptions.push(`${Math.max(1, solution - 1)}`); // Arithmetic error
+            incorrectOptions.push(`${parseInt(equation.match(/= (\d+)/)[1])}`); // Copied the result
+        }
+
+        // Fill remaining slots with other plausible values
+        while (incorrectOptions.length < 3) {
+            const randomValue = _.random(1, 20);
+            if (randomValue !== solution && !incorrectOptions.includes(`${randomValue}`)) {
+                incorrectOptions.push(`${randomValue}`);
+            }
+        }
+
+        return {
+            questionDisplay: {
+                text: 'Solve for x:',
+                math: equation
+            },
+            correctAnswer: `${solution}`,
+            options: [`${solution}`, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+            explanation: `${workingSteps.join(' → ')}`
+        };
+    }
+    
+    else if (sectionType === 'examples') {
+        const stepExplanations = {
+            'addition': "Subtract the constant from both sides",
+            'subtraction': "Add the constant to both sides", 
+            'multiplication': "Divide both sides by the coefficient",
+            'division': "Multiply both sides by the denominator"
+        };
+
+        return {
+            title: "Simple Rearrangement",
+            questionText: `Solve ${equation}`,
+            solution: [
+                {
+                    explanation: "Start with the given equation",
+                    formula: equation
+                },
+                {
+                    explanation: stepExplanations[equationType],
+                    formula: workingSteps[1]
+                },
+                {
+                    explanation: "Calculate the result",
+                    formula: workingSteps[2]
+                }
+            ]
+        };
+    }
+
+    // Fallback
+    return generateSimpleRearrangement({ ...options, sectionType: 'diagnostic' });
+};
+
+/**
+ * NEW: Generate equations containing brackets
+ * Handles equations like 3(x + 2) = 15, 2(x - 1) = 8, etc.
+ * Section-aware output for starter, diagnostic, examples
+ */
+export const generateBracketEquation = (options = {}) => {
+    const {
+        difficulty = 'medium',
+        sectionType = 'diagnostic'
+    } = options;
+
+    // Generate equation components
+    const outsideCoeff = difficulty === 'easy' ? _.random(2, 4) : _.random(2, 6);
+    const insideConstant = _.random(1, 8);
+    const useSubtraction = difficulty !== 'easy' && Math.random() > 0.6;
+    
+    // Calculate the right-hand side to ensure integer solution
+    const desiredSolution = _.random(2, 12);
+    const rightSide = outsideCoeff * (desiredSolution + (useSubtraction ? -insideConstant : insideConstant));
+    
+    // Build equation
+    const equation = useSubtraction ? 
+        `${outsideCoeff}(x - ${insideConstant}) = ${rightSide}` :
+        `${outsideCoeff}(x + ${insideConstant}) = ${rightSide}`;
+
+    const solution = desiredSolution;
+
+    // Working steps
+    const step1 = `${outsideCoeff}(x ${useSubtraction ? '-' : '+'} ${insideConstant}) = ${rightSide}`;
+    const step2 = `x ${useSubtraction ? '-' : '+'} ${insideConstant} = ${Math.floor(rightSide / outsideCoeff)}`;
+    const step3 = `x = ${Math.floor(rightSide / outsideCoeff)} ${useSubtraction ? '+' : '-'} ${insideConstant}`;
+    const step4 = `x = ${solution}`;
+
+    // Section-aware output
+    if (sectionType === 'starter') {
+        return {
+            question: `Solve: ${equation}`,
+            answer: `${step1}\\\\${step2}\\\\${step3}\\\\${step4}`,
+            difficulty: 'algebra'
+        };
+    }
+    
+    else if (sectionType === 'diagnostic') {
+        const incorrectOptions = [
+            `${Math.floor(rightSide / outsideCoeff)}`, // Forgot to handle the constant inside brackets
+            `${solution + (useSubtraction ? -2 * insideConstant : 2 * insideConstant)}`, // Wrong operation with constant
+            `${Math.max(1, solution - 1)}` // Arithmetic error
+        ];
+
+        return {
+            questionDisplay: {
+                text: 'Solve for x:',
+                math: equation
+            },
+            correctAnswer: `${solution}`,
+            options: [`${solution}`, ...incorrectOptions].sort(() => Math.random() - 0.5),
+            explanation: `First divide both sides by ${outsideCoeff}, then ${useSubtraction ? 'add' : 'subtract'} ${insideConstant}`
+        };
+    }
+    
+    else if (sectionType === 'examples') {
+        return {
+            title: "Equations with Brackets",
+            questionText: `Solve ${equation}`,
+            solution: [
+                {
+                    explanation: "Start with the given equation",
+                    formula: step1
+                },
+                {
+                    explanation: `Divide both sides by ${outsideCoeff}`,
+                    formula: step2
+                },
+                {
+                    explanation: `${useSubtraction ? 'Add' : 'Subtract'} ${insideConstant} ${useSubtraction ? 'to' : 'from'} both sides`,
+                    formula: step3
+                },
+                {
+                    explanation: "Calculate the final answer",
+                    formula: step4
+                }
+            ]
+        };
+    }
+
+    return generateBracketEquation({ ...options, sectionType: 'diagnostic' });
+};
+
+/**
+ * NEW: Generate fractional equations (improved from division)
+ * Handles equations like x/3 + 2 = 5, (x+1)/4 = 3, etc.
+ * Section-aware output for starter, diagnostic, examples
+ */
+export const generateFractionalEquation = (options = {}) => {
+    const {
+        difficulty = 'medium',
+        sectionType = 'diagnostic'
+    } = options;
+
+    // Choose equation type
+    const equationTypes = difficulty === 'easy' ? 
+        ['simple_fraction'] : 
+        ['simple_fraction', 'fraction_plus_constant', 'fraction_with_addition'];
+    
+    const equationType = _.sample(equationTypes);
+    
+    let equation, solution, workingSteps;
+
+    if (equationType === 'simple_fraction') {
+        // x/a = b → x = ab
+        const a = _.random(2, 8);
+        const b = _.random(2, 10);
+        solution = a * b;
+        equation = `\\frac{x}{${a}} = ${b}`;
+        workingSteps = [
+            `\\frac{x}{${a}} = ${b}`,
+            `x = ${b} \\times ${a}`,
+            `x = ${solution}`
+        ];
+    }
+    else if (equationType === 'fraction_plus_constant') {
+        // x/a + b = c → x = a(c - b)
+        const a = _.random(2, 6);
+        const b = _.random(1, 5);
+        const c = _.random(b + 2, 15);
+        solution = a * (c - b);
+        equation = `\\frac{x}{${a}} + ${b} = ${c}`;
+        workingSteps = [
+            `\\frac{x}{${a}} + ${b} = ${c}`,
+            `\\frac{x}{${a}} = ${c} - ${b}`,
+            `\\frac{x}{${a}} = ${c - b}`,
+            `x = ${c - b} \\times ${a}`,
+            `x = ${solution}`
+        ];
+    }
+    else { // fraction_with_addition
+        // (x + a)/b = c → x = bc - a
+        const a = _.random(1, 6);
+        const b = _.random(2, 6);
+        const c = _.random(2, 8);
+        solution = b * c - a;
+        
+        // Ensure positive solution
+        if (solution <= 0) {
+            return generateFractionalEquation(options);
+        }
+        
+        equation = `\\frac{x + ${a}}{${b}} = ${c}`;
+        workingSteps = [
+            `\\frac{x + ${a}}{${b}} = ${c}`,
+            `x + ${a} = ${c} \\times ${b}`,
+            `x + ${a} = ${c * b}`,
+            `x = ${c * b} - ${a}`,
+            `x = ${solution}`
+        ];
+    }
+
+    // Section-aware output
+    if (sectionType === 'starter') {
+        return {
+            question: `Solve: ${equation}`,
+            answer: workingSteps.join('\\\\'),
+            difficulty: 'algebra'
+        };
+    }
+    
+    else if (sectionType === 'diagnostic') {
+        const incorrectOptions = [];
+        
+        // Generate misconception-based distractors
+        if (equationType === 'simple_fraction') {
+            const a = parseInt(equation.match(/frac{x}{(\d+)}/)[1]);
+            const b = parseInt(equation.match(/= (\d+)/)[1]);
+            incorrectOptions.push(`${Math.floor(b / a)}`); // Divided instead of multiplied
+            incorrectOptions.push(`${b}`); // Ignored the fraction
+            incorrectOptions.push(`${a}`); // Mixed up the numbers
+        } else if (equationType === 'fraction_plus_constant') {
+            incorrectOptions.push(`${solution / 2}`); // Forgot to multiply by denominator
+            incorrectOptions.push(`${solution + 4}`); // Arithmetic error
+            incorrectOptions.push(`${Math.abs(solution - 10)}`); // Different arithmetic error
+        }
+
+        // Fill remaining slots
+        while (incorrectOptions.length < 3) {
+            const randomValue = _.random(1, 30);
+            if (randomValue !== solution && !incorrectOptions.includes(`${randomValue}`)) {
+                incorrectOptions.push(`${randomValue}`);
+            }
+        }
+
+        return {
+            questionDisplay: {
+                text: 'Solve for x:',
+                math: equation
+            },
+            correctAnswer: `${solution}`,
+            options: [`${solution}`, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+            explanation: workingSteps.slice(-2).join(' → ')
+        };
+    }
+    
+    else if (sectionType === 'examples') {
+        return {
+            title: "Fractional Equations",
+            questionText: `Solve ${equation}`,
+            solution: workingSteps.map((step, index) => ({
+                explanation: index === 0 ? "Start with the given equation" :
+                           index === workingSteps.length - 1 ? "Calculate the final answer" :
+                           "Simplify step by step",
+                formula: step
+            }))
+        };
+    }
+
+    return generateFractionalEquation({ ...options, sectionType: 'diagnostic' });
+};
+
+/**
+ * NEW: Generate three-step equations with fractions/division
+ * Handles equations like (2x + 3)/4 = 5, (x - 1)/3 = 2, etc.
+ * Section-aware output for starter, diagnostic, examples
+ */
+export const generateThreeStepEquation = (options = {}) => {
+  const {
+    difficulty = 'medium',
+    sectionType = 'diagnostic'
+  } = options;
+
+  // Generate equation components: (ax + b)/c = d
+  let a, b, c, d, solution;
+
+  if (difficulty === 'easy') {
+    // Simple coefficients for clean solutions
+    a = _.random(1, 3);
+    b = _.random(1, 6);
+    c = _.random(2, 4);
+    d = _.random(2, 8);
+    
+    // Calculate solution: x = (cd - b)/a
+    solution = (c * d - b) / a;
+    
+    // Ensure integer solution by adjusting d if needed
+    if (solution !== Math.floor(solution)) {
+      d = Math.ceil((b + a * _.random(1, 8)) / c);
+      solution = (c * d - b) / a;
+    }
+  } else if (difficulty === 'medium') {
+    a = _.random(1, 4);
+    b = _.random(1, 8);
+    c = _.random(2, 5);
+    
+    // Work backwards from a nice solution
+    solution = _.random(1, 10);
+    d = (a * solution + b) / c;
+    
+    // Ensure d is a nice number
+    if (d !== Math.floor(d)) {
+      solution = _.random(2, 12);
+      d = Math.ceil((a * solution + b) / c);
+      solution = (c * d - b) / a;
+    }
+  } else {
+    // Hard: May have decimal solutions
+    a = _.random(2, 5);
+    b = _.random(1, 10);
+    c = _.random(2, 6);
+    d = _.random(3, 15);
+    solution = (c * d - b) / a;
+    
+    // Round to 1 decimal place if needed
+    solution = Math.round(solution * 10) / 10;
+  }
+
+  // Build equation string
+  const numerator = b >= 0 ? `${a}x + ${b}` : `${a}x - ${Math.abs(b)}`;
+  const equation = a === 1 ? 
+    (b >= 0 ? `\\frac{x + ${b}}{${c}} = ${d}` : `\\frac{x - ${Math.abs(b)}}{${c}} = ${d}`) :
+    `\\frac{${numerator}}{${c}} = ${d}`;
+
+  // Working steps for solution
+  const step1 = `${numerator} = ${d} \\times ${c}`;
+  const step2 = `${numerator} = ${d * c}`;
+  const step3 = a === 1 ? 
+    (b >= 0 ? `x = ${d * c} - ${b}` : `x = ${d * c} + ${Math.abs(b)}`) :
+    (b >= 0 ? `${a}x = ${d * c} - ${b}` : `${a}x = ${d * c} + ${Math.abs(b)}`);
+  const step4 = a === 1 ? `x = ${solution}` : `x = \\frac{${d * c - b}}{${a}} = ${solution}`;
+
+  // Section-aware output
+  if (sectionType === 'starter') {
+    return {
+      question: `Solve: ${equation}`,
+      answer: `${step1}\\\\${step2}\\\\${step3}\\\\${step4}`,
+      difficulty: 'algebra'
+    };
+  }
+  
+  else if (sectionType === 'diagnostic') {
+    const incorrectOptions = [
+      `${d}`, // Forgot to multiply by denominator
+      `${(d * c) / a}`, // Forgot to handle the constant b
+      `${solution + 1}`, // Arithmetic error
+      `${Math.abs(solution - 2)}` // Different arithmetic error
+    ].filter(opt => opt != solution); // Remove if accidentally correct
+
+    return {
+      questionDisplay: {
+        text: 'Solve for x:',
+        math: equation
+      },
+      correctAnswer: `${solution}`,
+      options: [`${solution}`, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+      explanation: `Multiply both sides by ${c}, then solve: x = ${solution}`
+    };
+  }
+  
+  else if (sectionType === 'examples') {
+    return {
+      title: "Three-Step Equations with Fractions",
+      questionText: `Solve ${equation}`,
+      solution: [
+        {
+          explanation: "Start with the equation",
+          formula: equation
+        },
+        {
+          explanation: `Multiply both sides by ${c} to clear the fraction`,
+          formula: step1
+        },
+        {
+          explanation: "Simplify the right side",
+          formula: step2
+        },
+        {
+          explanation: a === 1 ? 
+            (b >= 0 ? `Subtract ${b} from both sides` : `Add ${Math.abs(b)} to both sides`) :
+            (b >= 0 ? `Subtract ${b} from both sides` : `Add ${Math.abs(b)} to both sides`),
+          formula: step3
+        },
+        ...(a === 1 ? [] : [{
+          explanation: `Divide both sides by ${a}`,
+          formula: step4
+        }]),
+        {
+          explanation: "Final answer",
+          formula: `x = ${solution}`
+        }
+      ]
+    };
+  }
+
+  return generateThreeStepEquation({ ...options, sectionType: 'diagnostic' });
+};
+
 // Export grouped generators for future expansion
 export const equationGenerators = {
     generateDivisionEquation,
     generateThinkOfNumberQuestion,
-    generateLinearEquationBothSides
-    // Future generators can be added here:
-    // generateQuadraticEquation,
-    // generateSimultaneousEquations,
-    // etc.
+    generateLinearEquationBothSides,
+    generateThreeStepEquation,
+    generateSimpleRearrangement,
+    generateBracketEquation,
+    generateFractionalEquation
+    // Add more generators here as needed
 };
 
 export default equationGenerators;

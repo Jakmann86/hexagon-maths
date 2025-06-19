@@ -1,4 +1,4 @@
-// src/generators/algebra/expressionsGenerator.js - Updated with Unified Architecture
+// src/generators/algebra/expressionsGenerator.js - Enhanced with Phase 2 additions
 import _ from 'lodash';
 
 /**
@@ -340,7 +340,7 @@ export const generateExpandingDoubleBrackets = (options = {}) => {
 
   // UNIFIED MATH LOGIC
   let a, b, c, d;
-  
+
   if (difficulty === 'easy') {
     // Easy: Simple coefficients, mostly positive
     a = _.random(1, 2);
@@ -369,10 +369,10 @@ export const generateExpandingDoubleBrackets = (options = {}) => {
   const middleTerm = outerTerm + innerTerm; // combined x coefficient
 
   // Build bracket expressions
-  const bracket1 = a === 1 ? 
+  const bracket1 = a === 1 ?
     (b >= 0 ? `(x + ${b})` : `(x - ${Math.abs(b)})`) :
     (b >= 0 ? `(${a}x + ${b})` : `(${a}x - ${Math.abs(b)})`);
-    
+
   const bracket2 = c === 1 ?
     (d >= 0 ? `(x + ${d})` : `(x - ${Math.abs(d)})`) :
     (d >= 0 ? `(${c}x + ${d})` : `(${c}x - ${Math.abs(d)})`);
@@ -381,21 +381,21 @@ export const generateExpandingDoubleBrackets = (options = {}) => {
 
   // Build answer
   let answerTerms = [];
-  
+
   // x^2 term
   if (firstTerm === 1) {
     answerTerms.push('x^2');
   } else {
     answerTerms.push(`${firstTerm}x^2`);
   }
-  
+
   // x term
   if (middleTerm > 0) {
     answerTerms.push(middleTerm === 1 ? '+ x' : `+ ${middleTerm}x`);
   } else if (middleTerm < 0) {
     answerTerms.push(Math.abs(middleTerm) === 1 ? '- x' : `- ${Math.abs(middleTerm)}x`);
   }
-  
+
   // constant term
   if (lastTerm > 0) {
     answerTerms.push(`+ ${lastTerm}`);
@@ -426,12 +426,12 @@ export const generateExpandingDoubleBrackets = (options = {}) => {
     const incorrectAnswers = [
       // Mistake 1: Only multiply first and last terms
       `${firstTerm}x^2 + ${lastTerm}`,
-      
+
       // Mistake 2: Wrong middle term (forget one of outer/inner)
-      middleTerm >= 0 ? 
+      middleTerm >= 0 ?
         `${firstTerm}x^2 + ${outerTerm}x + ${lastTerm}` :
         `${firstTerm}x^2 - ${Math.abs(outerTerm)}x + ${lastTerm}`,
-      
+
       // Mistake 3: Add instead of multiply
       `${a + c}x^2 + ${b + d}x + ${Math.abs(b * d)}`
     ];
@@ -462,7 +462,7 @@ export const generateExpandingDoubleBrackets = (options = {}) => {
         formula: `\\text{Outer: } ${a === 1 ? '' : a}x \\times ${d} = ${outerTerm}x`
       },
       {
-        explanation: "Inner: Multiply the inside terms", 
+        explanation: "Inner: Multiply the inside terms",
         formula: `\\text{Inner: } ${b} \\times ${c === 1 ? '' : c}x = ${innerTerm}x`
       },
       {
@@ -491,9 +491,348 @@ export const generateExpandingDoubleBrackets = (options = {}) => {
 };
 
 /**
+ * NEW: Generate triple bracket expansion
+ * Handles expressions like (x+1)(x+2)(x+3)
+ * Adapts the double bracket logic for three brackets
+ */
+export const generateExpandingTripleBrackets = (options = {}) => {
+  const {
+    difficulty = 'medium',
+    sectionType = 'examples'
+  } = options;
+
+  // Generate simpler coefficients for triple brackets (complexity increases quickly)
+  const a = _.random(1, 2);
+  const b = _.random(1, 3);
+  const c = _.random(1, 2);
+  const d = _.random(1, 3);
+  const e = _.random(1, 2);
+  const f = _.random(1, 3);
+
+  // Keep mostly positive for manageability
+  const actualB = difficulty === 'hard' && Math.random() > 0.7 ? -b : b;
+  const actualD = difficulty === 'hard' && Math.random() > 0.7 ? -d : d;
+  const actualF = difficulty === 'hard' && Math.random() > 0.7 ? -f : f;
+
+  // Build bracket expressions
+  const bracket1 = a === 1 ?
+    (actualB >= 0 ? `(x + ${actualB})` : `(x - ${Math.abs(actualB)})`) :
+    (actualB >= 0 ? `(${a}x + ${actualB})` : `(${a}x - ${Math.abs(actualB)})`);
+
+  const bracket2 = c === 1 ?
+    (actualD >= 0 ? `(x + ${actualD})` : `(x - ${Math.abs(actualD)})`) :
+    (actualD >= 0 ? `(${c}x + ${actualD})` : `(${c}x - ${Math.abs(actualD)})`);
+
+  const bracket3 = e === 1 ?
+    (actualF >= 0 ? `(x + ${actualF})` : `(x - ${Math.abs(actualF)})`) :
+    (actualF >= 0 ? `(${e}x + ${actualF})` : `(${e}x - ${Math.abs(actualF)})`);
+
+  const expression = `${bracket1}${bracket2}${bracket3}`;
+
+  // For simplicity, we'll show the method rather than compute the full expansion
+  // In real teaching, students would expand two brackets first, then multiply by the third
+
+  if (sectionType === 'starter') {
+    return {
+      question: `Expand ${expression}`,
+      answer: `First expand ${bracket1}${bracket2}, then multiply by ${bracket3}`,
+      difficulty: 'algebra'
+    };
+  }
+
+  else if (sectionType === 'examples') {
+    const solution = [
+      {
+        explanation: "When expanding three brackets, expand two brackets first",
+        formula: `${expression} = [${bracket1}${bracket2}] \\times ${bracket3}`
+      },
+      {
+        explanation: `First expand ${bracket1}${bracket2} using FOIL`,
+        formula: "\\text{Use the double bracket method first}"
+      },
+      {
+        explanation: "Then multiply the result by the third bracket",
+        formula: "\\text{Multiply each term by each term in the third bracket}"
+      },
+      {
+        explanation: "Finally, collect like terms to get the cubic expression",
+        formula: "\\text{Result will be a cubic expression in } x"
+      }
+    ];
+
+    return {
+      title: "Expanding Triple Brackets",
+      questionText: `Expand ${expression}`,
+      solution
+    };
+  }
+
+  return generateExpandingTripleBrackets({ ...options, sectionType: 'examples' });
+};
+
+/**
+ * NEW: Generate basic powers and indices operations
+ * Handles simple index laws like x² × x³ = x⁵
+ */
+export const generateBasicIndices = (options = {}) => {
+  const {
+    difficulty = 'medium',
+    sectionType = 'diagnostic'
+  } = options;
+
+  const operationTypes = ['multiply', 'divide', 'power_of_power', 'evaluate'];
+  const operationType = difficulty === 'easy' ?
+    _.sample(['multiply', 'evaluate']) :
+    _.sample(operationTypes);
+
+  let question, answer, workingSteps;
+
+  if (operationType === 'multiply') {
+    // x^a × x^b = x^(a+b)
+    const a = _.random(2, 6);
+    const b = _.random(2, 6);
+    const result = a + b;
+
+    question = `x^${a} \\times x^${b}`;
+    answer = `x^${result}`;
+    workingSteps = [`x^${a} \\times x^${b} = x^{${a}+${b}} = x^${result}`];
+  }
+
+  else if (operationType === 'divide') {
+    // x^a ÷ x^b = x^(a-b)
+    const a = _.random(5, 10);
+    const b = _.random(2, a - 1);
+    const result = a - b;
+
+    question = `x^${a} \\div x^${b}`;
+    answer = `x^${result}`;
+    workingSteps = [`x^${a} \\div x^${b} = x^{${a}-${b}} = x^${result}`];
+  }
+
+  else if (operationType === 'power_of_power') {
+    // (x^a)^b = x^(ab)
+    const a = _.random(2, 4);
+    const b = _.random(2, 4);
+    const result = a * b;
+
+    question = `(x^${a})^${b}`;
+    answer = `x^${result}`;
+    workingSteps = [`(x^${a})^${b} = x^{${a} \\times ${b}} = x^${result}`];
+  }
+
+  else { // evaluate
+    // Simple number powers like 2³ = 8
+    const base = _.random(2, 5);
+    const power = _.random(2, 4);
+    const result = Math.pow(base, power);
+
+    question = `${base}^${power}`;
+    answer = `${result}`;
+    workingSteps = [`${base}^${power} = ${base} \\times ${base}${power > 2 ? ` \\times ${base}` : ''}${power > 3 ? ` \\times ${base}` : ''} = ${result}`];
+  }
+
+  // Section-aware output
+  if (sectionType === 'starter') {
+    return {
+      question: `Calculate: ${question}`,
+      answer: workingSteps[0],
+      difficulty: 'algebra'
+    };
+  }
+
+  else if (sectionType === 'diagnostic') {
+    const incorrectOptions = [];
+
+    if (operationType === 'multiply') {
+      const a = parseInt(question.match(/x\^(\d+)/)[1]);
+      const b = parseInt(question.match(/x\^(\d+).*x\^(\d+)/)[2]);
+      incorrectOptions.push(`x^${a * b}`); // Multiplied powers instead of adding
+      incorrectOptions.push(`x^${a}x^${b}`); // Didn't simplify
+      incorrectOptions.push(`x^${Math.abs(a - b)}`); // Subtracted instead of added
+    } else if (operationType === 'evaluate') {
+      const base = parseInt(question.match(/(\d+)\^/)[1]);
+      const power = parseInt(question.match(/\^(\d+)/)[1]);
+      incorrectOptions.push(`${base * power}`); // Multiplied instead of power
+      incorrectOptions.push(`${base + power}`); // Added instead of power
+      incorrectOptions.push(`${Math.pow(base, power) + 1}`); // Calculation error
+    }
+
+    // Fill remaining slots
+    while (incorrectOptions.length < 3) {
+      const randomValue = operationType === 'evaluate' ? _.random(10, 50) : `x^${_.random(2, 15)}`;
+      if (!incorrectOptions.includes(randomValue) && randomValue !== answer) {
+        incorrectOptions.push(randomValue);
+      }
+    }
+
+    return {
+      questionDisplay: {
+        text: 'Calculate:',
+        math: question
+      },
+      correctAnswer: answer,
+      options: [answer, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+      explanation: workingSteps[0]
+    };
+  }
+
+  else if (sectionType === 'examples') {
+    const ruleExplanations = {
+      'multiply': "When multiplying powers with the same base, add the indices",
+      'divide': "When dividing powers with the same base, subtract the indices",
+      'power_of_power': "When raising a power to a power, multiply the indices",
+      'evaluate': "Calculate the value by repeated multiplication"
+    };
+
+    return {
+      title: "Powers and Indices",
+      questionText: `Calculate ${question}`,
+      solution: [
+        {
+          explanation: "Start with the given expression",
+          formula: question
+        },
+        {
+          explanation: ruleExplanations[operationType],
+          formula: workingSteps[0]
+        }
+      ]
+    };
+  }
+
+  return generateBasicIndices({ ...options, sectionType: 'diagnostic' });
+};
+
+/**
+ * NEW: Generate expression classification questions
+ * Identifies whether expressions are linear, quadratic, or cubic
+ */
+export const generateExpressionClassification = (options = {}) => {
+  const {
+    difficulty = 'medium',
+    sectionType = 'diagnostic'
+  } = options;
+
+  // Generate different types of expressions
+  const expressionTypes = ['linear', 'quadratic', 'cubic'];
+  const targetType = _.sample(expressionTypes);
+
+  let expression, correctAnswer;
+
+  if (targetType === 'linear') {
+    // Generate linear expression: ax + b
+    const a = _.random(1, 8);
+    const b = _.random(1, 10);
+    const useNegative = Math.random() > 0.5;
+
+    expression = useNegative ?
+      `${a}x - ${b}` :
+      `${a}x + ${b}`;
+    correctAnswer = 'Linear';
+  }
+
+  else if (targetType === 'quadratic') {
+    // Generate quadratic expression: ax² + bx + c
+    const a = _.random(1, 5);
+    const b = _.random(1, 8);
+    const c = _.random(1, 10);
+
+    // Sometimes omit the linear term
+    const includeLinear = difficulty !== 'easy' || Math.random() > 0.3;
+
+    if (includeLinear) {
+      expression = `${a}x^2 + ${b}x + ${c}`;
+    } else {
+      expression = `${a}x^2 + ${c}`;
+    }
+    correctAnswer = 'Quadratic';
+  }
+
+  else { // cubic
+    // Generate cubic expression: ax³ + bx² + cx + d
+    const a = _.random(1, 3);
+    const b = _.random(1, 5);
+    const c = _.random(1, 6);
+    const d = _.random(1, 8);
+
+    // For simplicity, sometimes omit middle terms
+    const complexity = difficulty === 'easy' ? 'simple' : _.sample(['simple', 'complex']);
+
+    if (complexity === 'simple') {
+      expression = `${a}x^3 + ${d}`;
+    } else {
+      expression = `${a}x^3 + ${b}x^2 + ${c}x + ${d}`;
+    }
+    correctAnswer = 'Cubic';
+  }
+
+  // Section-aware output
+  if (sectionType === 'starter') {
+    return {
+      question: `What type of expression is ${expression}?`,
+      answer: `${expression} is a ${correctAnswer.toLowerCase()} expression because the highest power of x is ${targetType === 'linear' ? '1' : targetType === 'quadratic' ? '2' : '3'}`,
+      difficulty: 'algebra'
+    };
+  }
+
+  else if (sectionType === 'diagnostic') {
+    const allTypes = ['Linear', 'Quadratic', 'Cubic'];
+    const incorrectOptions = allTypes.filter(type => type !== correctAnswer);
+
+    // Add a "None of these" option occasionally
+    if (difficulty === 'hard' && Math.random() > 0.7) {
+      incorrectOptions.push('None of these');
+    }
+
+    return {
+      questionDisplay: {
+        text: 'What type of expression is:',
+        math: expression
+      },
+      correctAnswer,
+      options: [correctAnswer, ...incorrectOptions].sort(() => Math.random() - 0.5),
+      explanation: `This is ${correctAnswer.toLowerCase()} because the highest power of x is ${targetType === 'linear' ? '1' : targetType === 'quadratic' ? '2' : '3'}`
+    };
+  }
+
+  else if (sectionType === 'examples') {
+    const powerExplanations = {
+      'linear': "The highest power of x is 1",
+      'quadratic': "The highest power of x is 2 (x²)",
+      'cubic': "The highest power of x is 3 (x³)"
+    };
+
+    return {
+      title: "Recognising Expression Types",
+      questionText: `Classify the expression ${expression}`,
+      solution: [
+        {
+          explanation: "Look for the highest power of the variable x",
+          formula: expression
+        },
+        {
+          explanation: powerExplanations[targetType],
+          formula: `\\text{This is a ${correctAnswer.toLowerCase()} expression}`
+        },
+        {
+          explanation: `${correctAnswer} expressions have the general form: ${targetType === 'linear' ? 'ax + b' :
+              targetType === 'quadratic' ? 'ax² + bx + c' :
+                'ax³ + bx² + cx + d'
+            }`,
+          formula: `\\text{where a, b, c, d are constants}`
+        }
+      ]
+    };
+  }
+
+  return generateExpressionClassification({ ...options, sectionType: 'diagnostic' });
+};
+
+/**
  * Unified distributive law question generator
  * Handles starter, diagnostic, and examples sections with section-aware output
  * Creates questions about which calculation represents a distributive law expansion
+ * FIXED: Ensures distractors are not valid alternative splits
  */
 export const generateDistributiveLaw = (options = {}) => {
   const {
@@ -532,10 +871,19 @@ export const generateDistributiveLaw = (options = {}) => {
     if (useRoundNumber) {
       // Split to a round number
       const roundNumbers = [10, 20, 25, 30];
-      const roundNum = _.sample(roundNumbers.filter(n => Math.abs(n - mainNum1) <= 5));
-      splitNum = roundNum;
-      remainderNum = mainNum1 - roundNum;
-      isPositive = remainderNum >= 0;
+      const validRoundNumbers = roundNumbers.filter(n => Math.abs(n - mainNum1) <= 5 && n !== mainNum1);
+      if (validRoundNumbers.length > 0) {
+        const roundNum = _.sample(validRoundNumbers);
+        splitNum = roundNum;
+        remainderNum = mainNum1 - roundNum;
+        isPositive = remainderNum >= 0;
+      } else {
+        // Fallback to simple split
+        const splitPoint = _.random(1, mainNum1 - 1);
+        splitNum = splitPoint;
+        remainderNum = mainNum1 - splitPoint;
+        isPositive = true;
+      }
     } else {
       // Split into two reasonable parts
       const splitPoint = _.random(1, mainNum1 - 1);
@@ -567,43 +915,71 @@ export const generateDistributiveLaw = (options = {}) => {
   }
 
   else if (sectionType === 'diagnostic') {
-    // Generate incorrect answers with common mistakes
+    // Generate incorrect answers that are NOT valid distributive splits
     const incorrectAnswers = [];
 
-    // Mistake 1: Wrong split
-    const wrongSplit1 = Math.floor(mainNum1 / 2);
-    const wrongSplit2 = mainNum1 - wrongSplit1;
-    incorrectAnswers.push(`${wrongSplit1} \\times ${mainNum2} + ${wrongSplit2} \\times ${mainNum2}`);
-
-    // Mistake 2: Adding the numbers instead of using distributive law
+    // Mistake 1: Adding the numbers instead of using distributive law
     incorrectAnswers.push(`${mainNum1 + mainNum2} \\times 2`);
 
-    // Mistake 3: Wrong operation in the split
+    // Mistake 2: Wrong operation in the split
     if (isPositive) {
       incorrectAnswers.push(`${splitNum} \\times ${mainNum2} - ${remainderNum} \\times ${mainNum2}`);
     } else {
       incorrectAnswers.push(`${splitNum} \\times ${mainNum2} + ${Math.abs(remainderNum)} \\times ${mainNum2}`);
     }
 
-    // Ensure uniqueness
-    const uniqueOptions = [correctDistributive];
-    for (const option of incorrectAnswers) {
-      if (!uniqueOptions.includes(option) && uniqueOptions.length < 4) {
-        uniqueOptions.push(option);
+    // Mistake 3: Multiplying the split numbers instead of using distributive law
+    incorrectAnswers.push(`${splitNum * Math.abs(remainderNum)} \\times ${mainNum2}`);
+
+    // Mistake 4: Using the wrong total (off by 1)
+    const wrongTotal = mainNum1 + 1;
+    const wrongSplit = Math.floor(wrongTotal / 2);
+    const wrongRemainder = wrongTotal - wrongSplit;
+    incorrectAnswers.push(`${wrongSplit} \\times ${mainNum2} + ${wrongRemainder} \\times ${mainNum2}`);
+
+    // Mistake 5: Doubling one of the numbers
+    incorrectAnswers.push(`${mainNum1} \\times ${mainNum2 * 2}`);
+
+    // Function to check if an answer is a valid distributive split
+    const isValidSplit = (answer) => {
+      // Extract numbers from expressions like "15 × 20 + 3 × 20"
+      const addPattern = /(\d+) \\times (\d+) \+ (\d+) \\times (\d+)/;
+      const subPattern = /(\d+) \\times (\d+) - (\d+) \\times (\d+)/;
+
+      let matches = answer.match(addPattern);
+      if (matches) {
+        const [, num1, mult1, num2, mult2] = matches;
+        // Check if multipliers are the same and split adds up to mainNum1
+        return parseInt(mult1) === mainNum2 && parseInt(mult2) === mainNum2 &&
+          (parseInt(num1) + parseInt(num2)) === mainNum1;
+      }
+
+      matches = answer.match(subPattern);
+      if (matches) {
+        const [, num1, mult1, num2, mult2] = matches;
+        // Check if multipliers are the same and split subtracts to mainNum1
+        return parseInt(mult1) === mainNum2 && parseInt(mult2) === mainNum2 &&
+          (parseInt(num1) - parseInt(num2)) === mainNum1;
+      }
+
+      return false;
+    };
+
+    // Filter out any accidentally valid splits
+    const filteredIncorrect = incorrectAnswers.filter(answer => !isValidSplit(answer));
+
+    // Take first 3 filtered incorrect answers
+    const finalIncorrect = filteredIncorrect.slice(0, 3);
+
+    // If we don't have enough, add some clearly wrong ones
+    while (finalIncorrect.length < 3) {
+      const wrongAnswer = `${_.random(5, 30)} \\times ${_.random(10, 40)} + ${_.random(5, 30)} \\times ${_.random(10, 40)}`;
+      if (!isValidSplit(wrongAnswer) && !finalIncorrect.includes(wrongAnswer)) {
+        finalIncorrect.push(wrongAnswer);
       }
     }
 
-    // Fill with additional wrong options if needed
-    while (uniqueOptions.length < 4) {
-      const randomSplit = _.random(5, 15);
-      const randomRemainder = mainNum1 - randomSplit;
-      if (randomRemainder > 0) {
-        const newOption = `${randomSplit} \\times ${mainNum2} + ${randomRemainder} \\times ${mainNum2}`;
-        if (!uniqueOptions.includes(newOption)) {
-          uniqueOptions.push(newOption);
-        }
-      }
-    }
+    const uniqueOptions = [correctDistributive, ...finalIncorrect];
 
     return {
       questionDisplay: {
@@ -831,7 +1207,7 @@ export const generateFactorisingExpression = (options = {}) => {
 
 // Export unified generators
 export const expressionsGenerators = {
-  // New unified functions
+  // Existing unified functions
   generateExpandingSingleBrackets,
   generateExpandingDoubleBrackets,
   generateSimplifyingExpression,
@@ -839,8 +1215,14 @@ export const expressionsGenerators = {
   generateFactorisingExpression,
   generateDistributiveLaw,
 
+  // NEW Phase 2 additions:
+  generateExpandingTripleBrackets,
+  generateBasicIndices,
+  generateExpressionClassification,
+
   // Legacy aliases for backward compatibility (temporary)
   expandingSingleBrackets: (options) => generateExpandingSingleBrackets(options),
+  expandingDoubleBrackets: (options) => generateExpandingDoubleBrackets(options),
   simplifyingExpression: (options) => generateSimplifyingExpression(options),
   substitution: (options) => generateSubstitution(options),
   factorisingExpression: (options) => generateFactorisingExpression(options),

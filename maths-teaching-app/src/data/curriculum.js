@@ -68,7 +68,7 @@ export const curriculum = {
                 title: "Solving Equations with Unknown on Both Sides",
                 sections: {
                     starter: 'linear-equations/StarterSection',
-                    diagnostic: 'linear-equations',
+                    diagnostic: 'linear-equations/DiagnosticSection',
                     learn: 'linear-equations',
                     examples: 'linear-equations',
                     challenge: 'linear-equations'
