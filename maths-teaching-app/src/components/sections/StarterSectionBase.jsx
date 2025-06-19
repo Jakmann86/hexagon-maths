@@ -1,5 +1,5 @@
 // src/components/sections/StarterSectionBase.jsx
-import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import ContentRenderer from '../common/ContentRenderer';
@@ -8,7 +8,7 @@ import SymbolPuzzleDisplay from '../math/puzzles/SymbolPuzzleDisplay';
 
 /**
  * QuestionDisplay component renders a single question card
- * Enhanced to handle symbol puzzles properly
+ * Handles both regular questions and symbol puzzles
  */
 const QuestionDisplay = memo(({
     type,
@@ -17,6 +17,7 @@ const QuestionDisplay = memo(({
     showAnswers,
     renderQuestionContent
 }) => {
+    // Color styles for different question types
     const typeStyles = {
         lastLesson: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
         lastWeek: 'bg-blue-100 hover:bg-blue-200 border-blue-300',
@@ -24,15 +25,7 @@ const QuestionDisplay = memo(({
         lastYear: 'bg-orange-100 hover:bg-orange-200 border-orange-300'
     };
 
-    // === DEBUG LOGS START ===
-    console.log("=== QuestionDisplay Debug ===");
-    console.log("data:", data);
-    console.log("data.isSymbolPuzzle:", data?.isSymbolPuzzle);
-    console.log("data.puzzleDisplay:", data?.puzzleDisplay);
-    console.log("isSymbolPuzzle calculation:", data?.isSymbolPuzzle || data?.puzzleDisplay);
-    console.log("Taking plain text path:", data?.isSymbolPuzzle || data?.puzzleDisplay);
-    // === DEBUG LOGS END ===
-
+    // Determine question characteristics
     const isPuzzle = data?.difficulty === 'puzzle' || type === 'lastYear';
     const isSymbolPuzzle = data?.isSymbolPuzzle || data?.puzzleDisplay;
 
@@ -57,18 +50,24 @@ const QuestionDisplay = memo(({
             border-2
         `}>
             <CardContent className="flex flex-col h-full">
+                {/* Question Title */}
                 <h3 className="font-bold mb-2 text-lg text-gray-700">
                     {title}
                 </h3>
 
                 <div className="flex-grow space-y-4">
-                    {/* Question Text - Special handling for symbol puzzles */}
+                    {/* Question Text Area */}
                     <div>
-                        {isSymbolPuzzle ? (
+                        {isSymbolPuzzle && data.puzzleDisplay ? (
                             <div className="text-gray-700 text-base leading-relaxed">
-                                {data.question}
+                                <SymbolPuzzleDisplay
+                                    puzzleDisplay={data.puzzleDisplay}
+                                    mode="question"
+                                    className="text-base"
+                                />
                             </div>
-                        ) : (
+                        ) : data.question ? (
+                            // Regular question: use ContentRenderer
                             <ContentRenderer
                                 content={data.question}
                                 sectionType="starter"
@@ -76,10 +75,13 @@ const QuestionDisplay = memo(({
                                 color="default"
                                 fontWeight="normal"
                             />
+                        ) : (
+                            // No question available
+                            <div className="text-gray-500 italic">No question text available</div>
                         )}
-                    </div>F
+                    </div>
 
-                    {/* Visualization Container - Consistent height for all questions */}
+                    {/* Visualization Container */}
                     <div className="visualization-container h-[120px] w-full flex justify-center items-center">
                         {data.visualization && (
                             renderQuestionContent ?
@@ -91,19 +93,19 @@ const QuestionDisplay = memo(({
                     </div>
                 </div>
 
-                {/* Answer Section - WITH CLICK PREVENTION */}
+                {/* Answer Section */}
                 {showAnswers && data.answer && (
                     <div
                         className="mt-auto pt-3 border-t border-gray-300"
-                        onClick={(e) => e.stopPropagation()} // ← PREVENT NEW QUESTION TRIGGER
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
                         <div
                             className="math-answer overflow-y-auto"
                             style={{ maxHeight: '100px' }}
-                            onClick={(e) => e.stopPropagation()} // ← DOUBLE PREVENTION
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Special handling for symbol puzzle answers */}
+                            {/* Symbol puzzle answers use plain text, others use ContentRenderer */}
                             {isSymbolPuzzle ? (
                                 <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
                                     {data.answer}
@@ -130,11 +132,12 @@ const QuestionDisplay = memo(({
     );
 });
 
+// Set display name for debugging
 QuestionDisplay.displayName = 'QuestionDisplay';
 
 /**
  * StarterSectionBase - Main component to display starter questions
- * Enhanced to handle symbol puzzles properly
+ * Renders a grid of questions with regeneration functionality
  */
 const StarterSectionBase = ({
     questionGenerators = [],
@@ -155,7 +158,7 @@ const StarterSectionBase = ({
 }) => {
     const { showAnswers } = useUI();
 
-    // Extract configuration
+    // Extract configuration with defaults
     const sectionTitles = sectionConfig.titles || {
         lastLesson: 'Last Lesson',
         lastWeek: 'Last Week',

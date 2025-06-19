@@ -1,4 +1,4 @@
-// src/generators/puzzles/symbolPuzzleGenerators.js - Enhanced with compatibility
+// src/generators/puzzles/symbolPuzzleGenerators.js - Complete Fixed Version
 
 import _ from 'lodash';
 import { 
@@ -108,17 +108,20 @@ export const generateProductSumPuzzle = (options = {}) => {
   ];
 
   return {
-    question: "Solve for the symbol values:",
+    question: null,
+    isSymbolPuzzle: true,
     answer: solutionSteps.join('\n'),
     puzzleDisplay: {
       type: 'productSum',
       equations: [productEquation, sumEquation],
       symbols: [symbol1, symbol2],
+      solutions: {
+        [symbol1]: a,
+        [symbol2]: b
+      },
       theme: theme,
       themeDisplayName: getThemeDisplayName(theme),
-      solutions: { [symbol1]: a, [symbol2]: b },
-      difficulty: difficulty,
-      compatibilityMode: safeMode // Add flag to indicate compatibility mode
+      difficulty: difficulty
     },
     difficulty: 'puzzle'
   };
@@ -195,22 +198,22 @@ export const generateChainSolvingPuzzle = (options = {}) => {
   ];
 
   return {
-    question: "Follow the chain to find the final symbol value:",
-    answer: solutionSteps.join('\n'),
+    question: null,
+    isSymbolPuzzle: true,
+    answer: `${symbol1} = ${value1}, ${symbol2} = ${value2}, ${symbol3} = ${value3}`,
     puzzleDisplay: {
       type: 'chainSolving',
       equations: [equation1, equation2, equation3],
       symbols: [symbol1, symbol2, symbol3],
-      theme: theme,
-      themeDisplayName: getThemeDisplayName(theme),
-      solutions: { 
-        [symbol1]: value1, 
-        [symbol2]: value2, 
-        [symbol3]: value3 
+      solutions: {
+        [symbol1]: value1,
+        [symbol2]: value2,
+        [symbol3]: value3
       },
       targetSymbol: symbol3,
-      difficulty: difficulty,
-      compatibilityMode: safeMode
+      theme: theme,
+      themeDisplayName: getThemeDisplayName(theme),
+      difficulty: difficulty
     },
     difficulty: 'puzzle'
   };
@@ -300,21 +303,24 @@ export const generateSimultaneousPuzzle = (options = {}) => {
   ];
 
   return {
-    question: "Solve the simultaneous symbol equations:",
+    question: null,
+    isSymbolPuzzle: true,
     answer: solutionSteps.join('\n'),
     puzzleDisplay: {
       type: 'simultaneous',
       equations: [equation1, equation2],
       symbols: [symbol1, symbol2],
+      solutions: {
+        [symbol1]: value1,
+        [symbol2]: value2
+      },
       theme: theme,
       themeDisplayName: getThemeDisplayName(theme),
-      solutions: { [symbol1]: value1, [symbol2]: value2 },
       coefficients: {
         equation1: [coeff1a, coeff1b],
         equation2: [coeff2a, coeff2b]
       },
-      difficulty: difficulty,
-      compatibilityMode: safeMode
+      difficulty: difficulty
     },
     difficulty: 'puzzle'
   };

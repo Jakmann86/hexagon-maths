@@ -134,31 +134,8 @@ const generateSymbolChainPuzzle = () => {
         difficulty: 'easy'
     });
     
-    // Create a special wrapper for the puzzle to signal special handling
-    return {
-        // Add a special flag to indicate this is a symbol puzzle
-        isSymbolPuzzle: true,
-        
-        // Use raw text for question to prevent ContentRenderer from processing emojis
-        question: puzzle.question,
-        
-        // Use raw text for answer
-        answer: puzzle.answer,
-        
-        // Keep difficulty marker
-        difficulty: 'puzzle',
-        
-        // Store the puzzle display data directly
-        puzzleDisplay: puzzle.puzzleDisplay,
-        
-        // Create the visualization component directly
-        visualization: (
-            <SymbolPuzzleDisplay 
-                puzzleDisplay={puzzle.puzzleDisplay}
-                containerHeight="120px"
-            />
-        )
-    };
+    // Return the puzzle data directly - no need to modify question or build visualization
+    return puzzle;
 };
 
 /**
@@ -184,18 +161,13 @@ const StarterSection = ({ currentTopic, currentLessonId }) => {
     // Enhanced custom rendering function for question visualizations
     const renderQuestionContent = (questionData, questionType) => {
         // Special handling for symbol puzzles
-        if (questionData.isSymbolPuzzle || questionData.puzzleDisplay) {
+        if (questionData.isSymbolPuzzle && questionData.puzzleDisplay) {
             return (
-                <div className="w-full h-full flex items-center justify-center">
-                    {/* Directly render the pre-built component or create one */}
-                    {React.isValidElement(questionData.visualization) 
-                        ? questionData.visualization
-                        : <SymbolPuzzleDisplay 
-                            puzzleDisplay={questionData.puzzleDisplay}
-                            containerHeight="120px"
-                          />
-                    }
-                </div>
+                <SymbolPuzzleDisplay 
+                    puzzleDisplay={questionData.puzzleDisplay}
+                    mode="visualization"
+                    containerHeight="120px"
+                />
             );
         }
         

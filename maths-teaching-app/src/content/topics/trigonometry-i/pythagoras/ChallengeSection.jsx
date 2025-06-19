@@ -212,7 +212,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
               {/* Coordinate Grid Visualization */}
               <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '460px' }}>  {/* ← INCREASED from 400px to 460px */}
                 {renderVisualization(currentChallenge)}
-              </div>F
+              </div>
 
               {/* Solution Steps - only visible when showAnswers is true */}
               {showAnswers && currentChallenge.solution && (

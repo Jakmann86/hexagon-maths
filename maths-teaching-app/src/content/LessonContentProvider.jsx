@@ -14,6 +14,7 @@ import { ExamplesSection as Sohcahtoa2Examples } from './topics/trigonometry-i/s
 import { StarterSection as AlgebraExpandingStarter } from './topics/algebra-i/expanding-brackets';
 import { DiagnosticSection as AlgebraExpandingDiagnostic } from './topics/algebra-i/expanding-brackets';
 import { LearnSection as AlgebraExpandingLearn } from './topics/algebra-i/expanding-brackets';
+import { ExamplesSection as AlgebraExpandingExamples } from './topics/algebra-i/expanding-brackets';
 import PlaceholderSection from '../components/sections/PlaceholderSection';
 
 /**
@@ -131,9 +132,14 @@ const LessonContentProvider = ({
 
   // Function to render Algebra I lessons
   const renderAlgebraI = () => {
-    // Lesson 1: Expanding Double Brackets
+    // Expanding Brackets (Lesson 1)
     if (currentLessonId === 1) {
       switch (currentSection) {
+        case 'examples':
+          return <AlgebraExpandingExamples
+            currentTopic={currentTopic}
+            currentLessonId={currentLessonId}
+          />;
         case 'starter':
           return <AlgebraExpandingStarter
             currentTopic={currentTopic}
@@ -148,11 +154,6 @@ const LessonContentProvider = ({
           return <AlgebraExpandingLearn
             currentTopic={currentTopic}
             currentLessonId={currentLessonId}
-          />;
-        case 'examples':
-          return <PlaceholderSection
-            sectionName="Examples"
-            message="Examples section for Expanding Double Brackets coming soon."
           />;
         case 'challenge':
           return <PlaceholderSection

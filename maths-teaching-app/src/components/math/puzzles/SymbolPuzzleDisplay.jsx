@@ -15,7 +15,8 @@ import { useUI } from '../../../context/UIContext';
 const SymbolPuzzleDisplay = ({ 
   puzzleDisplay, 
   className = '',
-  containerHeight = '120px'
+  containerHeight = '120px',
+  mode = 'visualization' 
 }) => {
   const { showAnswers } = useUI();
 
@@ -42,40 +43,67 @@ const SymbolPuzzleDisplay = ({
   const containerClasses = `
     symbol-puzzle-display 
     flex flex-col justify-center items-center 
-    bg-white rounded-lg border-2 border-gray-200 
-    p-4 font-mono text-lg
+    p-2 font-sans text-lg
     ${className}
-  `;
+  `.trim();
 
-  // Symbol rendering with proper spacing
+  // Symbol rendering with proper emoji handling
   const renderSymbolSequence = (text) => {
-    // Handle repeated symbols (🍎🍎🍎 → spaced symbols)
-    return text.split('').map((char, index) => {
-      // Check if character is an emoji (basic emoji detection)
-      const isEmoji = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(char);
+    // Use proper emoji-aware string splitting
+    const segments = text.split(/(\s|[+\-×÷=]|\d+)/);
+    
+    return segments.map((segment, index) => {
+      // Skip empty segments
+      if (!segment) return null;
       
-      if (isEmoji) {
+      // Handle whitespace
+      if (/^\s+$/.test(segment)) {
+        return <span key={index}> </span>;
+      }
+      
+      // Handle operators and numbers
+      if (/^[+\-×÷=]|\d+$/.test(segment)) {
         return (
           <span 
             key={index} 
-            className="symbol text-2xl mx-0.5 inline-block"
-            style={{ fontSize: '1.75rem' }}
+            className="operator text-xl font-semibold text-gray-700 mx-1"
           >
-            {char}
+            {segment}
           </span>
         );
       }
       
-      // Regular characters (operators, numbers, etc.)
-      return (
-        <span 
-          key={index} 
-          className="operator text-xl font-semibold text-gray-700"
-        >
-          {char}
-        </span>
-      );
-    });
+      // Handle emoji sequences (like 🐱🐱🐱)
+      // Split emojis properly using Array.from which handles Unicode correctly
+      const chars = Array.from(segment);
+      
+      return chars.map((char, charIndex) => {
+        // Check if character is an emoji
+        const isEmoji = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(char);
+        
+        if (isEmoji) {
+          return (
+            <span 
+              key={`${index}-${charIndex}`}
+              className="symbol text-2xl mx-0.5 inline-block"
+              style={{ fontSize: '1.75rem' }}
+            >
+              {char}
+            </span>
+          );
+        }
+        
+        // Regular characters
+        return (
+          <span 
+            key={`${index}-${charIndex}`}
+            className="operator text-xl font-semibold text-gray-700"
+          >
+            {char}
+          </span>
+        );
+      });
+    }).flat().filter(Boolean); // Remove null values and flatten
   };
 
   // Render equations based on puzzle type
@@ -165,6 +193,52 @@ const SymbolPuzzleDisplay = ({
     }
   };
 
+  /**
+   * Render question mode - just the equations text with proper emoji spacing
+   * Used for the question text area in starter cards
+   */
+  const renderQuestionMode = () => {
+    if (!equations || equations.length === 0) return null;
+
+    return (
+      <div className="question-mode space-y-1 text-center">
+        {equations.map((equation, index) => (
+          <div key={index} className="equation-text">
+            {renderSymbolSequence(equation)}
+          </div>
+        ))}
+        
+        {/* Add target symbol = ? for chain solving */}
+        {type === 'chainSolving' && targetSymbol && (
+          <>
+            <div className="border-t-2 border-gray-300 w-32 mx-auto my-2"></div>
+            <div className="target-question text-lg">
+              <span className="symbol text-2xl">{targetSymbol}</span>
+              <span className="operator text-xl font-semibold text-gray-700"> = </span>
+              <span className="text-xl text-gray-500">?</span>
+            </div>
+          </>
+        )}
+        
+        {/* Add unknowns for other puzzle types */}
+        {(type === 'productSum' || type === 'simultaneous') && symbols && (
+          <>
+            <div className="border-t-2 border-gray-300 w-32 mx-auto my-2"></div>
+            <div className="unknowns-question text-lg space-x-4">
+              {symbols.map((symbol, index) => (
+                <span key={index} className="unknown-item">
+                  <span className="symbol text-2xl">{symbol}</span>
+                  <span className="operator text-xl font-semibold text-gray-700"> = </span>
+                  <span className="text-xl text-gray-500">?</span>
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   // Render solutions when answers are shown
   const renderSolutions = () => {
     if (!showAnswers || !solutions) return null;
@@ -202,18 +276,18 @@ const SymbolPuzzleDisplay = ({
     <div 
       className={containerClasses}
       style={{ 
-        height: containerHeight,
-        minHeight: '120px',
+        height: mode === 'question' ? 'auto' : containerHeight,
+        minHeight: mode === 'question' ? 'auto' : '120px',
         position: 'relative'
       }}
     >
-      {renderThemeIndicator()}
+      {mode === 'visualization' && renderThemeIndicator()}
       
       <div className="puzzle-content flex-1 flex items-center justify-center w-full">
-        {renderEquations()}
+        {mode === 'question' ? renderQuestionMode() : renderEquations()}
       </div>
       
-      {renderSolutions()}
+      {mode === 'visualization' && renderSolutions()}
     </div>
   );
 };
