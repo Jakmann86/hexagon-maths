@@ -328,6 +328,169 @@ export const generateSimplifyingExpression = (options = {}) => {
 };
 
 /**
+ * Unified expanding double brackets generator
+ * Handles starter, diagnostic, and examples sections with section-aware output
+ */
+export const generateExpandingDoubleBrackets = (options = {}) => {
+  const {
+    difficulty = 'medium',
+    sectionType = 'starter',
+    units = ''
+  } = options;
+
+  // UNIFIED MATH LOGIC
+  let a, b, c, d;
+  
+  if (difficulty === 'easy') {
+    // Easy: Simple coefficients, mostly positive
+    a = _.random(1, 2);
+    b = _.random(1, 5);
+    c = _.random(1, 2);
+    d = _.random(1, 5);
+  } else if (difficulty === 'medium') {
+    // Medium: Some negative values, coefficients up to 3
+    a = _.random(1, 3);
+    b = Math.random() > 0.7 ? -_.random(1, 4) : _.random(1, 4);
+    c = _.random(1, 3);
+    d = Math.random() > 0.7 ? -_.random(1, 4) : _.random(1, 4);
+  } else {
+    // Hard: More complex coefficients and negatives
+    a = _.random(1, 4);
+    b = Math.random() > 0.5 ? -_.random(1, 6) : _.random(1, 6);
+    c = _.random(1, 4);
+    d = Math.random() > 0.5 ? -_.random(1, 6) : _.random(1, 6);
+  }
+
+  // Calculate expanded form using FOIL
+  const firstTerm = a * c; // x^2 coefficient
+  const outerTerm = a * d; // outer x term
+  const innerTerm = b * c; // inner x term
+  const lastTerm = b * d;  // constant term
+  const middleTerm = outerTerm + innerTerm; // combined x coefficient
+
+  // Build bracket expressions
+  const bracket1 = a === 1 ? 
+    (b >= 0 ? `(x + ${b})` : `(x - ${Math.abs(b)})`) :
+    (b >= 0 ? `(${a}x + ${b})` : `(${a}x - ${Math.abs(b)})`);
+    
+  const bracket2 = c === 1 ?
+    (d >= 0 ? `(x + ${d})` : `(x - ${Math.abs(d)})`) :
+    (d >= 0 ? `(${c}x + ${d})` : `(${c}x - ${Math.abs(d)})`);
+
+  const expression = `${bracket1}${bracket2}`;
+
+  // Build answer
+  let answerTerms = [];
+  
+  // x^2 term
+  if (firstTerm === 1) {
+    answerTerms.push('x^2');
+  } else {
+    answerTerms.push(`${firstTerm}x^2`);
+  }
+  
+  // x term
+  if (middleTerm > 0) {
+    answerTerms.push(middleTerm === 1 ? '+ x' : `+ ${middleTerm}x`);
+  } else if (middleTerm < 0) {
+    answerTerms.push(Math.abs(middleTerm) === 1 ? '- x' : `- ${Math.abs(middleTerm)}x`);
+  }
+  
+  // constant term
+  if (lastTerm > 0) {
+    answerTerms.push(`+ ${lastTerm}`);
+  } else if (lastTerm < 0) {
+    answerTerms.push(`- ${Math.abs(lastTerm)}`);
+  }
+
+  const answer = answerTerms.join(' ').replace(/^\+ /, '');
+
+  // SECTION-AWARE OUTPUT FORMATTING
+  if (sectionType === 'starter') {
+    const workingOut = `${expression}\\\\
+      \\text{First: } ${a === 1 ? '' : a}x \\times ${c === 1 ? '' : c}x = ${firstTerm}x^2\\\\
+      \\text{Outer: } ${a === 1 ? '' : a}x \\times ${d} = ${outerTerm}x\\\\
+      \\text{Inner: } ${b} \\times ${c === 1 ? '' : c}x = ${innerTerm}x\\\\
+      \\text{Last: } ${b} \\times ${d} = ${lastTerm}\\\\
+      \\text{Combine: } ${answer}`;
+
+    return {
+      question: `Expand ${expression}`,
+      answer: workingOut,
+      difficulty: 'algebra'
+    };
+  }
+
+  else if (sectionType === 'diagnostic') {
+    // Generate incorrect answers with common mistakes
+    const incorrectAnswers = [
+      // Mistake 1: Only multiply first and last terms
+      `${firstTerm}x^2 + ${lastTerm}`,
+      
+      // Mistake 2: Wrong middle term (forget one of outer/inner)
+      middleTerm >= 0 ? 
+        `${firstTerm}x^2 + ${outerTerm}x + ${lastTerm}` :
+        `${firstTerm}x^2 - ${Math.abs(outerTerm)}x + ${lastTerm}`,
+      
+      // Mistake 3: Add instead of multiply
+      `${a + c}x^2 + ${b + d}x + ${Math.abs(b * d)}`
+    ];
+
+    return {
+      questionDisplay: {
+        text: 'Expand:',
+        math: expression
+      },
+      correctAnswer: answer,
+      options: [answer, ...incorrectAnswers].sort(() => Math.random() - 0.5),
+      explanation: `Use FOIL: First (${firstTerm}x²), Outer (${outerTerm}x), Inner (${innerTerm}x), Last (${lastTerm}), then combine like terms.`
+    };
+  }
+
+  else if (sectionType === 'examples') {
+    const solution = [
+      {
+        explanation: "We use the FOIL method to expand the expression",
+        formula: expression
+      },
+      {
+        explanation: "First: Multiply the first terms in each bracket",
+        formula: `\\text{First: } ${a === 1 ? '' : a}x \\times ${c === 1 ? '' : c}x = ${firstTerm}x^2`
+      },
+      {
+        explanation: "Outer: Multiply the outside terms",
+        formula: `\\text{Outer: } ${a === 1 ? '' : a}x \\times ${d} = ${outerTerm}x`
+      },
+      {
+        explanation: "Inner: Multiply the inside terms", 
+        formula: `\\text{Inner: } ${b} \\times ${c === 1 ? '' : c}x = ${innerTerm}x`
+      },
+      {
+        explanation: "Last: Multiply the last terms in each bracket",
+        formula: `\\text{Last: } ${b} \\times ${d} = ${lastTerm}`
+      },
+      {
+        explanation: "Combine all terms",
+        formula: `${firstTerm}x^2 + ${outerTerm}x + ${innerTerm}x + ${lastTerm}`
+      },
+      {
+        explanation: "Simplify by collecting like terms",
+        formula: answer
+      }
+    ];
+
+    return {
+      title: "Expanding Double Brackets",
+      questionText: `Expand ${expression}`,
+      solution
+    };
+  }
+
+  // Fallback to starter format
+  return generateExpandingDoubleBrackets({ ...options, sectionType: 'starter' });
+};
+
+/**
  * Unified distributive law question generator
  * Handles starter, diagnostic, and examples sections with section-aware output
  * Creates questions about which calculation represents a distributive law expansion
@@ -670,6 +833,7 @@ export const generateFactorisingExpression = (options = {}) => {
 export const expressionsGenerators = {
   // New unified functions
   generateExpandingSingleBrackets,
+  generateExpandingDoubleBrackets,
   generateSimplifyingExpression,
   generateSubstitution,
   generateFactorisingExpression,

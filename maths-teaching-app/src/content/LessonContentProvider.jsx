@@ -1,4 +1,4 @@
-// src/content/LessonContentProvider.jsx - Dynamic Component Loader with Graceful Fallbacks
+// src/content/LessonContentProvider.jsx - Updated to handle index.js imports
 import React, { useState, useEffect } from 'react';
 import { curriculum } from '../data/curriculum';
 import PlaceholderSection from '../components/sections/PlaceholderSection';
@@ -38,8 +38,9 @@ const ErrorSection = ({ sectionName, error, onRetry }) => (
  * based on the curriculum.js configuration. Components are loaded only when
  * needed, improving performance and maintainability.
  * 
- * Gracefully falls back to PlaceholderSection for missing components instead
- * of showing harsh error states.
+ * Updated to handle both patterns:
+ * 1. Direct file imports: 'folder/ComponentName'
+ * 2. Index-based imports: 'folder' (imports from index.js and accesses named export)
  */
 const LessonContentProvider = ({ currentTopic, currentLessonId, currentSection }) => {
   const [Component, setComponent] = useState(null);
@@ -51,6 +52,14 @@ const LessonContentProvider = ({ currentTopic, currentLessonId, currentSection }
    */
   const getTopicKey = (topicName) => {
     return topicName.toLowerCase().replace(/\s+/g, '-');
+  };
+
+  /**
+   * Convert section name to component name
+   * "starter" -> "StarterSection"
+   */
+  const getSectionComponentName = (sectionName) => {
+    return sectionName.charAt(0).toUpperCase() + sectionName.slice(1) + 'Section';
   };
 
   /**
@@ -102,12 +111,21 @@ const LessonContentProvider = ({ currentTopic, currentLessonId, currentSection }
       
       const module = await import(importPath);
       
-      // Handle both default exports and named exports
-      const ComponentToRender = module.default || module[Object.keys(module)[0]];
+      let ComponentToRender;
+      
+      // Determine which pattern we're using based on the section path
+      if (sectionPath.includes('/')) {
+        // Pattern 1: Direct file import like 'folder/ComponentName'
+        ComponentToRender = module.default || module[Object.keys(module)[0]];
+      } else {
+        // Pattern 2: Index-based import like 'folder' - get the specific section component
+        const sectionComponentName = getSectionComponentName(currentSection);
+        ComponentToRender = module[sectionComponentName] || module.default?.[sectionComponentName];
+      }
       
       if (!ComponentToRender) {
         // Component file exists but no valid export - use placeholder
-        console.warn(`No valid component found in ${importPath}`);
+        console.warn(`No valid component found in ${importPath} for section ${currentSection}`);
         setComponent(null);
         setLoading(false);
         return;

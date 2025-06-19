@@ -1,4 +1,4 @@
-// src/data/curriculum.js
+// src/data/curriculum.js - Updated with new Solving Equations lesson
 export const curriculum = {
     'Trigonometry I': {
         title: 'Trigonometry I: Theory of Right-Angled Triangles',
@@ -68,10 +68,10 @@ export const curriculum = {
                 title: "Solving Equations with Unknown on Both Sides",
                 sections: {
                     starter: 'linear-equations/StarterSection',
-                    diagnostic: 'linear-equations/DiagnosticSection',
-                    learn: 'linear-equations/LearnSection',
-                    examples: 'linear-equations/ExamplesSection',
-                    challenge: 'linear-equations/ChallengeSection'
+                    diagnostic: 'linear-equations',
+                    learn: 'linear-equations',
+                    examples: 'linear-equations',
+                    challenge: 'linear-equations'
                 }
             },
             {
