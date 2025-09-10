@@ -63,6 +63,301 @@ export const generateDivisionEquation = (options = {}) => {
     }
 };
 
+import _ from 'lodash';
+
+/**
+ * Generate a linear equation with x on both sides
+ * Section-aware output for starter, diagnostic, and examples sections
+ * Equations like: 3x + 5 = 2x + 8
+ */
+export const generateLinearEquationBothSidesStarter = (options = {}) => {
+    const { 
+        difficulty = 'medium',
+        sectionType = 'starter' 
+    } = options;
+
+    let attempts = 0;
+    let solution, leftCoeff, rightCoeff, leftConstant, rightConstant;
+
+    // Try up to 10 times to generate a valid equation
+    while (attempts < 10) {
+        // Generate coefficients to ensure integer solution
+        if (difficulty === 'easy') {
+            leftCoeff = _.random(2, 5);
+            rightCoeff = 1; // Keep it simple for easy difficulty
+            leftConstant = _.random(1, 5);
+            rightConstant = _.random(leftConstant + 1, 15);
+        } else if (difficulty === 'medium') {
+            leftCoeff = _.random(2, 6);
+            rightCoeff = _.random(1, leftCoeff - 1);
+            leftConstant = _.random(1, 8);
+            rightConstant = _.random(leftConstant + 1, 20);
+        } else {
+            leftCoeff = _.random(3, 8);
+            rightCoeff = _.random(1, leftCoeff - 1);
+            leftConstant = _.random(1, 10);
+            rightConstant = _.random(leftConstant + 1, 25);
+        }
+        
+        // Calculate solution: (rightConstant - leftConstant) / (leftCoeff - rightCoeff)
+        const numerator = rightConstant - leftConstant;
+        const denominator = leftCoeff - rightCoeff;
+        solution = numerator / denominator;
+        
+        // Check if solution is a positive integer
+        if (solution > 0 && solution === Math.floor(solution) && solution <= 20) {
+            break; // Valid solution found
+        }
+        attempts++;
+    }
+
+    // Fallback to simple values if no valid solution found
+    if (attempts >= 10) {
+        leftCoeff = 5;
+        rightCoeff = 2;
+        leftConstant = 3;
+        rightConstant = 12;
+        solution = 3; // Manual calculation: (12-3)/(5-2) = 3
+    }
+
+    // Format the equation
+    const equation = `${leftCoeff}x + ${leftConstant} = ${rightCoeff}x + ${rightConstant}`;
+    
+    // Calculate intermediate values for steps
+    const simplifiedCoeff = leftCoeff - rightCoeff;
+    const simplifiedConstant = rightConstant - leftConstant;
+
+    // SECTION-AWARE OUTPUT
+    if (sectionType === 'starter') {
+        // Create the working steps with proper LaTeX formatting for starter section
+        const workingSteps = [];
+        
+        // Step 1: Collect x terms on one side
+        workingSteps.push(`${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}`);
+        
+        // Step 2: Simplify
+        workingSteps.push(`${simplifiedCoeff}x = ${simplifiedConstant}`);
+        
+        // Step 3: Divide to solve
+        if (simplifiedCoeff === 1) {
+            workingSteps.push(`x = ${solution}`);
+        } else {
+            workingSteps.push(`x = \\frac{${simplifiedConstant}}{${simplifiedCoeff}}`);
+            workingSteps.push(`x = ${solution}`);
+        }
+
+        return {
+            question: `Solve: ${equation}`,
+            answer: workingSteps.join('\\\\'),
+            difficulty: 'algebra'
+        };
+    }
+    
+    else if (sectionType === 'diagnostic') {
+        // Generate incorrect options based on common mistakes
+        const incorrectOptions = [
+            `${solution + 1}`, // Arithmetic error
+            `${solution - 1}`, // Arithmetic error
+            `${Math.max(1, Math.floor(solution / 2))}`, // Division error
+            `${rightConstant - leftConstant}`, // Forgot to divide by coefficient
+            `${leftCoeff + rightCoeff}` // Added coefficients instead of subtracting
+        ].filter(opt => opt != solution && opt > 0); // Remove if accidentally correct or negative
+
+        return {
+            questionDisplay: {
+                text: 'Solve for x:',
+                math: equation,
+                layout: 'horizontal'
+            },
+            correctAnswer: `${solution}`,
+            options: [`${solution}`, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+            explanation: `Collect x terms: ${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}
+                         Simplify: ${simplifiedCoeff}x = ${simplifiedConstant}
+                         Divide: x = ${solution}`
+        };
+    }
+    
+    else if (sectionType === 'examples') {
+        const solutionSteps = [
+            {
+                explanation: "Start with the equation",
+                formula: equation
+            },
+            {
+                explanation: "Collect all x terms on the left side and constants on the right",
+                formula: `${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}`
+            },
+            {
+                explanation: "Simplify the x terms on the left",
+                formula: `(${leftCoeff} - ${rightCoeff})x = ${rightConstant} - ${leftConstant}`
+            },
+            {
+                explanation: "Calculate the coefficients",
+                formula: `${simplifiedCoeff}x = ${simplifiedConstant}`
+            }
+        ];
+
+        // Add division step if coefficient is not 1
+        if (simplifiedCoeff !== 1) {
+            solutionSteps.push({
+                explanation: `Divide both sides by ${simplifiedCoeff}`,
+                formula: `x = \\frac{${simplifiedConstant}}{${simplifiedCoeff}}`
+            });
+        }
+
+        solutionSteps.push({
+            explanation: "Solution",
+            formula: `x = ${solution}`
+        });
+
+        // Add verification step
+        solutionSteps.push({
+            explanation: "Check: Substitute x = " + solution + " into the original equation",
+            formula: `${leftCoeff}(${solution}) + ${leftConstant} = ${rightCoeff}(${solution}) + ${rightConstant}`
+        });
+
+        const leftCheck = leftCoeff * solution + leftConstant;
+        const rightCheck = rightCoeff * solution + rightConstant;
+        
+        solutionSteps.push({
+            explanation: "Verify both sides are equal",
+            formula: `${leftCheck} = ${rightCheck} \\checkmark`
+        });
+
+        return {
+            title: "Solving Equations with x on Both Sides",
+            questionText: `Solve ${equation}`,
+            solution: solutionSteps
+        };
+    }
+
+    // Fallback to starter format if section type not specified
+    return generateLinearEquationBothSidesStarter({ ...options, sectionType: 'starter' });
+};
+
+/**
+ * Alternative version for word problems with equations having x on both sides
+ * Creates contextual problems that lead to equations like 3x + 5 = 2x + 8
+ * Section-aware output
+ */
+export const generateLinearEquationBothSidesWordProblem = (options = {}) => {
+    const { 
+        difficulty = 'medium',
+        sectionType = 'starter'
+    } = options;
+
+    // Generate a valid equation first
+    let leftCoeff = _.random(2, 5);
+    let rightCoeff = _.random(1, leftCoeff - 1);
+    let solution = _.random(3, 12);
+    
+    // Calculate constants based on the desired solution
+    let leftConstant = _.random(2, 10);
+    let rightConstant = leftCoeff * solution + leftConstant - rightCoeff * solution;
+
+    // Verify the equation works
+    const checkLeft = leftCoeff * solution + leftConstant;
+    const checkRight = rightCoeff * solution + rightConstant;
+    
+    if (checkLeft !== checkRight) {
+        // Adjust rightConstant to make it work
+        rightConstant = checkLeft - rightCoeff * solution;
+    }
+
+    // Create contextual word problems
+    const contexts = [
+        {
+            setup: `Two phone plans are being compared. Plan A charges £${leftCoeff} per GB plus a £${leftConstant} monthly fee. Plan B charges £${rightCoeff} per GB plus a £${rightConstant} monthly fee.`,
+            question: `For how many GB of data will both plans cost the same?`,
+            variable: 'GB of data',
+            unit: 'GB'
+        },
+        {
+            setup: `Two taxi companies have different rates. Company A charges £${leftCoeff} per mile plus a £${leftConstant} base fare. Company B charges £${rightCoeff} per mile plus a £${rightConstant} base fare.`,
+            question: `For what distance will both companies charge the same amount?`,
+            variable: 'miles',
+            unit: 'miles'
+        },
+        {
+            setup: `Two gym memberships are available. Gym A costs £${leftCoeff} per visit plus a £${leftConstant} joining fee. Gym B costs £${rightCoeff} per visit plus a £${rightConstant} joining fee.`,
+            question: `After how many visits will the total cost be the same for both gyms?`,
+            variable: 'visits',
+            unit: 'visits'
+        }
+    ];
+
+    const context = _.sample(contexts);
+    const equation = `${leftCoeff}x + ${leftConstant} = ${rightCoeff}x + ${rightConstant}`;
+    
+    // SECTION-AWARE OUTPUT
+    if (sectionType === 'starter') {
+        const workingSteps = [
+            `Let x = the number of ${context.variable}`,
+            `Set up equation: ${equation}`,
+            `Collect x terms: ${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}`,
+            `Simplify: ${leftCoeff - rightCoeff}x = ${rightConstant - leftConstant}`,
+            `Solve: x = ${solution}`,
+            `Answer: ${solution} ${context.unit}`
+        ];
+
+        return {
+            question: `${context.setup}\n${context.question}`,
+            answer: workingSteps.join('\\\\'),
+            difficulty: 'word-problem'
+        };
+    }
+    
+    else if (sectionType === 'examples') {
+        return {
+            title: "Word Problems Leading to Equations with x on Both Sides",
+            questionText: `${context.setup} ${context.question}`,
+            solution: [
+                {
+                    explanation: "Define the variable",
+                    formula: `\\text{Let } x = \\text{ the number of ${context.variable}}`
+                },
+                {
+                    explanation: "Set up equation for Plan/Company/Gym A",
+                    formula: `\\text{Cost}_A = ${leftCoeff}x + ${leftConstant}`
+                },
+                {
+                    explanation: "Set up equation for Plan/Company/Gym B",
+                    formula: `\\text{Cost}_B = ${rightCoeff}x + ${rightConstant}`
+                },
+                {
+                    explanation: "Set the costs equal to find when they're the same",
+                    formula: equation
+                },
+                {
+                    explanation: "Collect x terms on one side",
+                    formula: `${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}`
+                },
+                {
+                    explanation: "Simplify",
+                    formula: `${leftCoeff - rightCoeff}x = ${rightConstant - leftConstant}`
+                },
+                {
+                    explanation: "Divide to solve for x",
+                    formula: `x = \\frac{${rightConstant - leftConstant}}{${leftCoeff - rightCoeff}} = ${solution}`
+                },
+                {
+                    explanation: "State the answer with units",
+                    formula: `\\text{Both cost the same at } ${solution} \\text{ ${context.unit}}`
+                },
+                {
+                    explanation: "Verify the answer",
+                    formula: `\\text{Cost at } ${solution} \\text{ ${context.unit}: £}${checkLeft}`
+                }
+            ]
+        };
+    }
+
+    // Fallback to starter format
+    return generateLinearEquationBothSidesWordProblem({ ...options, sectionType: 'starter' });
+};
+
+
+
 /**
  * Generate a "think of a number" real-world problem
  * Used for starter questions reviewing linear equation solving
@@ -702,7 +997,9 @@ export const equationGenerators = {
     generateThreeStepEquation,
     generateSimpleRearrangement,
     generateBracketEquation,
-    generateFractionalEquation
+    generateFractionalEquation,
+    generateLinearEquationBothSidesStarter,
+    generateLinearEquationBothSidesWordProblem,
     // Add more generators here as needed
 };
 
