@@ -1,4 +1,4 @@
-// src/data/curriculum.js - Updated with new Solving Equations lesson
+// src/data/curriculum.js - Fully consistent Pattern 1
 export const curriculum = {
     'Trigonometry I': {
         title: 'Trigonometry I: Theory of Right-Angled Triangles',
@@ -69,9 +69,9 @@ export const curriculum = {
                 sections: {
                     starter: 'linear-equations/StarterSection',
                     diagnostic: 'linear-equations/DiagnosticSection',
-                    learn: 'linear-equations',
-                    examples: 'linear-equations',
-                    challenge: 'linear-equations'
+                    learn: 'linear-equations/LearnSection',  // ← Fixed
+                    examples: 'linear-equations/ExamplesSection',  // ← Fixed
+                    challenge: 'linear-equations/ChallengeSection'  // ← Fixed
                 }
             },
             {
