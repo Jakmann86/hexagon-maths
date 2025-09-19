@@ -63,7 +63,7 @@ export const generateDivisionEquation = (options = {}) => {
     }
 };
 
-import _ from 'lodash';
+
 
 /**
  * Generate a linear equation with x on both sides
