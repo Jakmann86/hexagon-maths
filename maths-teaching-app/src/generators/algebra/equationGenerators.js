@@ -636,6 +636,62 @@ export const generateSimpleRearrangement = (options = {}) => {
     return generateSimpleRearrangement({ ...options, sectionType: 'diagnostic' });
 };
 
+// src/generators/algebra/equationGenerators.js - ADD THIS FUNCTION
+
+/**
+ * Generate substitution questions where unknown is the second term
+ * Tests ability to substitute back and solve for the second variable
+ */
+export const generateSubstitutionWithSecondTerm = (options = {}) => {
+    const {
+        difficulty = 'medium',
+        sectionType = 'diagnostic'
+    } = options;
+
+    // Generate clean integer solutions
+    const knownValue = _.random(-2, 5);
+    const unknownValue = _.random(1, 8);
+    
+    // Create equation coefficients
+    const coeffX = _.random(2, 7);
+    const coeffY = _.random(2, 6);
+    
+    // Randomly decide which variable is known
+    const yIsKnown = Math.random() > 0.5;
+    
+    let questionText, correctAnswer, substitutionExample;
+    
+    if (yIsKnown) {
+        // Given y, find x: coeffX * x + coeffY * y = total
+        const total = coeffX * unknownValue + coeffY * knownValue;
+        questionText = `If y = ${knownValue}, what is x when ${coeffX}x + ${coeffY}y = ${total}?`;
+        correctAnswer = `${unknownValue}`;
+        substitutionExample = `${coeffX}x + ${coeffY}(${knownValue}) = ${total}`;
+    } else {
+        // Given x, find y: coeffX * x + coeffY * y = total  
+        const total = coeffX * knownValue + coeffY * unknownValue;
+        questionText = `If x = ${knownValue}, what is y when ${coeffX}x + ${coeffY}y = ${total}?`;
+        correctAnswer = `${unknownValue}`;
+        substitutionExample = `${coeffX}(${knownValue}) + ${coeffY}y = ${total}`;
+    }
+    
+    // Generate strategic distractors
+    const incorrectOptions = [
+        `${unknownValue + 1}`,           // Off by one
+        `${Math.abs(unknownValue - knownValue)}`, // Calculation error
+        `${knownValue}`                  // Using the known value instead
+    ].filter(opt => opt !== correctAnswer);
+
+    return {
+        questionDisplay: {
+            text: questionText
+        },
+        correctAnswer,
+        options: [correctAnswer, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+        explanation: `Substitute: ${substitutionExample}, then solve to get ${yIsKnown ? 'x' : 'y'} = ${unknownValue}`
+    };
+};
+
 /**
  * NEW: Generate equations containing brackets
  * Handles equations like 3(x + 2) = 15, 2(x - 1) = 8, etc.
@@ -1000,6 +1056,7 @@ export const equationGenerators = {
     generateFractionalEquation,
     generateLinearEquationBothSidesStarter,
     generateLinearEquationBothSidesWordProblem,
+    generateSubstitutionWithSecondTerm,
     // Add more generators here as needed
 };
 

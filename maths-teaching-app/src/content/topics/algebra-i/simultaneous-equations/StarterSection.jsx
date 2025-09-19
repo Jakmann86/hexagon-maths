@@ -87,7 +87,7 @@ const generateMixedWeek1TrigonometryQuestion = () => {
       };
       
     case 'pythagoras-isosceles':
-      const isoscelesQuestion = PythagorasGenerators.generateIsoscelesAreaQuestion({
+      const isoscelesQuestion = PythagorasGenerators.generateIsoscelesArea({
         sectionType: 'starter',
         difficulty: 'easy'
       });

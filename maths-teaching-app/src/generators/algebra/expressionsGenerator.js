@@ -328,6 +328,62 @@ export const generateSimplifyingExpression = (options = {}) => {
 };
 
 /**
+ * Generate collecting like terms with signs for simultaneous equations diagnostic
+ * Tests operations like (-9y) + (-12y) and (-18x) - (-8x)
+ */
+export const generateCollectingLikeTermsWithSigns = (options = {}) => {
+    const {
+        difficulty = 'medium',
+        sectionType = 'diagnostic'
+    } = options;
+
+    // Generate coefficients
+    const coeff1 = _.random(5, 18);
+    const coeff2 = _.random(3, 15);
+    const variable = _.sample(['x', 'y', 'a', 'b']);
+
+    // Create sign scenarios that commonly appear in simultaneous equations
+    const scenarios = [
+        { first: -coeff1, second: -coeff2, op: '+' },  // (-9y) + (-12y)
+        { first: -coeff1, second: coeff2, op: '-' },   // (-18x) - (-8x)  
+        { first: coeff1, second: -coeff2, op: '+' },   // (7a) + (-3a)
+        { first: -coeff1, second: -coeff2, op: '-' }   // (-5b) - (-11b)
+    ];
+    
+    const scenario = _.sample(scenarios);
+    const result = scenario.op === '+' ? 
+        scenario.first + scenario.second : 
+        scenario.first - scenario.second;
+
+    // Format question and answer
+    const firstTerm = scenario.first < 0 ? `(${scenario.first})${variable}` : `${scenario.first}${variable}`;
+    const secondTerm = scenario.second < 0 ? `(${scenario.second})${variable}` : `${scenario.second}${variable}`;
+    const questionText = `${firstTerm} ${scenario.op} ${secondTerm}`;
+    
+    const correctAnswer = result === 0 ? '0' : 
+                         result === 1 ? variable :
+                         result === -1 ? `-${variable}` :
+                         `${result}${variable}`;
+
+    // Generate strategic distractors
+    const incorrectOptions = [
+        `${Math.abs(scenario.first) + Math.abs(scenario.second)}${variable}`, // Ignore signs
+        `${-result}${variable}`,                                              // Wrong sign
+        `${scenario.op === '+' ? scenario.first - scenario.second : scenario.first + scenario.second}${variable}` // Wrong operation
+    ].filter(opt => opt !== correctAnswer);
+
+    return {
+        questionDisplay: {
+            text: 'Simplify by collecting like terms:',
+            math: questionText.replace(/\(/g, '').replace(/\)/g, '')
+        },
+        correctAnswer,
+        options: [correctAnswer, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
+        explanation: `Combine like terms: ${scenario.first} ${scenario.op} ${scenario.second} = ${result}, so answer is ${correctAnswer}`
+    };
+};
+
+/**
  * Unified expanding double brackets generator
  * Handles starter, diagnostic, and examples sections with section-aware output
  */
@@ -1219,6 +1275,7 @@ export const expressionsGenerators = {
   generateExpandingTripleBrackets,
   generateBasicIndices,
   generateExpressionClassification,
+  generateCollectingLikeTermsWithSigns,
 
   // Legacy aliases for backward compatibility (temporary)
   expandingSingleBrackets: (options) => generateExpandingSingleBrackets(options),
