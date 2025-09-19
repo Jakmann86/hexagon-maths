@@ -1,411 +1,292 @@
-// src/generators/algebra/simultaneousEquationsGenerator.js - Phase 3 New Generator
+// src/generators/algebra/simultaneousEquationsGenerator.js - NEW DEDICATED FILE
+
 import _ from 'lodash';
 
 /**
- * Generate linear simultaneous equations using elimination method
- * Handles starter, diagnostic, and examples sections with section-aware output
+ * Generate elimination example where coefficients are already the same
+ * Example: 3x + 2y = 16 and 3x + 5y = 22
+ * Teaching point: Direct subtraction when coefficients match
  */
-export const generateLinearSimultaneous = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'diagnostic'
-  } = options;
+export const generateEliminationSameCoefficient = (options = {}) => {
+    const {
+        difficulty = 'medium',
+        sectionType = 'examples'
+    } = options;
 
-  // UNIFIED MATH LOGIC - Work backwards from solution for clean results
-  const x = _.random(1, 8);
-  const y = _.random(1, 8);
-
-  let a1, b1, c1, a2, b2, c2;
-
-  if (difficulty === 'easy') {
-    // Simple coefficients, one coefficient is 1
-    a1 = 1;
-    b1 = _.random(1, 3);
-    a2 = _.random(2, 4);
-    b2 = _.random(1, 3);
-  } else if (difficulty === 'medium') {
-    // Medium coefficients
-    a1 = _.random(1, 4);
-    b1 = _.random(1, 4);
-    a2 = _.random(1, 4);
-    b2 = _.random(1, 4);
+    // Work backwards from solution - allow negative values
+    const x = _.random(-5, 8);
+    const y = _.random(-4, 7);
     
-    // Ensure they're not multiples of each other (would be parallel/same line)
-    while (a1 * b2 === a2 * b1) {
-      b2 = _.random(1, 4);
+    // Ensure at least one is non-zero
+    if (x === 0 && y === 0) {
+        return generateEliminationSameCoefficient(options);
     }
-  } else {
-    // Harder coefficients, some negatives
-    a1 = _.random(1, 5);
-    b1 = Math.random() > 0.7 ? -_.random(1, 4) : _.random(1, 4);
-    a2 = _.random(1, 5);
-    b2 = Math.random() > 0.7 ? -_.random(1, 4) : _.random(1, 4);
+
+    // Create equations where one coefficient is the same
+    const sameCoeff = _.random(2, 5);  // Same coefficient for x or y
+    const useXSame = Math.random() > 0.5;
     
-    // Ensure not parallel
-    while (a1 * b2 === a2 * b1) {
-      b2 = Math.random() > 0.5 ? -_.random(1, 4) : _.random(1, 4);
-    }
-  }
-
-  // Calculate right-hand sides
-  c1 = a1 * x + b1 * y;
-  c2 = a2 * x + b2 * y;
-
-  // Build equation strings
-  const formatEquation = (a, b, c) => {
-    const xTerm = a === 1 ? 'x' : a === -1 ? '-x' : `${a}x`;
-    const yTerm = b === 1 ? (b > 0 ? '+ y' : '- y') : 
-                 b === -1 ? '- y' : 
-                 b > 0 ? `+ ${b}y` : `- ${Math.abs(b)}y`;
+    let a1, b1, c1, a2, b2, c2;
     
-    return `${xTerm} ${yTerm} = ${c}`.replace(/^\+\s*/, '');
-  };
-
-  const equation1 = formatEquation(a1, b1, c1);
-  const equation2 = formatEquation(a2, b2, c2);
-
-  // Solution method (elimination)
-  const eliminationSteps = generateEliminationSteps(a1, b1, c1, a2, b2, c2, x, y);
-
-  // SECTION-AWARE OUTPUT FORMATTING
-  if (sectionType === 'starter') {
-    return {
-      question: `Solve the simultaneous equations:
-                 ${equation1}
-                 ${equation2}`,
-      answer: `x = ${x}, y = ${y}`,
-      difficulty: 'algebra'
-    };
-  }
-
-  else if (sectionType === 'diagnostic') {
-    const incorrectOptions = [
-      `x = ${y}, y = ${x}`, // Swapped values
-      `x = ${x + 1}, y = ${y}`, // x wrong
-      `x = ${x}, y = ${y + 1}`, // y wrong
-      `x = ${Math.abs(x - y)}, y = ${x + y}` // Arithmetic error
-    ];
-
-    return {
-      questionDisplay: {
-        text: 'Solve the simultaneous equations:',
-        math: `\\begin{cases} ${equation1.replace(/\s*=\s*/, ' = ').replace(/\+\s*/, ' + ').replace(/-\s*/, ' - ')} \\\\ ${equation2.replace(/\s*=\s*/, ' = ').replace(/\+\s*/, ' + ').replace(/-\s*/, ' - ')} \\end{cases}`
-      },
-      correctAnswer: `x = ${x}, y = ${y}`,
-      options: [`x = ${x}, y = ${y}`, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
-      explanation: `Use elimination or substitution. Solution: x = ${x}, y = ${y}`
-    };
-  }
-
-  else if (sectionType === 'examples') {
-    return {
-      title: "Solving Linear Simultaneous Equations",
-      questionText: `Solve: ${equation1} and ${equation2}`,
-      solution: eliminationSteps
-    };
-  }
-
-  return generateLinearSimultaneous({ ...options, sectionType: 'diagnostic' });
-};
-
-/**
- * Generate elimination method steps for examples section
- */
-const generateEliminationSteps = (a1, b1, c1, a2, b2, c2, x, y) => {
-  const equation1 = `${a1}x ${b1 >= 0 ? '+' : ''} ${b1}y = ${c1}`;
-  const equation2 = `${a2}x ${b2 >= 0 ? '+' : ''} ${b2}y = ${c2}`;
-
-  const steps = [
-    {
-      explanation: "Write the two equations clearly",
-      formula: `\\begin{cases} ${equation1} \\quad (1) \\\\ ${equation2} \\quad (2) \\end{cases}`
-    }
-  ];
-
-  // Decide which variable to eliminate (choose the easier one)
-  const xCoeffGCD = gcd(Math.abs(a1), Math.abs(a2));
-  const yCoeffGCD = gcd(Math.abs(b1), Math.abs(b2));
-  
-  const eliminateX = xCoeffGCD >= yCoeffGCD;
-
-  if (eliminateX) {
-    // Eliminate x
-    const mult1 = Math.abs(a2) / xCoeffGCD;
-    const mult2 = Math.abs(a1) / xCoeffGCD;
-    
-    steps.push({
-      explanation: `To eliminate x, multiply equation (1) by ${mult1} and equation (2) by ${mult2}`,
-      formula: `\\text{This makes the x coefficients: } ${mult1 * a1} \\text{ and } ${mult2 * a2}`
-    });
-
-    const newA1 = a1 * mult1;
-    const newB1 = b1 * mult1;
-    const newC1 = c1 * mult1;
-    const newA2 = a2 * mult2;
-    const newB2 = b2 * mult2;
-    const newC2 = c2 * mult2;
-
-    // Subtract or add to eliminate
-    const operation = (newA1 > 0 && newA2 > 0) || (newA1 < 0 && newA2 < 0) ? 'subtract' : 'add';
-    const resultB = operation === 'subtract' ? newB1 - newB2 : newB1 + newB2;
-    const resultC = operation === 'subtract' ? newC1 - newC2 : newC1 + newC2;
-
-    steps.push({
-      explanation: `${operation === 'subtract' ? 'Subtract' : 'Add'} the equations to eliminate x`,
-      formula: `${resultB}y = ${resultC}`
-    });
-
-    steps.push({
-      explanation: "Solve for y",
-      formula: `y = ${resultC} \\div ${resultB} = ${y}`
-    });
-
-    steps.push({
-      explanation: "Substitute back to find x",
-      formula: `${a1}x + ${b1}(${y}) = ${c1} \\Rightarrow x = ${x}`
-    });
-
-  } else {
-    // Similar logic for eliminating y
-    steps.push({
-      explanation: "Eliminate y using multiplication and addition/subtraction",
-      formula: "\\text{(Working shown step by step)}"
-    });
-    
-    steps.push({
-      explanation: "Solve for x first, then substitute to find y",
-      formula: `x = ${x}, y = ${y}`
-    });
-  }
-
-  steps.push({
-    explanation: "Check the solution in both original equations",
-    formula: `\\text{Verification: } (${x}, ${y}) \\text{ satisfies both equations}`
-  });
-
-  return steps;
-};
-
-/**
- * Generate substitution method simultaneous equations
- * Alternative approach to elimination
- */
-export const generateSimultaneousSubstitution = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'examples'
-  } = options;
-
-  // Generate where one equation has a coefficient of 1 for easy substitution
-  const x = _.random(2, 8);
-  const y = _.random(1, 8);
-
-  let a1 = 1, b1, c1, a2, b2, c2;
-
-  if (difficulty === 'easy') {
-    b1 = _.random(1, 3);
-    a2 = _.random(2, 4);
-    b2 = _.random(1, 3);
-  } else {
-    b1 = Math.random() > 0.8 ? -_.random(1, 4) : _.random(1, 4);
-    a2 = _.random(2, 5);
-    b2 = Math.random() > 0.8 ? -_.random(1, 4) : _.random(1, 4);
-  }
-
-  c1 = a1 * x + b1 * y;
-  c2 = a2 * x + b2 * y;
-
-  const equation1 = `x ${b1 >= 0 ? '+' : ''} ${b1}y = ${c1}`;
-  const equation2 = `${a2}x ${b2 >= 0 ? '+' : ''} ${b2}y = ${c2}`;
-
-  if (sectionType === 'examples') {
-    const solution = [
-      {
-        explanation: "From the first equation, express x in terms of y",
-        formula: `x = ${c1} - (${b1})y = ${c1} ${-b1 >= 0 ? '+' : ''} ${-b1}y`
-      },
-      {
-        explanation: "Substitute this expression into the second equation",
-        formula: `${a2}(${c1} ${-b1 >= 0 ? '+' : ''} ${-b1}y) ${b2 >= 0 ? '+' : ''} ${b2}y = ${c2}`
-      },
-      {
-        explanation: "Expand and solve for y",
-        formula: `${a2 * c1} ${a2 * (-b1) >= 0 ? '+' : ''} ${a2 * (-b1)}y ${b2 >= 0 ? '+' : ''} ${b2}y = ${c2}`
-      },
-      {
-        explanation: "Simplify and solve",
-        formula: `${a2 * (-b1) + b2}y = ${c2 - a2 * c1}`
-      },
-      {
-        explanation: "Therefore",
-        formula: `y = ${y}`
-      },
-      {
-        explanation: "Substitute back to find x",
-        formula: `x = ${c1} ${-b1 >= 0 ? '+' : ''} ${-b1}(${y}) = ${x}`
-      }
-    ];
-
-    return {
-      title: "Solving by Substitution Method",
-      questionText: `Solve: ${equation1} and ${equation2}`,
-      solution
-    };
-  }
-
-  return generateSimultaneousSubstitution({ ...options, sectionType: 'examples' });
-};
-
-/**
- * Generate quadratic simultaneous equations (one linear, one quadratic)
- * For advanced topics (Algebra IV - Week 5)
- */
-export const generateQuadraticSimultaneous = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'examples'
-  } = options;
-
-  // Keep it simple: line and circle/parabola intersection
-  const solutions = [
-    { x: _.random(1, 4), y: _.random(1, 6) },
-    { x: _.random(-2, 0), y: _.random(2, 8) }
-  ];
-
-  // Linear equation: y = mx + c (through one solution)
-  const m = _.random(1, 3);
-  const c = solutions[0].y - m * solutions[0].x;
-  
-  // Quadratic: y = ax² + bx + d (through both solutions)
-  // Using y = x² + bx + d for simplicity
-  const a = 1;
-  const b = -(solutions[0].x + solutions[1].x); // Sum of roots
-  const d = solutions[0].y - solutions[0].x * solutions[0].x - b * solutions[0].x;
-
-  const linearEq = `y = ${m}x ${c >= 0 ? '+' : ''} ${c}`;
-  const quadraticEq = `y = x^2 ${b >= 0 ? '+' : ''} ${b}x ${d >= 0 ? '+' : ''} ${d}`;
-
-  if (sectionType === 'examples') {
-    return {
-      title: "Quadratic Simultaneous Equations",
-      questionText: `Solve: ${linearEq} and ${quadraticEq}`,
-      solution: [
-        {
-          explanation: "Since both expressions equal y, set them equal",
-          formula: `${m}x + ${c} = x^2 ${b >= 0 ? '+' : ''} ${b}x ${d >= 0 ? '+' : ''} ${d}`
-        },
-        {
-          explanation: "Rearrange to standard quadratic form",
-          formula: `x^2 ${b - m >= 0 ? '+' : ''} ${b - m}x ${d - c >= 0 ? '+' : ''} ${d - c} = 0`
-        },
-        {
-          explanation: "Solve the quadratic equation",
-          formula: `x = ${solutions[0].x} \\text{ or } x = ${solutions[1].x}`
-        },
-        {
-          explanation: "Find corresponding y values",
-          formula: `\\text{Solutions: } (${solutions[0].x}, ${solutions[0].y}) \\text{ and } (${solutions[1].x}, ${solutions[1].y})`
+    if (useXSame) {
+        // Same x coefficients
+        a1 = a2 = sameCoeff;
+        b1 = _.random(1, 4);
+        b2 = _.random(1, 4);
+        // Ensure different y coefficients
+        while (b1 === b2) {
+            b2 = _.random(1, 4);
         }
-      ]
-    };
-  }
-
-  return generateQuadraticSimultaneous({ ...options, sectionType: 'examples' });
-};
-
-/**
- * Helper function to find GCD
- */
-const gcd = (a, b) => {
-  while (b !== 0) {
-    const temp = b;
-    b = a % b;
-    a = temp;
-  }
-  return a;
-};
-
-/**
- * Generate word problems involving simultaneous equations
- * Real-world contexts for starter questions
- */
-export const generateSimultaneousWordProblem = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'starter'
-  } = options;
-
-  // Simple scenarios
-  const scenarios = [
-    {
-      context: "A cinema sells adult tickets for £{price1} and child tickets for £{price2}. On one day, they sold {total} tickets and made £{revenue}.",
-      setup: "Let a = adult tickets, c = child tickets",
-      equations: ["a + c = {total}", "{price1}a + {price2}c = {revenue}"],
-      question: "How many adult and child tickets were sold?"
-    },
-    {
-      context: "A farmer has {total} animals - chickens and cows. Together they have {legs} legs.",
-      setup: "Let c = chickens, w = cows",
-      equations: ["c + w = {total}", "2c + 4w = {legs}"],
-      question: "How many chickens and cows are there?"
-    },
-    {
-      context: "Two numbers add up to {sum} and their difference is {diff}.",
-      setup: "Let x = larger number, y = smaller number",
-      equations: ["x + y = {sum}", "x - y = {diff}"],
-      question: "Find the two numbers."
+    } else {
+        // Same y coefficients  
+        b1 = b2 = sameCoeff;
+        a1 = _.random(1, 4);
+        a2 = _.random(1, 4);
+        // Ensure different x coefficients
+        while (a1 === a2) {
+            a2 = _.random(1, 4);
+        }
     }
-  ];
 
-  const scenario = _.sample(scenarios);
-  
-  // Generate values
-  const x = _.random(5, 15);
-  const y = _.random(3, 12);
-  
-  const values = {
-    price1: _.random(8, 12),
-    price2: _.random(4, 7),
-    total: x + y,
-    revenue: 0, // Will be calculated
-    legs: 2 * x + 4 * y,
-    sum: x + y,
-    diff: Math.abs(x - y)
-  };
-  
-  values.revenue = values.price1 * x + values.price2 * y;
+    // Calculate constants
+    c1 = a1 * x + b1 * y;
+    c2 = a2 * x + b2 * y;
 
-  // Replace placeholders
-  let contextText = scenario.context;
-  let setupText = scenario.setup;
-  let equationsText = scenario.equations.map(eq => eq);
+    // Format equations with proper LaTeX
+    const equation1 = `${a1 === 1 ? '' : a1}x ${b1 >= 0 ? '+' : ''} ${b1 === 1 ? '' : b1 === -1 ? '-' : b1}y = ${c1}`;
+    const equation2 = `${a2 === 1 ? '' : a2}x ${b2 >= 0 ? '+' : ''} ${b2 === 1 ? '' : b2 === -1 ? '-' : b2}y = ${c2}`;
 
-  Object.keys(values).forEach(key => {
-    const placeholder = `{${key}}`;
-    contextText = contextText.replace(new RegExp(placeholder, 'g'), values[key]);
-    setupText = setupText.replace(new RegExp(placeholder, 'g'), values[key]);
-    equationsText = equationsText.map(eq => eq.replace(new RegExp(placeholder, 'g'), values[key]));
-  });
+    // Generate solution steps
+    const variable = useXSame ? 'x' : 'y';
+    const eliminatedCoeff = useXSame ? a1 : b1;
+    const remainingCoeff = useXSame ? (b1 - b2) : (a1 - a2);
+    const remainingConstant = c1 - c2;
+    const remainingVariable = useXSame ? 'y' : 'x';
+    const solvedValue = useXSame ? y : x;
 
-  if (sectionType === 'starter') {
+    const solution = [
+        {
+            explanation: `Notice that both equations have the same coefficient for ${variable} (${eliminatedCoeff})`,
+            formula: `\\begin{cases} ${equation1} \\quad (1) \\\\ ${equation2} \\quad (2) \\end{cases}`
+        },
+        {
+            explanation: "Subtract equation (2) from equation (1) to eliminate the variable with the same coefficient",
+            formula: `(1) - (2): (${a1}x ${b1 >= 0 ? '+' : ''} ${b1}y) - (${a2}x ${b2 >= 0 ? '+' : ''} ${b2}y) = ${c1} - ${c2}`
+        },
+        {
+            explanation: "Simplify to solve for the remaining variable",
+            formula: `${remainingCoeff}${remainingVariable} = ${remainingConstant}`
+        },
+        {
+            explanation: `Solve for ${remainingVariable}`,
+            formula: `${remainingVariable} = ${remainingConstant} \\div ${remainingCoeff} = ${solvedValue}`
+        },
+        {
+            explanation: `Substitute back into equation (1) to find ${variable}`,
+            formula: `${a1}(${useXSame ? x : solvedValue}) ${b1 >= 0 ? '+' : ''} ${b1}(${useXSame ? solvedValue : y}) = ${c1}`
+        },
+        {
+            explanation: "Final solution",
+            formula: `x = ${x}, \\quad y = ${y}`
+        }
+    ];
+
     return {
-      question: `${contextText} ${scenario.question}`,
-      answer: `${setupText}
-               Equations: ${equationsText.join(', ')}
-               Solution: First variable = ${x}, Second variable = ${y}`,
-      difficulty: 'algebra'
+        title: "Same Coefficients",
+        equation1,
+        equation2,
+        solution,
+        answer: { x, y }
     };
-  }
-
-  return generateSimultaneousWordProblem({ ...options, sectionType: 'starter' });
 };
 
-// Export all simultaneous equation generators
+/**
+ * Generate elimination example requiring multiplication of one or both equations
+ * Teaching point: Use LCM to create matching coefficients
+ */
+export const generateEliminationWithMultiplication = (options = {}) => {
+    const {
+        difficulty = 'medium', 
+        sectionType = 'examples'
+    } = options;
+
+    // Work backwards from solution
+    const x = _.random(-4, 6);
+    const y = _.random(-5, 7);
+    
+    // Ensure at least one is non-zero
+    if (x === 0 && y === 0) {
+        return generateEliminationWithMultiplication(options);
+    }
+
+    // Create coefficients that need LCM
+    const coeff1 = _.random(2, 4);
+    const coeff2 = _.random(3, 5);
+    // Ensure they're different and need real multiplication
+    while (coeff1 === coeff2 || coeff1 % coeff2 === 0 || coeff2 % coeff1 === 0) {
+        const newCoeff2 = _.random(3, 5);
+        if (newCoeff2 !== coeff1) {
+            break;
+        }
+    }
+
+    // Decide which variable to eliminate
+    const eliminateX = Math.random() > 0.5;
+    
+    let a1, b1, a2, b2, c1, c2;
+    
+    if (eliminateX) {
+        a1 = coeff1;
+        a2 = coeff2;
+        b1 = _.random(1, 4);
+        b2 = _.random(1, 4);
+    } else {
+        a1 = _.random(1, 4);
+        a2 = _.random(1, 4);
+        b1 = coeff1;
+        b2 = coeff2;
+    }
+
+    // Calculate constants
+    c1 = a1 * x + b1 * y;
+    c2 = a2 * x + b2 * y;
+
+    // Format equations
+    const equation1 = `${a1 === 1 ? '' : a1}x ${b1 >= 0 ? '+' : ''} ${b1 === 1 ? '' : b1 === -1 ? '-' : b1}y = ${c1}`;
+    const equation2 = `${a2 === 1 ? '' : a2}x ${b2 >= 0 ? '+' : ''} ${b2 === 1 ? '' : b2 === -1 ? '-' : b2}y = ${c2}`;
+
+    // Calculate LCM and multipliers
+    const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+    const lcm = (a, b) => Math.abs(a * b) / gcd(a, b);
+    const targetCoeffs = eliminateX ? [a1, a2] : [b1, b2];
+    const lcmValue = lcm(targetCoeffs[0], targetCoeffs[1]);
+    const mult1 = lcmValue / targetCoeffs[0];
+    const mult2 = lcmValue / targetCoeffs[1];
+
+    const solution = [
+        {
+            explanation: `To eliminate ${eliminateX ? 'x' : 'y'}, we need matching coefficients`,
+            formula: `\\begin{cases} ${equation1} \\quad (1) \\\\ ${equation2} \\quad (2) \\end{cases}`
+        },
+        {
+            explanation: `LCM of ${targetCoeffs[0]} and ${targetCoeffs[1]} is ${lcmValue}. Multiply equation (1) by ${mult1} and equation (2) by ${mult2}`,
+            formula: `${mult1} \\times (1): \\quad ${mult2} \\times (2):`
+        },
+        {
+            explanation: "This gives us the new system",
+            formula: `\\begin{cases} ${a1 * mult1}x ${(b1 * mult1) >= 0 ? '+' : ''} ${b1 * mult1}y = ${c1 * mult1} \\\\ ${a2 * mult2}x ${(b2 * mult2) >= 0 ? '+' : ''} ${b2 * mult2}y = ${c2 * mult2} \\end{cases}`
+        },
+        {
+            explanation: `Subtract to eliminate ${eliminateX ? 'x' : 'y'}`,
+            formula: `${eliminateX ? (b1 * mult1 - b2 * mult2) : (a1 * mult1 - a2 * mult2)}${eliminateX ? 'y' : 'x'} = ${c1 * mult1 - c2 * mult2}`
+        },
+        {
+            explanation: `Solve for ${eliminateX ? 'y' : 'x'}`,
+            formula: `${eliminateX ? 'y' : 'x'} = ${eliminateX ? y : x}`
+        },
+        {
+            explanation: "Substitute back to find the other variable",
+            formula: `x = ${x}, \\quad y = ${y}`
+        }
+    ];
+
+    return {
+        title: "Multiplication Required",
+        equation1,
+        equation2,
+        solution,
+        answer: { x, y }
+    };
+};
+
+/**
+ * Generate elimination examples with different sign combinations
+ * Cycles through ++, +-, -+, -- patterns
+ */
+export const generateEliminationSignVariations = (options = {}) => {
+    const {
+        difficulty = 'medium',
+        sectionType = 'examples'
+    } = options;
+
+    // Work backwards from solution
+    const x = _.random(-4, 6);
+    const y = _.random(-5, 7);
+    
+    // Ensure at least one is non-zero
+    if (x === 0 && y === 0) {
+        return generateEliminationSignVariations(options);
+    }
+
+    // Define sign patterns for teaching
+    const signPatterns = [
+        { name: 'Both Positive (++)', a1: 1, b1: 1, a2: 1, b2: 1 },
+        { name: 'Mixed Signs (+-)', a1: 1, b1: 1, a2: 1, b2: -1 },
+        { name: 'Mixed Signs (-+)', a1: -1, b1: 1, a2: 1, b2: 1 },
+        { name: 'Both Negative (--)', a1: -1, b1: -1, a2: -1, b2: -1 }
+    ];
+
+    const pattern = _.sample(signPatterns);
+    
+    // Apply coefficients with chosen signs
+    const a1 = pattern.a1 * _.random(2, 4);
+    const b1 = pattern.b1 * _.random(1, 3);
+    const a2 = pattern.a2 * _.random(1, 3);
+    const b2 = pattern.b2 * _.random(2, 4);
+
+    // Calculate constants
+    const c1 = a1 * x + b1 * y;
+    const c2 = a2 * x + b2 * y;
+
+    // Format equations
+    const equation1 = `${a1 === 1 ? '' : a1 === -1 ? '-' : a1}x ${b1 >= 0 ? '+' : ''} ${b1 === 1 ? '' : b1 === -1 ? '-' : b1}y = ${c1}`;
+    const equation2 = `${a2 === 1 ? '' : a2 === -1 ? '-' : a2}x ${b2 >= 0 ? '+' : ''} ${b2 === 1 ? '' : b2 === -1 ? '-' : b2}y = ${c2}`;
+
+    // Determine operation based on signs
+    const shouldAdd = (a1 > 0 && a2 < 0) || (a1 < 0 && a2 > 0);
+    const operation = shouldAdd ? 'add' : 'subtract';
+    
+    const solution = [
+        {
+            explanation: `Example with ${pattern.name} sign pattern`,
+            formula: `\\begin{cases} ${equation1} \\quad (1) \\\\ ${equation2} \\quad (2) \\end{cases}`
+        },
+        {
+            explanation: `To eliminate x, we ${operation} the equations because of the sign pattern`,
+            formula: `(1) ${shouldAdd ? '+' : '-'} (2):`
+        },
+        {
+            explanation: "This eliminates the x terms",
+            formula: `${shouldAdd ? (b1 + b2) : (b1 - b2)}y = ${shouldAdd ? (c1 + c2) : (c1 - c2)}`
+        },
+        {
+            explanation: "Solve for y",
+            formula: `y = ${y}`
+        },
+        {
+            explanation: "Substitute back to find x",
+            formula: `x = ${x}`
+        },
+        {
+            explanation: "Final solution",
+            formula: `x = ${x}, \\quad y = ${y}`
+        }
+    ];
+
+    return {
+        title: `Sign Variations (${pattern.name.slice(-3, -1)})`,
+        equation1,
+        equation2,
+        solution,
+        answer: { x, y }
+    };
+};
+
+// Export all generators
 export const simultaneousEquationsGenerators = {
-  generateLinearSimultaneous,
-  generateSimultaneousSubstitution,
-  generateQuadraticSimultaneous,
-  generateSimultaneousWordProblem
+    generateEliminationSameCoefficient,
+    generateEliminationWithMultiplication,  
+    generateEliminationSignVariations
 };
 
 export default simultaneousEquationsGenerators;
