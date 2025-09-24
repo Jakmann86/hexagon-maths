@@ -547,9 +547,9 @@ export const generateExpandingDoubleBrackets = (options = {}) => {
 };
 
 /**
- * NEW: Generate triple bracket expansion
+ * Generate triple bracket expansion with FULL computation
  * Handles expressions like (x+1)(x+2)(x+3)
- * Adapts the double bracket logic for three brackets
+ * Now calculates the complete cubic expansion
  */
 export const generateExpandingTripleBrackets = (options = {}) => {
   const {
@@ -585,13 +585,85 @@ export const generateExpandingTripleBrackets = (options = {}) => {
 
   const expression = `${bracket1}${bracket2}${bracket3}`;
 
-  // For simplicity, we'll show the method rather than compute the full expansion
-  // In real teaching, students would expand two brackets first, then multiply by the third
+  // STEP 1: Expand first two brackets using FOIL
+  const first12 = a * c; // x^2 coefficient
+  const outer12 = a * actualD; // outer x term
+  const inner12 = actualB * c; // inner x term
+  const last12 = actualB * actualD; // constant term
+  const middle12 = outer12 + inner12; // combined x coefficient
 
+  // Build the intermediate quadratic expression
+  let quadTerms = [];
+  if (first12 === 1) {
+    quadTerms.push('x^2');
+  } else {
+    quadTerms.push(`${first12}x^2`);
+  }
+  
+  if (middle12 > 0) {
+    quadTerms.push(middle12 === 1 ? '+ x' : `+ ${middle12}x`);
+  } else if (middle12 < 0) {
+    quadTerms.push(Math.abs(middle12) === 1 ? '- x' : `- ${Math.abs(middle12)}x`);
+  }
+  
+  if (last12 > 0) {
+    quadTerms.push(`+ ${last12}`);
+  } else if (last12 < 0) {
+    quadTerms.push(`- ${Math.abs(last12)}`);
+  }
+  
+  const intermediateQuadratic = quadTerms.join(' ').replace(/^\+ /, '');
+
+  // STEP 2: Multiply the quadratic by the third bracket
+  // (ax^2 + bx + c)(ex + f)
+  const x3_coeff = first12 * e; // x^3 term
+  const x2_coeff = first12 * actualF + middle12 * e; // x^2 term
+  const x1_coeff = middle12 * actualF + last12 * e; // x term
+  const x0_coeff = last12 * actualF; // constant term
+
+  // Build the final cubic expression
+  let finalTerms = [];
+  
+  // x^3 term
+  if (x3_coeff === 1) {
+    finalTerms.push('x^3');
+  } else if (x3_coeff === -1) {
+    finalTerms.push('-x^3');
+  } else {
+    finalTerms.push(`${x3_coeff}x^3`);
+  }
+  
+  // x^2 term
+  if (x2_coeff > 0) {
+    finalTerms.push(x2_coeff === 1 ? '+ x^2' : `+ ${x2_coeff}x^2`);
+  } else if (x2_coeff < 0) {
+    finalTerms.push(Math.abs(x2_coeff) === 1 ? '- x^2' : `- ${Math.abs(x2_coeff)}x^2`);
+  }
+  
+  // x term
+  if (x1_coeff > 0) {
+    finalTerms.push(x1_coeff === 1 ? '+ x' : `+ ${x1_coeff}x`);
+  } else if (x1_coeff < 0) {
+    finalTerms.push(Math.abs(x1_coeff) === 1 ? '- x' : `- ${Math.abs(x1_coeff)}x`);
+  }
+  
+  // constant term
+  if (x0_coeff > 0) {
+    finalTerms.push(`+ ${x0_coeff}`);
+  } else if (x0_coeff < 0) {
+    finalTerms.push(`- ${Math.abs(x0_coeff)}`);
+  }
+  
+  const finalAnswer = finalTerms.join(' ').replace(/^\+ /, '');
+
+  // SECTION-AWARE OUTPUT
   if (sectionType === 'starter') {
     return {
       question: `Expand ${expression}`,
-      answer: `First expand ${bracket1}${bracket2}, then multiply by ${bracket3}`,
+      answer: `${expression}\\\\
+        \\text{Step 1: } ${bracket1}${bracket2} = ${intermediateQuadratic}\\\\
+        \\text{Step 2: } (${intermediateQuadratic})${bracket3}\\\\
+        \\text{Answer: } ${finalAnswer}`,
       difficulty: 'algebra'
     };
   }
@@ -604,15 +676,19 @@ export const generateExpandingTripleBrackets = (options = {}) => {
       },
       {
         explanation: `First expand ${bracket1}${bracket2} using FOIL`,
-        formula: "\\text{Use the double bracket method first}"
+        formula: `${bracket1}${bracket2} = ${intermediateQuadratic}`
       },
       {
-        explanation: "Then multiply the result by the third bracket",
-        formula: "\\text{Multiply each term by each term in the third bracket}"
+        explanation: "Now multiply each term in the quadratic by each term in the third bracket",
+        formula: `(${intermediateQuadratic})${bracket3}`
       },
       {
-        explanation: "Finally, collect like terms to get the cubic expression",
-        formula: "\\text{Result will be a cubic expression in } x"
+        explanation: `Multiply each term: ${first12 === 1 ? '' : first12}x^2 \\times ${e === 1 ? '' : e}x = ${x3_coeff === 1 ? '' : x3_coeff}x^3`,
+        formula: `${x3_coeff === 1 ? '' : x3_coeff}x^3 ${x2_coeff >= 0 ? '+' : ''} ${x2_coeff === 0 ? '' : Math.abs(x2_coeff) === 1 ? (x2_coeff > 0 ? '' : '-') + 'x^2' : x2_coeff + 'x^2'} ${x1_coeff >= 0 ? '+' : ''} ${x1_coeff === 0 ? '' : Math.abs(x1_coeff) === 1 ? (x1_coeff > 0 ? '' : '-') + 'x' : x1_coeff + 'x'} ${x0_coeff >= 0 ? '+' : ''} ${x0_coeff === 0 ? '' : x0_coeff}`
+      },
+      {
+        explanation: "Collect like terms to get the final cubic expression",
+        formula: finalAnswer
       }
     ];
 

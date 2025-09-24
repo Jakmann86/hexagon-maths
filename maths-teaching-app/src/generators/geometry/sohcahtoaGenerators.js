@@ -218,8 +218,13 @@ export const generateTriangleLabeling = (options = {}) => {
 
 /**
  * Unified missing side using trigonometry generator
- * Handles starter, diagnostic, and examples sections with section-aware output
- * Examples section includes variety of trig ratios and angles
+ * FINAL FIX: Properly accounts for angle position in triangle
+ * 
+ * KEY INSIGHT: In default orientation (right angle at bottom-left):
+ * - showAngles[0] = true shows angle at BOTTOM-RIGHT (base angle)
+ * - showAngles[1] = true shows angle at TOP (height angle)
+ * 
+ * The relationship between sides changes based on which angle is marked!
  */
 export const generateFindMissingSideTrig = (options = {}) => {
   const {
@@ -227,96 +232,93 @@ export const generateFindMissingSideTrig = (options = {}) => {
     difficulty = 'medium',
     seed = Date.now(),
     units = 'cm',
-    trigRatio = null // Allow forcing specific ratio for examples
+    trigRatio = null
   } = options;
 
-  // Choose angles - easier angles for starter/diagnostic, variety for examples
   const angles = sectionType === 'examples' 
     ? [30, 35, 40, 45, 50, 55, 60]
-    : [30, 45, 60]; // Stick to special angles for cleaner answers
+    : [30, 45, 60];
 
   const angle = seed ? angles[seed % angles.length] : _.sample(angles);
 
-  // Choose trig ratio - force specific one if provided, otherwise random
   const ratios = ['sine', 'cosine', 'tangent'];
   const chosenRatio = trigRatio || (seed ? ratios[seed % 3] : _.sample(ratios));
 
   let base, height, labels, knownSide, unknownSide, correctAnswer;
+  let hypotenuse, opposite, adjacent;
+  let knowOpposite = false;
 
-  // Generate triangle based on the chosen ratio
   if (chosenRatio === 'sine') {
-    // sin(θ) = opposite / hypotenuse - know hypotenuse, find opposite
-    const hypotenuse = seed ? 5 + (seed % 6) : _.random(5, 10);
-    const opposite = Math.round(hypotenuse * Math.sin(angle * Math.PI / 180) * 10) / 10;
-    const adjacent = Math.round(Math.sqrt(hypotenuse * hypotenuse - opposite * opposite) * 10) / 10;
+    // sin(θ) = opposite / hypotenuse
+    hypotenuse = seed ? 5 + (seed % 6) : _.random(5, 10);
+    opposite = Math.round(hypotenuse * Math.sin(angle * Math.PI / 180) * 10) / 10;
+    adjacent = Math.round(Math.sqrt(hypotenuse * hypotenuse - opposite * opposite) * 10) / 10;
 
+    // KEY: For sine, we want angle at bottom-right (showAngles[0] = true)
+    // In default orientation with angle at bottom-right:
+    // - base (horizontal) = ADJACENT to the angle
+    // - height (vertical) = OPPOSITE to the angle
     base = adjacent;
     height = opposite;
     knownSide = hypotenuse;
     unknownSide = opposite;
     correctAnswer = opposite;
 
-    // Determine angle position
-    const angleAtBase = seed ? ((seed + 2) % 2 === 0) : (Math.random() > 0.5);
-    
-    // Labels: show hypotenuse + unknown opposite + hide adjacent
-    labels = angleAtBase ?
-      ['? cm', null, `${hypotenuse} cm`] :
-      [null, '? cm', `${hypotenuse} cm`];
+    // Labels: [base=adjacent, height=opposite, hypotenuse]
+    // Show hypotenuse and opposite (height), hide adjacent (base)
+    labels = [null, '? cm', `${hypotenuse} cm`];
 
   } else if (chosenRatio === 'cosine') {
-    // cos(θ) = adjacent / hypotenuse - know hypotenuse, find adjacent
-    const hypotenuse = seed ? 5 + (seed % 6) : _.random(5, 10);
-    const adjacent = Math.round(hypotenuse * Math.cos(angle * Math.PI / 180) * 10) / 10;
-    const opposite = Math.round(Math.sqrt(hypotenuse * hypotenuse - adjacent * adjacent) * 10) / 10;
+    // cos(θ) = adjacent / hypotenuse
+    hypotenuse = seed ? 5 + (seed % 6) : _.random(5, 10);
+    adjacent = Math.round(hypotenuse * Math.cos(angle * Math.PI / 180) * 10) / 10;
+    opposite = Math.round(Math.sqrt(hypotenuse * hypotenuse - adjacent * adjacent) * 10) / 10;
 
+    // KEY: For cosine, we want angle at bottom-right (showAngles[0] = true)
+    // In default orientation with angle at bottom-right:
+    // - base (horizontal) = ADJACENT to the angle
+    // - height (vertical) = OPPOSITE to the angle
     base = adjacent;
     height = opposite;
     knownSide = hypotenuse;
     unknownSide = adjacent;
     correctAnswer = adjacent;
 
-    // Determine angle position
-    const angleAtBase = seed ? ((seed + 2) % 2 === 0) : (Math.random() > 0.5);
-    
-    // Labels: show hypotenuse + unknown adjacent + hide opposite
-    labels = angleAtBase ?
-      [null, '? cm', `${hypotenuse} cm`] :
-      ['? cm', null, `${hypotenuse} cm`];
+    // Labels: [base=adjacent, height=opposite, hypotenuse]
+    // Show hypotenuse and adjacent (base), hide opposite (height)
+    labels = ['? cm', null, `${hypotenuse} cm`];
 
   } else {
     // tangent - know one side, find other
-    const knowOpposite = seed ? ((seed + 3) % 2 === 0) : (Math.random() > 0.5);
+    knowOpposite = seed ? ((seed + 3) % 2 === 0) : (Math.random() > 0.5);
 
     if (knowOpposite) {
-      const opposite = seed ? 3 + (seed % 6) : _.random(3, 8);
-      const adjacent = Math.round(opposite / Math.tan(angle * Math.PI / 180) * 10) / 10;
+      opposite = seed ? 3 + (seed % 6) : _.random(3, 8);
+      adjacent = Math.round(opposite / Math.tan(angle * Math.PI / 180) * 10) / 10;
 
+      // Angle at bottom-right: base=adjacent, height=opposite
       base = adjacent;
       height = opposite;
       knownSide = opposite;
       unknownSide = adjacent;
       correctAnswer = adjacent;
 
-      const angleAtBase = seed ? ((seed + 1) % 2 === 0) : (Math.random() > 0.5);
-      labels = angleAtBase ?
-        [`${opposite} cm`, '? cm', null] :
-        ['? cm', `${opposite} cm`, null];
+      // Show opposite (height), find adjacent (base)
+      labels = ['? cm', `${opposite} cm`, null];
 
     } else {
-      const adjacent = seed ? 3 + (seed % 6) : _.random(3, 8);
-      const opposite = Math.round(adjacent * Math.tan(angle * Math.PI / 180) * 10) / 10;
+      adjacent = seed ? 3 + (seed % 6) : _.random(3, 8);
+      opposite = Math.round(adjacent * Math.tan(angle * Math.PI / 180) * 10) / 10;
 
+      // Angle at bottom-right: base=adjacent, height=opposite  
       base = adjacent;
       height = opposite;
       knownSide = adjacent;
       unknownSide = opposite;
       correctAnswer = opposite;
 
-      const angleAtBase = seed ? ((seed + 1) % 2 === 0) : (Math.random() > 0.5);
-      labels = angleAtBase ?
-        ['? cm', `${adjacent} cm`, null] :
-        [`${adjacent} cm`, '? cm', null];
+      // Show adjacent (base), find opposite (height)
+      labels = [`${adjacent} cm`, '? cm', null];
     }
   }
 
@@ -328,57 +330,72 @@ export const generateFindMissingSideTrig = (options = {}) => {
     orientationConfig.orientation = orientations[orientationIndex];
   }
 
-  // Create visualization with ACTUAL angle value instead of θ
+  // Create visualization - ALWAYS show angle at bottom-right in starter mode
   const visualization = createRightTriangle({
     base,
     height,
     showRightAngle: true,
-    showAngles: [true, false],
-    angleLabels: [`${angle}°`, ''], // ← FIXED: Use actual angle value instead of θ
-    labelStyle: "custom",
+    showAngles: [true, false], // [0] = bottom-right angle, [1] = top angle
+    angleLabels: [`${angle}°`, ''],
+    labelStyle: 'custom',
     labels,
     units,
     sectionType,
     ...orientationConfig
   });
 
-  // SECTION-AWARE OUTPUT FORMATTING
+  const questionText = `Find the length of the missing side.`;
+
+  // SECTION-AWARE OUTPUT
   if (sectionType === 'starter') {
-    const questionText = `Find the missing side in this right-angled triangle. The angle is ${angle}°.`;
+    let workingSteps;
     
+    if (chosenRatio === 'sine') {
+      workingSteps = `\\text{Use: } \\sin(${angle}°) = \\frac{\\text{opposite}}{\\text{hypotenuse}}\\\\
+                     \\text{opposite} = ${hypotenuse} \\times \\sin(${angle}°)\\\\
+                     \\text{opposite} = ${correctAnswer}\\text{ cm}`;
+    } else if (chosenRatio === 'cosine') {
+      workingSteps = `\\text{Use: } \\cos(${angle}°) = \\frac{\\text{adjacent}}{\\text{hypotenuse}}\\\\
+                     \\text{adjacent} = ${hypotenuse} \\times \\cos(${angle}°)\\\\
+                     \\text{adjacent} = ${correctAnswer}\\text{ cm}`;
+    } else {
+      if (knowOpposite) {
+        workingSteps = `\\text{Use: } \\tan(${angle}°) = \\frac{\\text{opposite}}{\\text{adjacent}}\\\\
+                       \\text{adjacent} = \\frac{${knownSide}}{\\tan(${angle}°)}\\\\
+                       \\text{adjacent} = ${correctAnswer}\\text{ cm}`;
+      } else {
+        workingSteps = `\\text{Use: } \\tan(${angle}°) = \\frac{\\text{opposite}}{\\text{adjacent}}\\\\
+                       \\text{opposite} = ${knownSide} \\times \\tan(${angle}°)\\\\
+                       \\text{opposite} = ${correctAnswer}\\text{ cm}`;
+      }
+    }
+
     return {
       question: questionText,
-      answer: `\\text{Using ${chosenRatio}: } \\text{missing side} = ${correctAnswer}\\text{ ${units}}`,
+      answer: workingSteps,
       visualization
     };
   }
 
   else if (sectionType === 'diagnostic') {
-    const questionText = `Find the missing side using trigonometry. The angle is ${angle}°.`;
-
-    // Generate distractors
-    const distractors = [
-      Math.round((correctAnswer + _.random(0.5, 2)) * 10) / 10,
-      Math.round((correctAnswer - _.random(0.5, 1.5)) * 10) / 10,
-      Math.round((correctAnswer * 1.2) * 10) / 10
+    const incorrectOptions = [
+      Math.round((correctAnswer * 0.8) * 10) / 10,
+      Math.round((correctAnswer * 1.2) * 10) / 10,
+      Math.round((knownSide) * 10) / 10
     ];
 
     return {
-      questionDisplay: { text: questionText },
-      correctAnswer: `${correctAnswer}\\text{ ${units}}`,
-      options: generateUniqueOptions([
-        `${correctAnswer}\\text{ ${units}}`,
-        ...distractors.map(d => `${d}\\text{ ${units}}`)
-      ]),
-      explanation: `Use ${chosenRatio} to find the missing side: ${correctAnswer} ${units}`,
+      questionDisplay: {
+        text: questionText
+      },
+      correctAnswer: `${correctAnswer}`,
+      options: generateUniqueOptions([`${correctAnswer}`, ...incorrectOptions.map(val => `${val}`)]),
+      explanation: `Use ${chosenRatio}: the missing side is ${correctAnswer} cm`,
       visualization
     };
   }
 
   else if (sectionType === 'examples') {
-    const questionText = `Find the missing side length in this right-angled triangle. The angle is ${angle}°.`;
-
-    // Create solution steps based on the chosen ratio
     let solution;
     
     if (chosenRatio === 'sine') {
@@ -428,9 +445,6 @@ export const generateFindMissingSideTrig = (options = {}) => {
         }
       ];
     } else {
-      // tangent
-      const knowOpposite = labels[0].includes('?') ? false : true;
-      
       if (knowOpposite) {
         solution = [
           {
@@ -488,14 +502,12 @@ export const generateFindMissingSideTrig = (options = {}) => {
     };
   }
 
-  // Fallback to diagnostic format
   return generateFindMissingSideTrig({ ...options, sectionType: 'diagnostic' });
 };
 
 /**
- * NEW: Unified missing angle using inverse trigonometry generator
- * Handles starter, diagnostic, and examples sections with section-aware output
- * Uses inverse trig functions (sin⁻¹, cos⁻¹, tan⁻¹)
+ * Unified missing angle using inverse trigonometry generator
+ * FIXED: Corrected sine and cosine label positioning for angle finding
  */
 export const generateFindMissingAngleTrig = (options = {}) => {
   const {
@@ -503,7 +515,7 @@ export const generateFindMissingAngleTrig = (options = {}) => {
     difficulty = 'medium', 
     seed = Date.now(),
     units = 'cm',
-    trigRatio = null // Allow forcing specific ratio for examples
+    trigRatio = null
   } = options;
 
   // Choose common angles that give nice results
@@ -529,8 +541,9 @@ export const generateFindMissingAngleTrig = (options = {}) => {
     side1 = opposite;
     side2 = hypotenuse;
 
-    // Show opposite and hypotenuse, find angle
-    labels = [`${opposite} cm`, null, `${hypotenuse} cm`];
+    // FIXED: Labels array is [base, height, hypotenuse]
+    // For sine: show opposite (height) and hypotenuse, hide adjacent (base)
+    labels = [null, `${opposite} cm`, `${hypotenuse} cm`];
 
   } else if (chosenRatio === 'cosine') {
     // cos⁻¹(adjacent/hypotenuse) = angle
@@ -543,8 +556,9 @@ export const generateFindMissingAngleTrig = (options = {}) => {
     side1 = adjacent;
     side2 = hypotenuse;
 
-    // Show adjacent and hypotenuse, find angle
-    labels = [null, `${adjacent} cm`, `${hypotenuse} cm`];
+    // FIXED: Labels array is [base, height, hypotenuse]
+    // For cosine: show adjacent (base) and hypotenuse, hide opposite (height)
+    labels = [`${adjacent} cm`, null, `${hypotenuse} cm`];
 
   } else {
     // tan⁻¹(opposite/adjacent) = angle
@@ -556,8 +570,8 @@ export const generateFindMissingAngleTrig = (options = {}) => {
     side1 = opposite;
     side2 = adjacent;
 
-    // Show opposite and adjacent, find angle
-    labels = [`${opposite} cm`, `${adjacent} cm`, null];
+    // For tangent: show opposite (height) and adjacent (base), hide hypotenuse
+    labels = [`${adjacent} cm`, `${opposite} cm`, null];
   }
 
   // Generate orientation variety for all sections EXCEPT starter
@@ -574,51 +588,62 @@ export const generateFindMissingAngleTrig = (options = {}) => {
     height,
     showRightAngle: true,
     showAngles: [true, false],
-    angleLabels: ['?', ''], // Show ? for the missing angle
-    labelStyle: "custom",
+    angleLabels: ['?', ''],
+    labelStyle: 'custom',
     labels,
     units,
     sectionType,
     ...orientationConfig
   });
 
-  // SECTION-AWARE OUTPUT FORMATTING
+  // Build question text
+  const questionText = `Find the size of the missing angle.`;
+
+  // SECTION-AWARE OUTPUT
   if (sectionType === 'starter') {
-    const questionText = `Find the missing angle in this right-angled triangle.`;
+    let workingSteps;
     
+    if (chosenRatio === 'sine') {
+      workingSteps = `\\text{Use: } \\sin^{-1}\\left(\\frac{${side1}}{${side2}}\\right)\\\\
+                     \\text{angle} = \\sin^{-1}\\left(\\frac{${side1}}{${side2}}\\right)\\\\
+                     \\text{angle} = ${correctAngle}°`;
+    } else if (chosenRatio === 'cosine') {
+      workingSteps = `\\text{Use: } \\cos^{-1}\\left(\\frac{${side1}}{${side2}}\\right)\\\\
+                     \\text{angle} = \\cos^{-1}\\left(\\frac{${side1}}{${side2}}\\right)\\\\
+                     \\text{angle} = ${correctAngle}°`;
+    } else {
+      workingSteps = `\\text{Use: } \\tan^{-1}\\left(\\frac{${side1}}{${side2}}\\right)\\\\
+                     \\text{angle} = \\tan^{-1}\\left(\\frac{${side1}}{${side2}}\\right)\\\\
+                     \\text{angle} = ${correctAngle}°`;
+    }
+
     return {
       question: questionText,
-      answer: `\\text{Using inverse ${chosenRatio}: angle} = ${correctAngle}°`,
+      answer: workingSteps,
       visualization
     };
   }
 
   else if (sectionType === 'diagnostic') {
-    const questionText = `Find the missing angle using inverse trigonometry.`;
-
-    // Generate distractors
-    const distractors = [
-      Math.round(correctAngle + _.random(5, 15)),
-      Math.round(correctAngle - _.random(5, 15)),
-      Math.round(90 - correctAngle) // Complementary angle mistake
-    ].filter(angle => angle > 0 && angle < 90);
+    const incorrectOptions = [
+      correctAngle + 5,
+      correctAngle - 5,
+      90 - correctAngle,
+      Math.round(correctAngle * 1.2)
+    ].filter(val => val > 0 && val < 90);
 
     return {
-      questionDisplay: { text: questionText },
-      correctAnswer: `${correctAngle}°`,
-      options: generateUniqueOptions([
-        `${correctAngle}°`,
-        ...distractors.map(d => `${d}°`)
-      ]),
-      explanation: `Use inverse ${chosenRatio} to find the missing angle: ${correctAngle}°`,
+      questionDisplay: {
+        text: questionText
+      },
+      correctAnswer: `${correctAngle}`,
+      options: generateUniqueOptions([`${correctAngle}`, ...incorrectOptions.map(val => `${val}`)]),
+      explanation: `Use inverse ${chosenRatio}: the angle is ${correctAngle}°`,
       visualization
     };
   }
 
   else if (sectionType === 'examples') {
-    const questionText = `Find the missing angle in this right-angled triangle.`;
-
-    // Create solution steps based on the chosen ratio
     let solution;
     
     if (chosenRatio === 'sine') {
@@ -628,7 +653,7 @@ export const generateFindMissingAngleTrig = (options = {}) => {
           formula: `\\text{opposite} = ${side1}\\text{ cm}, \\text{ hypotenuse } = ${side2}\\text{ cm}`
         },
         {
-          explanation: "Since we know the opposite and hypotenuse, we use sine",
+          explanation: "Since we know the opposite and hypotenuse, we use inverse sine",
           formula: `\\sin(\\text{angle}) = \\frac{\\text{opposite}}{\\text{hypotenuse}}`
         },
         {
@@ -651,7 +676,7 @@ export const generateFindMissingAngleTrig = (options = {}) => {
           formula: `\\text{adjacent} = ${side1}\\text{ cm}, \\text{ hypotenuse } = ${side2}\\text{ cm}`
         },
         {
-          explanation: "Since we know the adjacent and hypotenuse, we use cosine",
+          explanation: "Since we know the adjacent and hypotenuse, we use inverse cosine",
           formula: `\\cos(\\text{angle}) = \\frac{\\text{adjacent}}{\\text{hypotenuse}}`
         },
         {
@@ -668,14 +693,13 @@ export const generateFindMissingAngleTrig = (options = {}) => {
         }
       ];
     } else {
-      // tangent
       solution = [
         {
           explanation: `Identify what we know: opposite = ${side1} cm, adjacent = ${side2} cm`,
           formula: `\\text{opposite} = ${side1}\\text{ cm}, \\text{ adjacent } = ${side2}\\text{ cm}`
         },
         {
-          explanation: "Since we know the opposite and adjacent, we use tangent",
+          explanation: "Since we know the opposite and adjacent, we use inverse tangent",
           formula: `\\tan(\\text{angle}) = \\frac{\\text{opposite}}{\\text{adjacent}}`
         },
         {
@@ -701,7 +725,6 @@ export const generateFindMissingAngleTrig = (options = {}) => {
     };
   }
 
-  // Fallback to diagnostic format
   return generateFindMissingAngleTrig({ ...options, sectionType: 'diagnostic' });
 };
 

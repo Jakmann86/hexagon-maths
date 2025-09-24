@@ -5,6 +5,7 @@ import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import { useUI } from '../../../../context/UIContext';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import { RefreshCw } from 'lucide-react';
+import { expressionsGenerators } from '../../../../generators/algebra/expressionsGenerator';
 
 const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   // Get theme colors for challenge section
@@ -14,43 +15,14 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   // Challenge state
   const [challenge, setChallenge] = useState(null);
 
-  // Generate a new challenge
+  // Generate a new challenge using the triple brackets generator
   const generateChallenge = () => {
-    const newChallenge = {
-      problemText: "Expand and simplify (3x + 2)(2x - 5)",
-      solution: [
-        {
-          explanation: "Use the FOIL method to expand the brackets",
-          formula: "(3x + 2)(2x - 5)"
-        },
-        {
-          explanation: "First: Multiply the first terms",
-          formula: "3x \\times 2x = 6x^2"
-        },
-        {
-          explanation: "Outside: Multiply the outside terms",
-          formula: "3x \\times (-5) = -15x"
-        },
-        {
-          explanation: "Inside: Multiply the inside terms",
-          formula: "2 \\times 2x = 4x"
-        },
-        {
-          explanation: "Last: Multiply the last terms",
-          formula: "2 \\times (-5) = -10"
-        },
-        {
-          explanation: "Combine all terms",
-          formula: "6x^2 - 15x + 4x - 10"
-        },
-        {
-          explanation: "Simplify by collecting like terms",
-          formula: "6x^2 - 11x - 10"
-        }
-      ]
-    };
+    const generatedChallenge = expressionsGenerators.generateExpandingTripleBrackets({
+      difficulty: 'medium',
+      sectionType: 'examples'
+    });
     
-    setChallenge(newChallenge);
+    setChallenge(generatedChallenge);
   };
 
   // Generate challenge on initial render
@@ -64,7 +36,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
         <div className="px-6 pt-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-gray-800">
-              Algebraic Expansion Challenge
+              Triple Bracket Expansion Challenge
             </h3>
             
             <button
@@ -84,7 +56,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                 {/* Problem Statement */}
                 <div className="bg-red-50 p-5 rounded-lg mb-6">
                   <div className="text-lg text-gray-800">
-                    {challenge.problemText}
+                    <MathDisplay math={challenge.questionText} />
                   </div>
                 </div>
 

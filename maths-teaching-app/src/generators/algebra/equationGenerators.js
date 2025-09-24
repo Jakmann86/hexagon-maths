@@ -69,6 +69,7 @@ export const generateDivisionEquation = (options = {}) => {
  * Generate a linear equation with x on both sides
  * Section-aware output for starter, diagnostic, and examples sections
  * Equations like: 3x + 5 = 2x + 8
+ * FIXED: Now ensures more variety in coefficients
  */
 export const generateLinearEquationBothSidesStarter = (options = {}) => {
     const { 
@@ -83,18 +84,18 @@ export const generateLinearEquationBothSidesStarter = (options = {}) => {
     while (attempts < 10) {
         // Generate coefficients to ensure integer solution
         if (difficulty === 'easy') {
-            leftCoeff = _.random(2, 5);
-            rightCoeff = 1; // Keep it simple for easy difficulty
+            leftCoeff = _.random(3, 6);  // Changed from 2-5
+            rightCoeff = _.random(2, leftCoeff - 1);  // Changed from always 1 - now varies between 2 and leftCoeff-1
             leftConstant = _.random(1, 5);
             rightConstant = _.random(leftConstant + 1, 15);
         } else if (difficulty === 'medium') {
-            leftCoeff = _.random(2, 6);
-            rightCoeff = _.random(1, leftCoeff - 1);
+            leftCoeff = _.random(3, 7);  // Adjusted range
+            rightCoeff = _.random(2, leftCoeff - 1);  // Ensure rightCoeff is at least 2
             leftConstant = _.random(1, 8);
             rightConstant = _.random(leftConstant + 1, 20);
         } else {
-            leftCoeff = _.random(3, 8);
-            rightCoeff = _.random(1, leftCoeff - 1);
+            leftCoeff = _.random(4, 8);
+            rightCoeff = _.random(2, leftCoeff - 1);  // Ensure rightCoeff is at least 2
             leftConstant = _.random(1, 10);
             rightConstant = _.random(leftConstant + 1, 25);
         }
@@ -158,22 +159,18 @@ export const generateLinearEquationBothSidesStarter = (options = {}) => {
         const incorrectOptions = [
             `${solution + 1}`, // Arithmetic error
             `${solution - 1}`, // Arithmetic error
-            `${Math.max(1, Math.floor(solution / 2))}`, // Division error
-            `${rightConstant - leftConstant}`, // Forgot to divide by coefficient
-            `${leftCoeff + rightCoeff}` // Added coefficients instead of subtracting
-        ].filter(opt => opt != solution && opt > 0); // Remove if accidentally correct or negative
+            `${Math.max(1, Math.floor(solution / 2))}`, // Different error
+            `${Math.ceil(simplifiedConstant / 2)}` // Wrong division
+        ].filter((val, index, arr) => arr.indexOf(val) === index && val !== `${solution}`);
 
         return {
             questionDisplay: {
                 text: 'Solve for x:',
-                math: equation,
-                layout: 'horizontal'
+                math: equation
             },
             correctAnswer: `${solution}`,
             options: [`${solution}`, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
-            explanation: `Collect x terms: ${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}
-                         Simplify: ${simplifiedCoeff}x = ${simplifiedConstant}
-                         Divide: x = ${solution}`
+            explanation: `Collect x terms: ${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}, then ${simplifiedCoeff}x = ${simplifiedConstant}, so x = ${solution}`
         };
     }
     
@@ -184,31 +181,22 @@ export const generateLinearEquationBothSidesStarter = (options = {}) => {
                 formula: equation
             },
             {
-                explanation: "Collect all x terms on the left side and constants on the right",
+                explanation: "Collect all x terms on one side by subtracting from both sides",
                 formula: `${leftCoeff}x - ${rightCoeff}x = ${rightConstant} - ${leftConstant}`
             },
             {
-                explanation: "Simplify the x terms on the left",
-                formula: `(${leftCoeff} - ${rightCoeff})x = ${rightConstant} - ${leftConstant}`
+                explanation: "Simplify both sides",
+                formula: `${simplifiedCoeff}x = ${simplifiedConstant}`
             },
             {
-                explanation: "Calculate the coefficients",
-                formula: `${simplifiedCoeff}x = ${simplifiedConstant}`
-            }
-        ];
-
-        // Add division step if coefficient is not 1
-        if (simplifiedCoeff !== 1) {
-            solutionSteps.push({
                 explanation: `Divide both sides by ${simplifiedCoeff}`,
                 formula: `x = \\frac{${simplifiedConstant}}{${simplifiedCoeff}}`
-            });
-        }
-
-        solutionSteps.push({
-            explanation: "Solution",
-            formula: `x = ${solution}`
-        });
+            },
+            {
+                explanation: "Calculate the final answer",
+                formula: `x = ${solution}`
+            }
+        ];
 
         // Add verification step
         solutionSteps.push({
