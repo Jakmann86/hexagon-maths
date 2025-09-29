@@ -1,4 +1,4 @@
-// src/data/curriculum.js - Fully consistent Pattern 1
+// src/data/curriculum.js - Updated with Algebra II (Week 3)
 export const curriculum = {
     'Trigonometry I': {
         title: 'Trigonometry I: Theory of Right-Angled Triangles',
@@ -69,9 +69,9 @@ export const curriculum = {
                 sections: {
                     starter: 'linear-equations/StarterSection',
                     diagnostic: 'linear-equations/DiagnosticSection',
-                    learn: 'linear-equations/LearnSection',  // ← Fixed
-                    examples: 'linear-equations/ExamplesSection',  // ← Fixed
-                    challenge: 'linear-equations/ChallengeSection'  // ← Fixed
+                    learn: 'linear-equations/LearnSection',
+                    examples: 'linear-equations/ExamplesSection',
+                    challenge: 'linear-equations/ChallengeSection'
                 }
             },
             {
@@ -94,6 +94,55 @@ export const curriculum = {
                     learn: 'indices/LearnSection',
                     examples: 'indices/ExamplesSection',
                     challenge: 'indices/ChallengeSection'
+                }
+            }
+        ]
+    },
+    'Algebra II': {
+        title: 'Algebra II: Quadratics and Formulae',
+        lessons: [
+            {
+                id: 1,
+                title: "Converting Recurring Decimals to Fractions",
+                sections: {
+                    starter: 'recurring-decimals/StarterSection',
+                    diagnostic: 'recurring-decimals/DiagnosticSection',
+                    learn: 'recurring-decimals/LearnSection',
+                    examples: 'recurring-decimals/ExamplesSection',
+                    challenge: 'recurring-decimals/ChallengeSection'
+                }
+            },
+            {
+                id: 2,
+                title: "Factorising Quadratics",
+                sections: {
+                    starter: 'factorising-quadratics/StarterSection',
+                    diagnostic: 'factorising-quadratics/DiagnosticSection',
+                    learn: 'factorising-quadratics/LearnSection',
+                    examples: 'factorising-quadratics/ExamplesSection',
+                    challenge: 'factorising-quadratics/ChallengeSection'
+                }
+            },
+            {
+                id: 3,
+                title: "Solving Quadratic Simultaneous Equations",
+                sections: {
+                    starter: 'quadratic-simultaneous/StarterSection',
+                    diagnostic: 'quadratic-simultaneous/DiagnosticSection',
+                    learn: 'quadratic-simultaneous/LearnSection',
+                    examples: 'quadratic-simultaneous/ExamplesSection',
+                    challenge: 'quadratic-simultaneous/ChallengeSection'
+                }
+            },
+            {
+                id: 4,
+                title: "Re-arranging Formulae",
+                sections: {
+                    starter: 'rearranging-formula/StarterSection',
+                    diagnostic: 'rearranging-formula/DiagnosticSection',
+                    learn: 'rearranging-formula/LearnSection',
+                    examples: 'rearranging-formula/ExamplesSection',
+                    challenge: 'rearranging-formula/ChallengeSection'
                 }
             }
         ]

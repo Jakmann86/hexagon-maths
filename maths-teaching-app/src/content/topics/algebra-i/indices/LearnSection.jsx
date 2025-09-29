@@ -75,7 +75,7 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
     {
       title: "Fractional Powers",
       rule: "x^{\\frac{1}{n}} = \\sqrt[n]{x}",
-      description: "Fractional powers represent roots",
+      description: "A fractional power with numerator 1 means the nth root",
       example: {
         question: "x^{\\frac{1}{2}}",
         steps: [
@@ -84,19 +84,6 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
         ],
         visual: "fractional"
       }
-    },
-    {
-      title: "Zero Power",
-      rule: "x^0 = 1 \\text{ (where } x \\neq 0 \\text{)}",
-      description: "Any non-zero number to the power 0 equals 1",
-      example: {
-        question: "5^0",
-        steps: [
-          { text: "Start with the expression", math: "5^0" },
-          { text: "Apply the zero power rule", math: "1" }
-        ],
-        visual: "zero"
-      }
     }
   ];
 
@@ -104,73 +91,11 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
 
   // Interactive visualization component
   const IndexLawVisualization = ({ law, step }) => {
-    const baseStyle = "transition-all duration-500 ease-in-out";
-    
-    if (law.visual === "multiplication") {
-      return (
-        <div className="flex items-center justify-center space-x-4 py-8">
-          <div className={`${baseStyle} ${step >= 0 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">x³</div>
-              <div className="text-sm text-gray-600">Base: x, Index: 3</div>
-            </div>
-          </div>
-          
-          <div className={`text-3xl font-bold text-gray-400 ${baseStyle} ${step >= 1 ? 'text-green-600' : ''}`}>
-            ×
-          </div>
-          
-          <div className={`${baseStyle} ${step >= 0 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">x⁵</div>
-              <div className="text-sm text-gray-600">Base: x, Index: 5</div>
-            </div>
-          </div>
-          
-          <div className={`text-3xl font-bold text-gray-400 ${baseStyle} ${step >= 2 ? 'text-green-600' : ''}`}>
-            =
-          </div>
-          
-          <div className={`${baseStyle} ${step >= 2 ? 'opacity-100 scale-110 text-green-600' : 'opacity-30 scale-95'}`}>
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">x⁸</div>
-              <div className="text-sm text-gray-600">3 + 5 = 8</div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
-    if (law.visual === "negative") {
-      return (
-        <div className="flex items-center justify-center space-x-6 py-8">
-          <div className={`${baseStyle} ${step >= 0 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-red-600 mb-2">x⁻³</div>
-              <div className="text-sm text-gray-600">Negative power</div>
-            </div>
-          </div>
-          
-          <div className={`text-3xl font-bold text-gray-400 ${baseStyle} ${step >= 1 ? 'text-green-600' : ''}`}>
-            =
-          </div>
-          
-          <div className={`${baseStyle} ${step >= 1 ? 'opacity-100 scale-110 text-green-600' : 'opacity-30 scale-95'}`}>
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">
-                <div className="border-b-2 border-black pb-1">1</div>
-                <div className="pt-1">x³</div>
-              </div>
-              <div className="text-sm text-gray-600">One over x³</div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
+    const baseStyle = "transition-all duration-500 transform";
+
     if (law.visual === "fractional") {
       return (
-        <div className="flex items-center justify-center space-x-6 py-8">
+        <div className="flex items-center justify-center space-x-8 py-8">
           <div className={`${baseStyle} ${step >= 0 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
             <div className="text-center">
               <div className="text-4xl font-bold text-purple-600 mb-2">
@@ -329,8 +254,8 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
                 onClick={nextAnimationStep}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   animationStep >= currentLaw.example.steps.length - 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : `bg-${theme.primary} text-white hover:bg-${theme.primaryHover}`
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : `bg-${theme.primary} text-white hover:bg-${theme.secondary}`
                 }`}
                 disabled={animationStep >= currentLaw.example.steps.length - 1}
               >
@@ -339,68 +264,74 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
             </div>
           </div>
 
-          {/* Step-by-step Solution */}
-          <div className="space-y-4">
+          {/* Step-by-Step Breakdown */}
+          {showSteps && (
+            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+              <h4 className="text-lg font-semibold text-gray-700 mb-4">Step-by-Step Solution:</h4>
+              <div className="space-y-3">
+                {currentLaw.example.steps.map((step, index) => (
+                  <div 
+                    key={index}
+                    className={`flex items-center space-x-4 p-3 rounded-lg ${
+                      index <= animationStep ? 'bg-green-50 border border-green-200' : 'bg-white border border-gray-200'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      index <= animationStep ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <div className="flex-grow">
+                      <p className="text-gray-700 mb-1">{step.text}</p>
+                      <MathDisplay expression={step.math} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Show/Hide Steps Button */}
+          <div className="text-center">
             <button
               onClick={toggleSteps}
-              className={`w-full px-4 py-2 rounded-lg border-2 transition-colors ${
+              className={`px-6 py-2 rounded-lg transition-colors ${
                 showSteps 
-                  ? `bg-${theme.primary} text-white border-${theme.primary}`
-                  : `bg-white text-${theme.secondaryText} border-${theme.secondary} hover:bg-${theme.secondary}`
+                  ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                  : `bg-${theme.primary} text-white hover:bg-${theme.secondary}`
               }`}
             >
-              {showSteps ? 'Hide' : 'Show'} Step-by-Step Solution
+              {showSteps ? 'Hide Steps' : 'Show All Steps'}
             </button>
+          </div>
 
-            {showSteps && (
-              <div className={`bg-${theme.pastelBg} p-6 rounded-lg`}>
-                <h4 className={`text-lg font-semibold text-${theme.secondaryText} mb-4`}>
-                  Solution Steps:
-                </h4>
-                <div className="space-y-4">
-                  {currentLaw.example.steps.map((step, index) => (
-                    <div 
-                      key={index}
-                      className={`flex items-center space-x-4 p-3 rounded-lg transition-all duration-300 ${
-                        index <= animationStep ? 'bg-white border border-green-200' : 'bg-gray-50'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        index <= animationStep ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-gray-700 mb-1">{step.text}</p>
-                        <MathDisplay expression={step.math} className="text-lg" />
-                      </div>
-                    </div>
-                  ))}
+          {/* Teacher Notes */}
+          {showAnswers && (
+            <div className={`mt-8 border-t border-${theme.borderColor} pt-6`}>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Teacher Notes</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-amber-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-amber-800 mb-2">Common Mistakes</h4>
+                  <ul className="list-disc list-inside space-y-1 text-amber-700 text-sm">
+                    <li>Adding indices when they should be multiplied</li>
+                    <li>Forgetting negative signs in calculations</li>
+                    <li>Confusing roots with regular powers</li>
+                    <li>Not applying rules consistently</li>
+                  </ul>
+                </div>
+                
+                <div className={`bg-${theme.pastelBg} p-4 rounded-lg`}>
+                  <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Key Teaching Points</h4>
+                  <ul className={`list-disc list-inside space-y-1 text-${theme.secondaryText} text-sm`}>
+                    <li>Start with concrete examples using small numbers</li>
+                    <li>Use the visualization to reinforce the concept</li>
+                    <li>Encourage students to check their work</li>
+                    <li>Link to real-world applications when possible</li>
+                  </ul>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="mt-6">
-            <div className="flex justify-center space-x-2">
-              {indexLaws.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setCurrentRule(index);
-                    setShowSteps(false);
-                    setAnimationStep(0);
-                  }}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentRule 
-                      ? `bg-${theme.primary}` 
-                      : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                />
-              ))}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

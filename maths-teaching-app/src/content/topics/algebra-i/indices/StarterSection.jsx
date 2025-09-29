@@ -138,10 +138,13 @@ const generateSolveEmojiPuzzle = () => {
     sectionType: 'starter'
   });
   
+  // Fix the template literal issue by using proper string concatenation
+  const questionText = puzzleData.puzzleDisplay ? 
+    'Solve this emoji puzzle to find the value of ' + (puzzleData.puzzleDisplay.targetSymbol || 'the symbols') + ':' :
+    'Solve this puzzle:';
+  
   return {
-    question: puzzleData.puzzleDisplay ? 
-      `Solve this emoji puzzle to find the value of ${puzzleData.puzzleDisplay.targetSymbol || 'the symbols'}:` :
-      'Solve this puzzle:',
+    question: questionText,
     answer: puzzleData.answer,
     isSymbolPuzzle: true,
     visualization: puzzleData.puzzleDisplay ? (
