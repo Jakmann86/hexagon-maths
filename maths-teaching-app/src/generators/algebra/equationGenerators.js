@@ -69,7 +69,7 @@ export const generateDivisionEquation = (options = {}) => {
  * Generate a linear equation with x on both sides
  * Section-aware output for starter, diagnostic, and examples sections
  * Equations like: 3x + 5 = 2x + 8
- * FIXED: Now ensures more variety in coefficients
+ * IMPROVED: Now generates more varied coefficients after simplification
  */
 export const generateLinearEquationBothSidesStarter = (options = {}) => {
     const { 
@@ -82,20 +82,26 @@ export const generateLinearEquationBothSidesStarter = (options = {}) => {
 
     // Try up to 10 times to generate a valid equation
     while (attempts < 10) {
-        // Generate coefficients to ensure integer solution
+        // Generate coefficients with MORE variety
         if (difficulty === 'easy') {
-            leftCoeff = _.random(3, 6);  // Changed from 2-5
-            rightCoeff = _.random(2, leftCoeff - 1);  // Changed from always 1 - now varies between 2 and leftCoeff-1
+            // Allow coefficients that result in 2x, 3x, or 4x after simplification
+            const targetSimplifiedCoeff = _.random(2, 4);
+            rightCoeff = _.random(1, 4);
+            leftCoeff = rightCoeff + targetSimplifiedCoeff;
             leftConstant = _.random(1, 5);
             rightConstant = _.random(leftConstant + 1, 15);
         } else if (difficulty === 'medium') {
-            leftCoeff = _.random(3, 7);  // Adjusted range
-            rightCoeff = _.random(2, leftCoeff - 1);  // Ensure rightCoeff is at least 2
+            // Allow coefficients that result in 2x through 5x after simplification
+            const targetSimplifiedCoeff = _.random(2, 5);
+            rightCoeff = _.random(1, 5);
+            leftCoeff = rightCoeff + targetSimplifiedCoeff;
             leftConstant = _.random(1, 8);
             rightConstant = _.random(leftConstant + 1, 20);
         } else {
-            leftCoeff = _.random(4, 8);
-            rightCoeff = _.random(2, leftCoeff - 1);  // Ensure rightCoeff is at least 2
+            // Hard: even more variety, 2x through 7x after simplification
+            const targetSimplifiedCoeff = _.random(2, 7);
+            rightCoeff = _.random(1, 6);
+            leftCoeff = rightCoeff + targetSimplifiedCoeff;
             leftConstant = _.random(1, 10);
             rightConstant = _.random(leftConstant + 1, 25);
         }
@@ -114,11 +120,11 @@ export const generateLinearEquationBothSidesStarter = (options = {}) => {
 
     // Fallback to simple values if no valid solution found
     if (attempts >= 10) {
-        leftCoeff = 5;
-        rightCoeff = 2;
-        leftConstant = 3;
-        rightConstant = 12;
-        solution = 3; // Manual calculation: (12-3)/(5-2) = 3
+        leftCoeff = 7;
+        rightCoeff = 3;
+        leftConstant = 2;
+        rightConstant = 18;
+        solution = 4; // Manual calculation: (18-2)/(7-3) = 16/4 = 4
     }
 
     // Format the equation
@@ -139,7 +145,7 @@ export const generateLinearEquationBothSidesStarter = (options = {}) => {
         // Step 2: Simplify
         workingSteps.push(`${simplifiedCoeff}x = ${simplifiedConstant}`);
         
-        // Step 3: Divide to solve
+        // Step 3: Divide to solve (show division step if coefficient > 1)
         if (simplifiedCoeff === 1) {
             workingSteps.push(`x = ${solution}`);
         } else {

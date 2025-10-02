@@ -47,7 +47,7 @@ const SymbolPuzzleDisplay = ({
     ${className}
   `.trim();
 
-  // Symbol rendering with proper emoji handling
+  // Symbol rendering with proper emoji handling - LEFT ALIGNED
   const renderSymbolSequence = (text) => {
     // Use proper emoji-aware string splitting
     const segments = text.split(/(\s|[+\-×÷=]|\d+)/);
@@ -85,8 +85,8 @@ const SymbolPuzzleDisplay = ({
           return (
             <span 
               key={`${index}-${charIndex}`}
-              className="symbol text-2xl mx-0.5 inline-block"
-              style={{ fontSize: '1.75rem' }}
+              className="symbol text-2xl inline-block"
+              style={{ fontSize: '1.75rem', marginRight: '4px' }}
             >
               {char}
             </span>
@@ -111,7 +111,7 @@ const SymbolPuzzleDisplay = ({
     switch (type) {
       case 'productSum':
         return (
-          <div className="space-y-2 text-center">
+          <div className="space-y-2 w-full">
             {equations.map((equation, index) => (
               <div key={index} className="equation-line">
                 {renderSymbolSequence(equation)}
@@ -119,7 +119,7 @@ const SymbolPuzzleDisplay = ({
             ))}
             
             {/* Separator line */}
-            <div className="border-t-2 border-gray-300 w-40 mx-auto my-2"></div>
+            <div className="border-t-2 border-gray-300 w-40 my-2"></div>
             
             {/* Question marks for unknowns */}
             <div className="unknowns-line text-lg space-x-6">
@@ -136,7 +136,7 @@ const SymbolPuzzleDisplay = ({
 
       case 'chainSolving':
         return (
-          <div className="space-y-3 text-center">
+          <div className="space-y-3 w-full">
             {equations.map((equation, index) => (
               <div key={index} className="chain-step">
                 <div className="equation-line">
@@ -150,7 +150,7 @@ const SymbolPuzzleDisplay = ({
             ))}
             
             {/* Final target */}
-            <div className="border-t-2 border-gray-300 w-32 mx-auto my-2"></div>
+            <div className="border-t-2 border-gray-300 w-32 my-2"></div>
             <div className="target-line text-lg">
               <span className="symbol text-2xl">{targetSymbol}</span>
               <span className="operator text-xl font-semibold text-gray-700"> = </span>
@@ -161,7 +161,7 @@ const SymbolPuzzleDisplay = ({
 
       case 'simultaneous':
         return (
-          <div className="space-y-2 text-center">
+          <div className="space-y-2 w-full">
             {equations.map((equation, index) => (
               <div key={index} className="equation-line">
                 {renderSymbolSequence(equation)}
@@ -169,7 +169,7 @@ const SymbolPuzzleDisplay = ({
             ))}
             
             {/* Separator line */}
-            <div className="border-t-2 border-gray-300 w-48 mx-auto my-2"></div>
+            <div className="border-t-2 border-gray-300 w-48 my-2"></div>
             
             {/* Question marks for unknowns */}
             <div className="unknowns-line text-lg space-x-6">
@@ -201,7 +201,7 @@ const SymbolPuzzleDisplay = ({
     if (!equations || equations.length === 0) return null;
 
     return (
-      <div className="question-mode space-y-1 text-center">
+      <div className="question-mode space-y-1 w-full">
         {equations.map((equation, index) => (
           <div key={index} className="equation-text">
             {renderSymbolSequence(equation)}
@@ -211,7 +211,7 @@ const SymbolPuzzleDisplay = ({
         {/* Add target symbol = ? for chain solving */}
         {type === 'chainSolving' && targetSymbol && (
           <>
-            <div className="border-t-2 border-gray-300 w-32 mx-auto my-2"></div>
+            <div className="border-t-2 border-gray-300 w-32 my-2"></div>
             <div className="target-question text-lg">
               <span className="symbol text-2xl">{targetSymbol}</span>
               <span className="operator text-xl font-semibold text-gray-700"> = </span>
@@ -223,7 +223,7 @@ const SymbolPuzzleDisplay = ({
         {/* Add unknowns for other puzzle types */}
         {(type === 'productSum' || type === 'simultaneous') && symbols && (
           <>
-            <div className="border-t-2 border-gray-300 w-32 mx-auto my-2"></div>
+            <div className="border-t-2 border-gray-300 w-32 my-2"></div>
             <div className="unknowns-question text-lg space-x-4">
               {symbols.map((symbol, index) => (
                 <span key={index} className="unknown-item">
@@ -283,7 +283,7 @@ const SymbolPuzzleDisplay = ({
     >
       {mode === 'visualization' && renderThemeIndicator()}
       
-      <div className="puzzle-content flex-1 flex items-center justify-center w-full">
+      <div className="puzzle-content flex-1 flex items-start justify-start w-full px-4">
         {mode === 'question' ? renderQuestionMode() : renderEquations()}
       </div>
       
@@ -320,7 +320,7 @@ export const ExpandedSymbolPuzzle = ({ puzzleDisplay, className = '' }) => {
   );
 };
 
-// CSS-in-JS styles for responsive behavior
+// CSS-in-JS styles for responsive behavior - LEFT ALIGNED
 const styles = `
   .symbol-puzzle-display .symbol {
     line-height: 1;
@@ -336,7 +336,15 @@ const styles = `
   .symbol-puzzle-display .equation-line {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.125rem;
+  }
+  
+  .symbol-puzzle-display .equation-text {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
     gap: 0.125rem;
   }
@@ -344,7 +352,7 @@ const styles = `
   .symbol-puzzle-display .unknowns-line {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
   }
   

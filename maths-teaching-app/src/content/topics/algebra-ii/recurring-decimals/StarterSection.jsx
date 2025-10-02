@@ -33,6 +33,12 @@ const generateMixedWeek2AlgebraQuestion = () => {
       difficulty: 'easy'
     }),
     
+    // Expanding triple brackets
+    () => expressionsGenerators.generateExpandingTripleBrackets({
+      sectionType: 'starter',
+      difficulty: 'easy'
+    }),
+    
     // Solving equations with x on both sides
     () => equationGenerators.generateLinearEquationBothSidesStarter({
       sectionType: 'starter',

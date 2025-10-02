@@ -57,29 +57,29 @@ const QuestionDisplay = memo(({
 
                 <div className="flex-grow space-y-4">
                     {/* Question Text Area */}
-                    <div>
-                        {isSymbolPuzzle && data.puzzleDisplay ? (
-                            <div className="text-gray-700 text-base leading-relaxed">
-                                <SymbolPuzzleDisplay
-                                    puzzleDisplay={data.puzzleDisplay}
-                                    mode="question"
-                                    className="text-base"
-                                />
-                            </div>
-                        ) : data.question ? (
-                            // Regular question: use ContentRenderer
-                            <ContentRenderer
-                                content={data.question}
-                                sectionType="starter"
-                                size="normal"
-                                color="default"
-                                fontWeight="normal"
-                            />
-                        ) : (
-                            // No question available
-                            <div className="text-gray-500 italic">No question text available</div>
-                        )}
-                    </div>
+<div>
+    {isSymbolPuzzle && data.puzzleDisplay ? (
+        <div className="text-gray-700 text-base leading-relaxed">
+            <SymbolPuzzleDisplay
+                puzzleDisplay={data.puzzleDisplay}
+                mode="question"
+                className="text-base"
+            />
+        </div>
+    ) : data.question ? (
+        // Regular question: use ContentRenderer with dynamic size
+        <ContentRenderer
+            content={data.question}
+            sectionType="starter"
+            size={data.fontSize === 'large' ? 'large' : 'normal'}  // Add this conditional
+            color="default"
+            fontWeight="normal"
+        />
+    ) : (
+        // No question available
+        <div className="text-gray-500 italic">No question text available</div>
+    )}
+</div>
 
                     {/* Visualization Container */}
                     <div className="visualization-container h-[120px] w-full flex justify-center items-center">

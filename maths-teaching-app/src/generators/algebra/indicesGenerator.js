@@ -113,7 +113,8 @@ export const generateComplexIndicesForStarter = (options = {}) => {
   return {
     question: `Simplify: ${question}`,
     answer: answer,
-    difficulty: 'algebra'
+    difficulty: 'algebra',
+    fontSize: 'large'  // Add this to make indices questions display larger
   };
 };
 
