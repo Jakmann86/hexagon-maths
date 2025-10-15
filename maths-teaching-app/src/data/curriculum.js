@@ -146,5 +146,54 @@ export const curriculum = {
                 }
             }
         ]
-    }
+    },
+    'Geometry I': {
+    title: 'Geometry I: Introduction to Geometrical Concepts',
+    lessons: [
+        {
+            id: 1,
+            title: "Triangles and Basic Angle Facts",
+            sections: {
+                starter: 'basic-angles/StarterSection',
+                diagnostic: 'basic-angles/DiagnosticSection',
+                learn: 'basic-angles/LearnSection',
+                examples: 'basic-angles/ExamplesSection',
+                challenge: 'basic-angles/ChallengeSection'
+            }
+        },
+        {
+            id: 2,
+            title: "Angles in Parallel Lines",
+            sections: {
+                starter: 'parallel-lines/StarterSection',
+                diagnostic: 'parallel-lines/DiagnosticSection',
+                learn: 'parallel-lines/LearnSection',
+                examples: 'parallel-lines/ExamplesSection',
+                challenge: 'parallel-lines/ChallengeSection'
+            }
+        },
+        {
+            id: 3,
+            title: "Interior Angles of a Polygon",
+            sections: {
+                starter: 'interior-angles/StarterSection',
+                diagnostic: 'interior-angles/DiagnosticSection',
+                learn: 'interior-angles/LearnSection',
+                examples: 'interior-angles/ExamplesSection',
+                challenge: 'interior-angles/ChallengeSection'
+            }
+        },
+        {
+            id: 4,
+            title: "Exterior Angles of a Polygon",
+            sections: {
+                starter: 'exterior-angles/StarterSection',
+                diagnostic: 'exterior-angles/DiagnosticSection',
+                learn: 'exterior-angles/LearnSection',
+                examples: 'exterior-angles/ExamplesSection',
+                challenge: 'exterior-angles/ChallengeSection'
+            }
+        }
+    ]
+}
 };
