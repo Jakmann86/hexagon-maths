@@ -9,7 +9,8 @@ import _ from 'lodash';
 export const generateMeanMedianModeRange = (options = {}) => {
     const {
         difficulty = 'medium',
-        sectionType = 'diagnostic'
+        sectionType = 'diagnostic',
+        statistic = 'mean' // Which statistic to ask for: 'mean', 'median', 'mode', 'range'
     } = options;
 
     // Generate a random dataset with a clear mode
@@ -32,22 +33,83 @@ export const generateMeanMedianModeRange = (options = {}) => {
     const range = dataset[dataset.length - 1] - dataset[0];
     
     if (sectionType === 'diagnostic') {
+        let questionText, correctAnswer, incorrectOptions, explanation;
+
+        // Generate question based on which statistic is requested
+        switch(statistic) {
+            case 'mean':
+                questionText = 'Calculate the mean (average) of this dataset:';
+                correctAnswer = `${mean}`;
+                incorrectOptions = [
+                    `${Math.round((mean + 1) * 100) / 100}`,
+                    `${Math.round((mean - 1) * 100) / 100}`,
+                    `${median}` // Common mistake - confusing mean with median
+                ];
+                explanation = `To find the mean:
+1. Add all values: ${dataset.join(' + ')} = ${sum}
+2. Divide by count: ${sum} ÷ ${dataset.length} = ${mean}`;
+                break;
+
+            case 'median':
+                questionText = 'Find the median of this dataset:';
+                correctAnswer = `${median}`;
+                incorrectOptions = [
+                    `${mean}`, // Confusing median with mean
+                    `${dataset[3]}`, // Forgot to average middle two
+                    `${Math.round((median + 1) * 100) / 100}`
+                ];
+                explanation = `To find the median:
+1. Data is already in order: ${dataset.join(', ')}
+2. Find middle values (positions 4 and 5): ${dataset[3]} and ${dataset[4]}
+3. Average them: (${dataset[3]} + ${dataset[4]}) ÷ 2 = ${median}`;
+                break;
+
+            case 'mode':
+                questionText = 'Find the mode (most frequent value) of this dataset:';
+                correctAnswer = `${mode}`;
+                // Get other values that aren't the mode for distractors
+                const otherVals = [...new Set(dataset.filter(n => n !== mode))];
+                incorrectOptions = [
+                    `${otherVals[0] || mode + 1}`,
+                    `${otherVals[1] || mode + 2}`,
+                    `${Math.max(...dataset)}` // Confusing mode with highest value
+                ];
+                explanation = `To find the mode:
+Count how many times each value appears:
+${[...new Set(dataset)].map(n => `${n} appears ${dataset.filter(x => x === n).length} time(s)`).join('\n')}
+
+The mode is ${mode} (appears 3 times - most frequent)`;
+                break;
+
+            case 'range':
+                questionText = 'Find the range of this dataset:';
+                correctAnswer = `${range}`;
+                incorrectOptions = [
+                    `${Math.max(...dataset)}`, // Gave max instead of range
+                    `${Math.min(...dataset)}`, // Gave min instead of range
+                    `${range + 1}` // Arithmetic error
+                ];
+                explanation = `To find the range:
+Range = Highest value - Lowest value
+Range = ${Math.max(...dataset)} - ${Math.min(...dataset)} = ${range}`;
+                break;
+
+            default:
+                questionText = 'Calculate the mean (average) of this dataset:';
+                correctAnswer = `${mean}`;
+                incorrectOptions = [`${mean + 1}`, `${mean - 1}`, `${median}`];
+                explanation = `Mean = ${sum} ÷ ${dataset.length} = ${mean}`;
+        }
+
         return {
             questionDisplay: {
-                text: 'Calculate the mean, median, mode and range:',
-                data: dataset,
-                layout: 'dataset'
+                text: questionText,
+                math: `\\text{Dataset: } ${dataset.join(', ')}`,
+                layout: 'vertical'
             },
-            parts: [
-                { label: 'Mean', correctAnswer: `${mean}` },
-                { label: 'Median', correctAnswer: `${median}` },
-                { label: 'Mode', correctAnswer: `${mode}` },
-                { label: 'Range', correctAnswer: `${range}` }
-            ],
-            explanation: `Mean: (${dataset.join(' + ')}) ÷ ${dataset.length} = ${mean}
-                         Median: Middle values are ${dataset[3]} and ${dataset[4]}, average = ${median}
-                         Mode: ${mode} appears 3 times (most frequent)
-                         Range: ${dataset[dataset.length - 1]} - ${dataset[0]} = ${range}`
+            correctAnswer: correctAnswer,
+            options: [correctAnswer, ...incorrectOptions].sort(() => Math.random() - 0.5),
+            explanation: explanation
         };
     }
 

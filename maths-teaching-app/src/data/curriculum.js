@@ -1,4 +1,4 @@
-// src/data/curriculum.js - Updated with Algebra II (Week 3)
+// src/data/curriculum.js - Updated with Statistics I (Week 5)
 export const curriculum = {
     'Trigonometry I': {
         title: 'Trigonometry I: Theory of Right-Angled Triangles',
@@ -148,52 +148,101 @@ export const curriculum = {
         ]
     },
     'Geometry I': {
-    title: 'Geometry I: Introduction to Geometrical Concepts',
-    lessons: [
-        {
-            id: 1,
-            title: "Triangles and Basic Angle Facts",
-            sections: {
-                starter: 'basic-angles/StarterSection',
-                diagnostic: 'basic-angles/DiagnosticSection',
-                learn: 'basic-angles/LearnSection',
-                examples: 'basic-angles/ExamplesSection',
-                challenge: 'basic-angles/ChallengeSection'
+        title: 'Geometry I: Introduction to Geometrical Concepts',
+        lessons: [
+            {
+                id: 1,
+                title: "Triangles and Basic Angle Facts",
+                sections: {
+                    starter: 'basic-angles/StarterSection',
+                    diagnostic: 'basic-angles/DiagnosticSection',
+                    learn: 'basic-angles/LearnSection',
+                    examples: 'basic-angles/ExamplesSection',
+                    challenge: 'basic-angles/ChallengeSection'
+                }
+            },
+            {
+                id: 2,
+                title: "Angles in Parallel Lines",
+                sections: {
+                    starter: 'parallel-lines/StarterSection',
+                    diagnostic: 'parallel-lines/DiagnosticSection',
+                    learn: 'parallel-lines/LearnSection',
+                    examples: 'parallel-lines/ExamplesSection',
+                    challenge: 'parallel-lines/ChallengeSection'
+                }
+            },
+            {
+                id: 3,
+                title: "Interior Angles of a Polygon",
+                sections: {
+                    starter: 'interior-angles/StarterSection',
+                    diagnostic: 'interior-angles/DiagnosticSection',
+                    learn: 'interior-angles/LearnSection',
+                    examples: 'interior-angles/ExamplesSection',
+                    challenge: 'interior-angles/ChallengeSection'
+                }
+            },
+            {
+                id: 4,
+                title: "Exterior Angles of a Polygon",
+                sections: {
+                    starter: 'exterior-angles/StarterSection',
+                    diagnostic: 'exterior-angles/DiagnosticSection',
+                    learn: 'exterior-angles/LearnSection',
+                    examples: 'exterior-angles/ExamplesSection',
+                    challenge: 'exterior-angles/ChallengeSection'
+                }
             }
-        },
-        {
-            id: 2,
-            title: "Angles in Parallel Lines",
-            sections: {
-                starter: 'parallel-lines/StarterSection',
-                diagnostic: 'parallel-lines/DiagnosticSection',
-                learn: 'parallel-lines/LearnSection',
-                examples: 'parallel-lines/ExamplesSection',
-                challenge: 'parallel-lines/ChallengeSection'
+        ]
+    },
+    'Statistics I': {
+        title: 'Statistics I: Averages and Grouped Data',
+        lessons: [
+            {
+                id: 1,
+                title: "Solving Problems with Mean Average",
+                sections: {
+                    starter: 'averages/StarterSection',
+                    diagnostic: 'averages/DiagnosticSection',
+                    learn: 'averages/LearnSection',
+                    examples: 'averages/ExamplesSection',
+                    challenge: 'averages/ChallengeSection'
+                }
+            },
+            {
+                id: 2,
+                title: "Finding Medians and Modes",
+                sections: {
+                    starter: 'median-mode/StarterSection',
+                    diagnostic: 'median-mode/DiagnosticSection',
+                    learn: 'median-mode/LearnSection',
+                    examples: 'median-mode/ExamplesSection',
+                    challenge: 'median-mode/ChallengeSection'
+                }
+            },
+            {
+                id: 3,
+                title: "Working with Grouped Data",
+                sections: {
+                    starter: 'grouped-data/StarterSection',
+                    diagnostic: 'grouped-data/DiagnosticSection',
+                    learn: 'grouped-data/LearnSection',
+                    examples: 'grouped-data/ExamplesSection',
+                    challenge: 'grouped-data/ChallengeSection'
+                }
+            },
+            {
+                id: 4,
+                title: "Estimated Mean from Frequency Tables",
+                sections: {
+                    starter: 'frequency-tables/StarterSection',
+                    diagnostic: 'frequency-tables/DiagnosticSection',
+                    learn: 'frequency-tables/LearnSection',
+                    examples: 'frequency-tables/ExamplesSection',
+                    challenge: 'frequency-tables/ChallengeSection'
+                }
             }
-        },
-        {
-            id: 3,
-            title: "Interior Angles of a Polygon",
-            sections: {
-                starter: 'interior-angles/StarterSection',
-                diagnostic: 'interior-angles/DiagnosticSection',
-                learn: 'interior-angles/LearnSection',
-                examples: 'interior-angles/ExamplesSection',
-                challenge: 'interior-angles/ChallengeSection'
-            }
-        },
-        {
-            id: 4,
-            title: "Exterior Angles of a Polygon",
-            sections: {
-                starter: 'exterior-angles/StarterSection',
-                diagnostic: 'exterior-angles/DiagnosticSection',
-                learn: 'exterior-angles/LearnSection',
-                examples: 'exterior-angles/ExamplesSection',
-                challenge: 'exterior-angles/ChallengeSection'
-            }
-        }
-    ]
-}
+        ]
+    }
 };
