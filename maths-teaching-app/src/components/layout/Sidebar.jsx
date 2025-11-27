@@ -70,10 +70,11 @@ export const Sidebar = ({
         <div
             ref={sidebarRef}
             className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-20`}
+                } w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out z-20 flex flex-col`}
         >
-            <div className="p-4">
-                <div className="flex justify-between items-center mb-4">
+            {/* Fixed Header */}
+            <div className="p-4 border-b border-gray-200 flex-shrink-0">
+                <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-gray-900">Topics</h3>
                     <button
                         onClick={() => setIsSidebarOpen(false)}
@@ -82,9 +83,12 @@ export const Sidebar = ({
                         <X size={20} />
                     </button>
                 </div>
+            </div>
 
+            {/* Scrollable Topics List */}
+            <div className="flex-1 overflow-y-auto p-4">
                 {Object.entries(curriculum).map(([topicKey, topic]) => (
-                    <div key={topicKey} className="mb-4">
+                    <div key={topicKey} className="mb-3">
                         <div 
                             className="flex items-center justify-between text-gray-700 hover:text-gray-900 cursor-pointer p-2 hover:bg-gray-50 rounded-md"
                             onClick={() => {
@@ -92,27 +96,27 @@ export const Sidebar = ({
                                 handleTopicClick(topicKey);
                             }}
                         >
-                            <span className="font-medium">{topic.title}</span>
+                            <span className="font-medium text-sm">{topic.title}</span>
                             {expandedTopics[topicKey] ? 
-                                <ChevronDown size={20} /> : 
-                                <ChevronRight size={20} />
+                                <ChevronDown size={18} className="flex-shrink-0 ml-2" /> : 
+                                <ChevronRight size={18} className="flex-shrink-0 ml-2" />
                             }
                         </div>
                         
                         {/* Lesson list - only show if topic is expanded */}
                         {expandedTopics[topicKey] && (
-                            <div className="ml-4 mt-2 space-y-2">
+                            <div className="ml-3 mt-1 space-y-1 border-l-2 border-gray-200 pl-3">
                                 {topic.lessons.map(lesson => (
                                     <div
                                         key={lesson.id}
                                         onClick={() => handleLessonClick(topicKey, lesson.id)}
-                                        className={`text-sm cursor-pointer p-2 rounded-md 
+                                        className={`text-sm cursor-pointer p-2 rounded-md transition-colors
                                             ${currentTopic === topicKey && currentLessonId === lesson.id
-                                                ? 'bg-indigo-50 text-indigo-600'
+                                                ? 'bg-indigo-50 text-indigo-600 font-medium'
                                                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                             }`}
                                     >
-                                        Lesson {lesson.id}: {lesson.title}
+                                        L{lesson.id}: {lesson.title}
                                     </div>
                                 ))}
                             </div>

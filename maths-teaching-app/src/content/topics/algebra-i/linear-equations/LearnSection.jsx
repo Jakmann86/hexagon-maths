@@ -3,24 +3,20 @@ import { Card, CardContent } from '../../../../components/common/Card';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import { useUI } from '../../../../context/UIContext';
 import { useSectionTheme } from '../../../../hooks/useSectionTheme';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, RotateCcw } from 'lucide-react';
 
 const LearnSection = ({ currentTopic, currentLessonId }) => {
   const { showAnswers } = useUI();
   const theme = useSectionTheme('learn');
   
-  // State for the interactive equation - start with an unbalanced equation
+  // The fixed solution value - this is what x equals, and we check balance against this
+  const [solutionValue, setSolutionValue] = useState(3);
+  
+  // Current state of the equation
   const [leftX, setLeftX] = useState(5);
   const [leftConstant, setLeftConstant] = useState(3);
   const [rightX, setRightX] = useState(2);
   const [rightConstant, setRightConstant] = useState(12);
-
-  // Calculate if balanced based on mathematical equality
-  const solution = leftX !== rightX ? (rightConstant - leftConstant) / (leftX - rightX) : null;
-  const leftSideValue = leftX * (solution || 1) + leftConstant;
-  const rightSideValue = rightX * (solution || 1) + rightConstant;
-  const isBalanced = Math.abs(leftSideValue - rightSideValue) < 0.001;
-  const isValidEquation = leftX !== rightX;
 
   // Generate equation string
   const formatSide = (xCoeff, constant) => {
@@ -33,41 +29,46 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
     return `${xPart}${constantPart}`;
   };
 
-  const leftSide = formatSide(leftX, leftConstant);
-  const rightSide = formatSide(rightX, rightConstant);
-  const equation = `${leftSide} = ${rightSide}`;
+  const equation = `${formatSide(leftX, leftConstant)} = ${formatSide(rightX, rightConstant)}`;
+
+  // Calculate tilt by evaluating both sides at the fixed solution value
+  // If both sides equal the same thing when x = solutionValue, scale is balanced
+  const leftWeight = leftX * solutionValue + leftConstant;
+  const rightWeight = rightX * solutionValue + rightConstant;
+  const weightDiff = leftWeight - rightWeight;
+  const tiltAngle = Math.max(-15, Math.min(15, weightDiff * 2));
+
+  const resetEquation = (lx = 5, lc = 3, rx = 2, rc = 12, sol = 3) => {
+    setLeftX(lx);
+    setLeftConstant(lc);
+    setRightX(rx);
+    setRightConstant(rc);
+    setSolutionValue(sol);
+  };
 
   // Interactive Balance Scale Component
   const InteractiveBalanceScale = () => {
-    // Calculate visual balance based on actual equation values
-    const solution = leftX !== rightX ? (rightConstant - leftConstant) / (leftX - rightX) : 1;
-    const leftSideValue = leftX * solution + leftConstant;
-    const rightSideValue = rightX * solution + rightConstant;
-    const valueDifference = rightSideValue - leftSideValue;
-    const tiltAngle = Math.max(-8, Math.min(8, valueDifference * 2));
-
-    const WeightStack = ({ type, count, side, isNegative = false }) => {
-      if (count === 0) return null;
+    const WeightStack = ({ type, count }) => {
+      if (count <= 0) return null;
       
-      const absCount = Math.abs(count);
-      const rows = Math.ceil(absCount / 3); // Max 3 blocks per row for better spacing
+      const rows = Math.ceil(count / 3);
       
       return (
-        <div className="flex flex-col-reverse items-center space-y-reverse space-y-1">
+        <div className="flex flex-col-reverse items-center space-y-reverse space-y-0.5">
           {Array.from({ length: rows }, (_, rowIndex) => {
             const startIndex = rowIndex * 3;
-            const endIndex = Math.min(startIndex + 3, absCount);
+            const endIndex = Math.min(startIndex + 3, count);
             const blocksInRow = endIndex - startIndex;
             
             return (
-              <div key={rowIndex} className="flex space-x-1">
+              <div key={rowIndex} className="flex space-x-0.5">
                 {Array.from({ length: blocksInRow }, (_, blockIndex) => (
                   <div
                     key={blockIndex}
-                    className={`w-8 h-6 rounded flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                    className={`w-7 h-5 rounded flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                       type === 'x' 
-                        ? isNegative ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
-                        : isNegative ? 'bg-red-300 text-gray-700' : 'bg-green-400 text-gray-700'
+                        ? 'bg-blue-500 text-white border border-blue-600'
+                        : 'bg-green-400 text-gray-700 border border-green-500'
                     }`}
                   >
                     {type === 'x' ? 'x' : '1'}
@@ -76,210 +77,187 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
               </div>
             );
           })}
-          {isNegative && count < 0 && (
-            <div className="text-red-600 text-xs font-bold mt-1">−{absCount}</div>
-          )}
         </div>
       );
     };
 
-    const ControlButton = ({ onClick, icon: Icon, disabled, color = 'blue' }) => (
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`w-8 h-8 rounded-full bg-${color}-500 text-white hover:bg-${color}-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center transition-colors`}
-      >
-        <Icon size={16} />
-      </button>
-    );
+    const NegativeIndicator = ({ value, type }) => {
+      if (value >= 0) return null;
+      return (
+        <div className="text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-600">
+          {type === 'x' ? `${value}x` : value}
+        </div>
+      );
+    };
 
     return (
-      <div className="flex flex-col items-center space-y-8 p-8 bg-gray-50 rounded-lg">
+      <div className="flex flex-col items-center space-y-4 p-6 bg-gray-50 rounded-lg">
         {/* Equation Display */}
-        <div className="bg-white p-6 rounded-lg border-2 border-gray-200 shadow-sm mb-4">
-          <div className="text-center">
-            <div className="text-2xl mb-2">
-              <MathDisplay math={equation} />
-            </div>
+        <div className="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
+          <div className="text-2xl text-center">
+            <MathDisplay math={equation} />
           </div>
         </div>
 
         {/* Balance Scale */}
-        <div className="relative w-full max-w-4xl mx-auto" style={{ height: '200px' }}>
-          {/* Central pivot */}
-          <div className="w-6 h-20 bg-gray-700 absolute left-1/2 top-12 transform -translate-x-1/2 z-10"></div>
+        <div className="relative w-full max-w-2xl mx-auto" style={{ height: '220px' }}>
+          {/* Base */}
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-gray-600 rounded"></div>
           
-          {/* Balance arm */}
+          {/* Post */}
+          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-3 h-20 bg-gray-700"></div>
+          
+          {/* Pivot triangle */}
           <div 
-            className="w-[500px] h-3 bg-gray-700 absolute top-20 left-1/2 transform -translate-x-1/2 transition-transform duration-1000 origin-center rounded-full"
-            style={{ transform: `translateX(-50%) rotate(${tiltAngle}deg)` }}
+            className="absolute bottom-20 left-1/2 transform -translate-x-1/2"
+            style={{ 
+              width: 0, 
+              height: 0, 
+              borderLeft: '8px solid transparent',
+              borderRight: '8px solid transparent',
+              borderBottom: '10px solid #374151'
+            }}
           ></div>
           
-          {/* Left scale plate */}
+          {/* Balance arm container - rotates around center */}
           <div 
-            className="absolute top-16 left-8 w-48 h-8 bg-gray-400 rounded-lg border-2 border-gray-600 transition-transform duration-1000 shadow-lg"
-            style={{ transform: `rotate(${-tiltAngle * 0.3}deg)` }}
-          ></div>
-          
-          {/* Left weights - positioned above the scale */}
-          <div 
-            className="absolute -top-4 left-8 w-48 flex justify-center items-end transition-transform duration-1000"
-            style={{ transform: `rotate(${-tiltAngle * 0.3}deg)` }}
+            className="absolute bottom-28 left-1/2 transition-transform duration-700 ease-out"
+            style={{ 
+              width: '480px',
+              transform: `translateX(-50%) rotate(${tiltAngle}deg)`,
+              transformOrigin: 'center center'
+            }}
           >
-            <div className="flex space-x-6 items-end w-full justify-center">
-              <WeightStack type="x" count={leftX} side="left" isNegative={leftX < 0} />
-              <WeightStack type="constant" count={leftConstant} side="left" isNegative={leftConstant < 0} />
-            </div>
-          </div>
-          
-          {/* Right scale plate */}
-          <div 
-            className="absolute top-16 right-8 w-48 h-8 bg-gray-400 rounded-lg border-2 border-gray-600 transition-transform duration-1000 shadow-lg"
-            style={{ transform: `rotate(${-tiltAngle * 0.3}deg)` }}
-          ></div>
-          
-          {/* Right weights - positioned above the scale */}
-          <div 
-            className="absolute -top-8 right-8 w-48 flex justify-center items-end transition-transform duration-1000"
-            style={{ transform: `rotate(${-tiltAngle * 0.3}deg)` }}
-          >
-            <div className="flex space-x-6 items-end w-full justify-center">
-              <WeightStack type="x" count={rightX} side="right" isNegative={rightX < 0} />
-              <WeightStack type="constant" count={rightConstant} side="right" isNegative={rightConstant < 0} />
-            </div>
-          </div>
-        </div>
-
-        {/* Balance status */}
-        <div className={`text-center font-bold text-lg transition-colors duration-500 ${
-          Math.abs(tiltAngle) < 0.1 ? 'text-green-600' : 'text-orange-600'
-        }`}>
-          {Math.abs(tiltAngle) < 0.1 ? '⚖️ BALANCED' : '⚖️ UNBALANCED'}
-          {solution && Number.isInteger(solution) && Math.abs(solution) < 20 && (
-            <div className="text-sm text-gray-600 mt-1">
-              (Solution: x = {solution})
-            </div>
-          )}
-        </div>
-
-        {/* Interactive Controls */}
-        <div className="grid grid-cols-2 gap-8 w-full max-w-lg">
-          {/* Left side controls */}
-          <div className="text-center">
-            <h4 className="font-semibold mb-4 text-gray-700">Left Side</h4>
+            {/* Beam */}
+            <div className="absolute top-1/2 left-0 right-0 h-2 bg-gray-700 rounded-full transform -translate-y-1/2"></div>
             
-            {/* X controls */}
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <ControlButton 
-                onClick={() => setLeftX(prev => Math.max(0, prev - 1))}
-                icon={Minus}
-                disabled={leftX <= 0}
-                color="red"
-              />
-              <div className="flex items-center space-x-1">
-                <div className="w-6 h-6 bg-blue-500 rounded"></div>
-                <span className="font-mono text-lg w-8">{leftX}</span>
+            {/* Left pan assembly */}
+            <div className="absolute left-4 top-1/2" style={{ transform: 'translateY(-50%)' }}>
+              <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gray-500"></div>
+              <div className="absolute top-9 left-1/2 transform -translate-x-1/2 w-40 h-2 bg-gray-400 rounded border border-gray-500"></div>
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 items-end justify-center min-h-[60px]">
+                <WeightStack type="x" count={leftX} />
+                <WeightStack type="constant" count={leftConstant} />
+                <NegativeIndicator value={leftX < 0 ? leftX : null} type="x" />
+                <NegativeIndicator value={leftConstant < 0 ? leftConstant : null} type="constant" />
               </div>
-              <ControlButton 
-                onClick={() => setLeftX(prev => Math.min(10, prev + 1))}
-                icon={Plus}
-                disabled={leftX >= 10}
-                color="blue"
-              />
             </div>
+            
+            {/* Right pan assembly */}
+            <div className="absolute right-4 top-1/2" style={{ transform: 'translateY(-50%)' }}>
+              <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gray-500"></div>
+              <div className="absolute top-9 left-1/2 transform -translate-x-1/2 w-40 h-2 bg-gray-400 rounded border border-gray-500"></div>
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 items-end justify-center min-h-[60px]">
+                <WeightStack type="x" count={rightX} />
+                <WeightStack type="constant" count={rightConstant} />
+                <NegativeIndicator value={rightX < 0 ? rightX : null} type="x" />
+                <NegativeIndicator value={rightConstant < 0 ? rightConstant : null} type="constant" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* Constant controls */}
-            <div className="flex items-center justify-center space-x-3">
-              <ControlButton 
+        {/* Operation Buttons */}
+        <div className="grid grid-cols-2 gap-6 w-full max-w-lg">
+          {/* Left Side Controls */}
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <h4 className="text-center font-medium text-gray-600 mb-3 text-sm">Left Side</h4>
+            
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <button
+                onClick={() => setLeftX(prev => prev - 1)}
+                className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+              >
+                <Minus size={16} />
+              </button>
+              <div className="w-10 h-8 bg-blue-500 rounded flex items-center justify-center text-white font-bold text-sm">
+                {leftX}x
+              </div>
+              <button
+                onClick={() => setLeftX(prev => prev + 1)}
+                className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2">
+              <button
                 onClick={() => setLeftConstant(prev => prev - 1)}
-                icon={Minus}
-                disabled={leftConstant <= -10}
-                color="red"
-              />
-              <div className="flex items-center space-x-1">
-                <div className="w-6 h-6 bg-green-400 rounded"></div>
-                <span className="font-mono text-lg w-8">{leftConstant}</span>
+                className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-700 rounded hover:bg-green-200"
+              >
+                <Minus size={16} />
+              </button>
+              <div className="w-10 h-8 bg-green-400 rounded flex items-center justify-center text-gray-700 font-bold text-sm">
+                {leftConstant}
               </div>
-              <ControlButton 
-                onClick={() => setLeftConstant(prev => Math.min(10, prev + 1))}
-                icon={Plus}
-                disabled={leftConstant >= 10}
-                color="green"
-              />
+              <button
+                onClick={() => setLeftConstant(prev => prev + 1)}
+                className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-700 rounded hover:bg-green-200"
+              >
+                <Plus size={16} />
+              </button>
             </div>
           </div>
 
-          {/* Right side controls */}
-          <div className="text-center">
-            <h4 className="font-semibold mb-4 text-gray-700">Right Side</h4>
+          {/* Right Side Controls */}
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <h4 className="text-center font-medium text-gray-600 mb-3 text-sm">Right Side</h4>
             
-            {/* X controls */}
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <ControlButton 
-                onClick={() => setRightX(prev => Math.max(0, prev - 1))}
-                icon={Minus}
-                disabled={rightX <= 0}
-                color="red"
-              />
-              <div className="flex items-center space-x-1">
-                <div className="w-6 h-6 bg-blue-500 rounded"></div>
-                <span className="font-mono text-lg w-8">{rightX}</span>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <button
+                onClick={() => setRightX(prev => prev - 1)}
+                className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+              >
+                <Minus size={16} />
+              </button>
+              <div className="w-10 h-8 bg-blue-500 rounded flex items-center justify-center text-white font-bold text-sm">
+                {rightX}x
               </div>
-              <ControlButton 
-                onClick={() => setRightX(prev => Math.min(10, prev + 1))}
-                icon={Plus}
-                disabled={rightX >= 10}
-                color="blue"
-              />
+              <button
+                onClick={() => setRightX(prev => prev + 1)}
+                className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+              >
+                <Plus size={16} />
+              </button>
             </div>
-
-            {/* Constant controls */}
-            <div className="flex items-center justify-center space-x-3">
-              <ControlButton 
+            
+            <div className="flex items-center justify-center gap-2">
+              <button
                 onClick={() => setRightConstant(prev => prev - 1)}
-                icon={Minus}
-                disabled={rightConstant <= -10}
-                color="red"
-              />
-              <div className="flex items-center space-x-1">
-                <div className="w-6 h-6 bg-green-400 rounded"></div>
-                <span className="font-mono text-lg w-8">{rightConstant}</span>
+                className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-700 rounded hover:bg-green-200"
+              >
+                <Minus size={16} />
+              </button>
+              <div className="w-10 h-8 bg-green-400 rounded flex items-center justify-center text-gray-700 font-bold text-sm">
+                {rightConstant}
               </div>
-              <ControlButton 
-                onClick={() => setRightConstant(prev => Math.min(10, prev + 1))}
-                icon={Plus}
-                disabled={rightConstant >= 10}
-                color="green"
-              />
+              <button
+                onClick={() => setRightConstant(prev => prev + 1)}
+                className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-700 rounded hover:bg-green-200"
+              >
+                <Plus size={16} />
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Preset examples button */}
-        <div className="flex flex-wrap justify-center gap-2">
+        {/* Reset and Presets */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <button
-            onClick={() => { setLeftX(4); setLeftConstant(7); setRightX(2); setRightConstant(13); }}
-            className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm"
+            onClick={() => resetEquation()}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
           >
-            4x + 7 = 2x + 13
+            <RotateCcw size={14} /> Reset
           </button>
-          <button
-            onClick={() => { setLeftX(5); setLeftConstant(1); setRightX(3); setRightConstant(9); }}
-            className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm"
-          >
-            5x + 1 = 3x + 9
+          <button onClick={() => resetEquation(5, 3, 2, 12, 3)} className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm">
+            5x + 3 = 2x + 12
           </button>
-          <button
-            onClick={() => { setLeftX(6); setLeftConstant(-2); setRightX(4); setRightConstant(6); }}
-            className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm"
-          >
-            6x - 2 = 4x + 6
+          <button onClick={() => resetEquation(4, 2, 1, 8, 2)} className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm">
+            4x + 2 = x + 8
           </button>
-          <button
-            onClick={() => { setLeftX(7); setLeftConstant(3); setRightX(2); setRightConstant(18); }}
-            className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 text-sm"
-          >
-            7x + 3 = 2x + 18
+          <button onClick={() => resetEquation(6, 4, 3, 10, 2)} className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm">
+            6x + 4 = 3x + 10
           </button>
         </div>
       </div>
@@ -292,30 +270,24 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
         <CardContent className="p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Solving Equations with x on Both Sides</h2>
           
-          {/* Main interactive visualization - central focus */}
           <div className="mb-4">
             <InteractiveBalanceScale />
           </div>
           
-          {/* Teacher notes - only shown when answers/hints are toggled on */}
+          {/* Teacher notes - only shown when toggled */}
           {showAnswers && (
             <div className={`mt-8 border-t border-${theme.borderColor} pt-6`}>
               <h3 className="text-lg font-semibold text-gray-700 mb-4">Teacher Notes</h3>
               
-              {/* The Balance Concept */}
               <div className={`mb-6 bg-${theme.pastelBg} p-4 rounded-lg`}>
-                <h4 className={`font-medium text-${theme.pastelText} mb-2`}>The Balance Concept</h4>
+                <h4 className={`font-medium text-${theme.pastelText} mb-2`}>How to Use This Interactive</h4>
                 <p className="text-gray-700 mb-3">
-                  Think of an equation as a balance scale. The equal sign (=) represents the balance point, 
-                  and both sides must have equal "weight" to stay balanced.
-                </p>
-                <p className="text-gray-700 mb-3">
-                  When we have x terms on both sides, our goal is to collect all the x terms on one side 
-                  and all the numbers on the other side, while maintaining the balance.
+                  The scale responds to changes on each side. When students remove an x from one side only, 
+                  the scale tips — demonstrating that they must do the same to both sides to keep it balanced.
                 </p>
                 <div className="bg-white p-3 rounded border-l-4 border-blue-400">
-                  <strong>Key Rule:</strong> Whatever operation you perform on one side, 
-                  you must perform the same operation on the other side to maintain balance.
+                  <strong>Goal:</strong> Get all the x's on one side and all the numbers on the other, 
+                  then divide the constants by the number of x's to find the solution.
                 </div>
               </div>
 
@@ -323,46 +295,31 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
                 <div className="bg-amber-50 p-4 rounded-lg">
                   <h4 className="font-medium text-amber-800 mb-2">Discussion Questions</h4>
                   <ul className="list-disc list-inside space-y-2 text-amber-700">
-                    <li>What happens to the balance if we add different amounts to each side?</li>
-                    <li>Why do we move all the x terms to one side instead of leaving them on both sides?</li>
-                    <li>Can you create an equation that has no solution?</li>
-                    <li>How would you check if your answer is correct?</li>
-                    <li>What's the difference between removing 2x and removing 2?</li>
-                    <li>Why does the scale stay balanced when we change both sides equally?</li>
+                    <li>What happens when you remove an x from only one side?</li>
+                    <li>How do we keep the equation balanced?</li>
+                    <li>Why do we want all the x's on one side?</li>
+                    <li>Once we have "3x = 9", how do we find x?</li>
                   </ul>
                 </div>
                 
                 <div className={`bg-${theme.pastelBg} p-4 rounded-lg`}>
-                  <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Key Points</h4>
-                  <ul className={`list-disc list-inside space-y-2 text-${theme.secondaryText}`}>
-                    <li>Blue blocks represent x terms</li>
-                    <li>Green blocks represent positive constants</li>
-                    <li>Red blocks represent negative values</li>
-                    <li>The goal is to get x by itself on one side</li>
-                    <li>Always perform the same operation on both sides</li>
-                    <li>Check your answer by substituting back into the original equation</li>
-                  </ul>
+                  <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Solving Strategy</h4>
+                  <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                    <li>Remove x's from both sides until x is only on one side</li>
+                    <li>Remove constants from both sides until numbers are only on the other side</li>
+                    <li>Divide the constant by the number of x's</li>
+                    <li>Check by substituting back</li>
+                  </ol>
                 </div>
               </div>
 
-              {/* Summary & Next Steps */}
-              <div className={`mt-6 bg-${theme.pastelBg} p-4 rounded-lg`}>
-                <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Summary & Next Steps</h4>
-                <div className="space-y-3">
-                  <p className="text-gray-700">
-                    <strong>Remember:</strong> An equation is like a balance scale. To solve equations with x on both sides:
-                  </p>
-                  <ol className="list-decimal list-inside space-y-1 text-gray-700 ml-4">
-                    <li>Get all x terms on one side by adding or subtracting x terms</li>
-                    <li>Get all constant numbers on the other side</li>
-                    <li>Divide both sides by the coefficient of x</li>
-                    <li>Always check your answer by substituting back into the original equation</li>
-                  </ol>
-                  <p className="text-gray-700 mt-3">
-                    <strong>Next:</strong> In the Examples section, you'll practice the standard algebraic method 
-                    without the visual balance scale, building fluency with the mathematical steps.
-                  </p>
-                </div>
+              <div className={`mt-4 bg-${theme.pastelBg} p-4 rounded-lg`}>
+                <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Key Points</h4>
+                <ul className={`list-disc list-inside space-y-1 text-${theme.secondaryText}`}>
+                  <li>Blue blocks = x terms, Green blocks = constants</li>
+                  <li>Whatever you do to one side, do to the other</li>
+                  <li>The scale tips when the equation becomes unbalanced</li>
+                </ul>
               </div>
             </div>
           )}

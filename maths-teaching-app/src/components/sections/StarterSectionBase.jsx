@@ -8,7 +8,7 @@ import SymbolPuzzleDisplay from '../math/puzzles/SymbolPuzzleDisplay';
 
 /**
  * QuestionDisplay component renders a single question card
- * Handles both regular questions and symbol puzzles
+ * Styled to match Maths-Starters aesthetic
  */
 const QuestionDisplay = memo(({
     type,
@@ -17,7 +17,7 @@ const QuestionDisplay = memo(({
     showAnswers,
     renderQuestionContent
 }) => {
-    // Color styles for different question types
+    // Color styles for different question types - with borders
     const typeStyles = {
         lastLesson: 'bg-pink-100 hover:bg-pink-200 border-pink-300',
         lastWeek: 'bg-blue-100 hover:bg-blue-200 border-blue-300',
@@ -28,116 +28,109 @@ const QuestionDisplay = memo(({
     // Determine question characteristics
     const isPuzzle = data?.difficulty === 'puzzle' || type === 'lastYear';
     const isSymbolPuzzle = data?.isSymbolPuzzle || data?.puzzleDisplay;
+    const hasVisualization = data?.visualization;
 
     // Early return if no question data
     if (!data) {
         return (
-            <Card noBg className={`${typeStyles[type] || 'bg-gray-100 hover:bg-gray-200 border-gray-300'} min-h-[300px] flex flex-col border-2`}>
-                <CardContent className="flex items-center justify-center text-gray-500 italic">
-                    <p>No question available</p>
-                </CardContent>
-            </Card>
+            <div className={`${typeStyles[type] || 'bg-gray-100 border-gray-300'} p-6 rounded-lg shadow border-2 min-h-[260px] max-h-[400px] flex items-center justify-center`}>
+                <p className="text-gray-500 italic">No question available</p>
+            </div>
         );
     }
 
-    return (
-        <Card noBg className={`
-            ${typeStyles[type] || 'bg-gray-100 hover:bg-gray-200 border-gray-300'} 
-            min-h-[300px]
-            flex flex-col
-            transform transition-all duration-300
-            hover:shadow-lg hover:translate-y-[-2px]
-            border-2
-        `}>
-            <CardContent className="flex flex-col h-full">
-                {/* Question Title */}
-                <h3 className="font-bold mb-2 text-lg text-gray-700">
-                    {title}
-                </h3>
-
-                <div className="flex-grow space-y-4">
-                    {/* Question Text Area */}
-<div>
-    {isSymbolPuzzle && data.puzzleDisplay ? (
-        <div className="text-gray-700 text-base leading-relaxed">
-            <SymbolPuzzleDisplay
-                puzzleDisplay={data.puzzleDisplay}
-                mode="question"
-                className="text-base"
+    // Helper to render content (string or React element)
+    const renderContent = (content) => {
+        if (React.isValidElement(content)) {
+            return content;
+        }
+        return (
+            <ContentRenderer
+                content={content}
+                sectionType="starter"
+                size="large"
+                color="default"
+                fontWeight="normal"
             />
-        </div>
-    ) : data.question ? (
-        // Regular question: use ContentRenderer with dynamic size
-        <ContentRenderer
-            content={data.question}
-            sectionType="starter"
-            size={data.fontSize === 'large' ? 'large' : 'normal'}  // Add this conditional
-            color="default"
-            fontWeight="normal"
-        />
-    ) : (
-        // No question available
-        <div className="text-gray-500 italic">No question text available</div>
-    )}
-</div>
+        );
+    };
 
-                    {/* Visualization Container */}
-                    <div className="visualization-container h-[120px] w-full flex justify-center items-center">
-                        {data.visualization && (
-                            renderQuestionContent ?
-                                renderQuestionContent(data, type) :
-                                (isSymbolPuzzle && data.puzzleDisplay ?
-                                    <SymbolPuzzleDisplay puzzleDisplay={data.puzzleDisplay} containerHeight="120px" /> :
-                                    <ContentRenderer content={data.visualization} />)
+    return (
+        <div className={`
+            ${typeStyles[type] || 'bg-gray-100 hover:bg-gray-200 border-gray-300'} 
+            p-6 rounded-lg shadow border-2
+            min-h-[340px] max-h-[480px]
+            flex flex-col
+        `}>
+            {/* Question Title - Bold, larger, capitalize */}
+            <h3 className="font-bold mb-3 text-gray-700 text-xl capitalize">
+                {title}
+            </h3>
+
+            {/* Question Content */}
+            <div className="text-lg mb-2">
+                {isSymbolPuzzle && data.puzzleDisplay ? (
+                    <SymbolPuzzleDisplay
+                        puzzleDisplay={data.puzzleDisplay}
+                        mode="question"
+                        className="text-lg"
+                    />
+                ) : data.question ? (
+                    renderContent(data.question)
+                ) : (
+                    <span className="text-gray-500 italic">No question text</span>
+                )}
+            </div>
+
+            {/* Visualization Container - compact, only if needed */}
+            {hasVisualization && (
+                <div className="w-full flex justify-center items-center flex-shrink-0 mt-4" style={{ height: '100px' }}>
+                    {renderQuestionContent ? (
+                        renderQuestionContent(data, type)
+                    ) : isSymbolPuzzle && data.puzzleDisplay ? (
+                        <SymbolPuzzleDisplay puzzleDisplay={data.puzzleDisplay} containerHeight="100px" />
+                    ) : React.isValidElement(data.visualization) ? (
+                        data.visualization
+                    ) : (
+                        <ContentRenderer content={data.visualization} />
+                    )}
+                </div>
+            )}
+
+            {/* Spacer to push answer to bottom */}
+            <div className="flex-grow" />
+
+            {/* Answer Section - with label */}
+            {showAnswers && data.answer && (
+                <div className="mt-3 pt-3">
+                    <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
+                    <div className="font-bold text-gray-800">
+                        {isSymbolPuzzle ? (
+                            <div className="whitespace-pre-wrap">
+                                {data.answer}
+                            </div>
+                        ) : (
+                            <ContentRenderer
+                                content={data.answer}
+                                sectionType="starter"
+                                size="large"
+                                color="default"
+                                fontWeight="bold"
+                                type={isPuzzle || data.difficulty === 'text' ? 'text' : 'auto'}
+                            />
                         )}
                     </div>
                 </div>
-
-                {/* Answer Section */}
-                {showAnswers && data.answer && (
-                    <div
-                        className="mt-auto pt-3 border-t border-gray-300"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h4 className="text-base font-semibold text-gray-700 mb-1">Answer:</h4>
-                        <div
-                            className="math-answer overflow-y-auto"
-                            style={{ maxHeight: '100px' }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Symbol puzzle answers use plain text, others use ContentRenderer */}
-                            {isSymbolPuzzle ? (
-                                <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
-                                    {data.answer}
-                                </div>
-                            ) : (
-                                <ContentRenderer
-                                    content={data.answer}
-                                    sectionType="starter"
-                                    size="normal"
-                                    color="default"
-                                    fontWeight="normal"
-                                    type={isPuzzle || data.difficulty === 'text' ? 'text' : 'auto'}
-                                    textOptions={{
-                                        className: isPuzzle ? 'whitespace-pre-wrap text-gray-700 text-sm leading-relaxed' : 'text-gray-700'
-                                    }}
-                                    mathOptions={{ displayMode: true }}
-                                />
-                            )}
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+            )}
+        </div>
     );
 });
 
-// Set display name for debugging
 QuestionDisplay.displayName = 'QuestionDisplay';
 
 /**
  * StarterSectionBase - Main component to display starter questions
- * Renders a grid of questions with regeneration functionality
+ * Renders a 2x2 grid of questions with regeneration functionality
  */
 const StarterSectionBase = ({
     questionGenerators = [],
@@ -171,11 +164,10 @@ const StarterSectionBase = ({
     // Normalize generators - ensure we have enough generators for all sections
     const normalizedGenerators = useMemo(() => {
         const generators = [...questionGenerators];
-        // Fill missing generators with placeholder
         while (generators.length < sectionTypes.length) {
             generators.push(() => ({
                 question: 'No question available',
-                answer: 'No answer available'
+                answer: 'N/A'
             }));
         }
         return generators;
@@ -183,7 +175,6 @@ const StarterSectionBase = ({
 
     // State for current questions
     const [questions, setQuestions] = useState(() => {
-        // Generate initial questions
         const initialQuestions = {};
         sectionTypes.forEach((type, index) => {
             initialQuestions[type] = normalizedGenerators[index]();
@@ -199,7 +190,6 @@ const StarterSectionBase = ({
         });
         setQuestions(newQuestions);
 
-        // Call external callback if provided
         if (onRegenerateAllQuestions && typeof onRegenerateAllQuestions === 'function') {
             onRegenerateAllQuestions();
         }
@@ -208,7 +198,7 @@ const StarterSectionBase = ({
     return (
         <Card className={`py-4 px-6 ${className}`}>
             <CardContent>
-                {/* Questions Grid */}
+                {/* Questions Grid - 2x2 layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     {sectionTypes.map((sectionType, index) => (
                         <QuestionDisplay
@@ -226,8 +216,7 @@ const StarterSectionBase = ({
                 <div className="flex justify-center mt-4">
                     <button
                         onClick={regenerateAllQuestions}
-                        className="px-4 py-2 text-white bg-blue-500 hover:bg-blue-600
-                            rounded-full transition-all flex items-center gap-2 shadow-md"
+                        className="px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-full transition-all flex items-center gap-2 shadow-md"
                     >
                         <RefreshCw className="w-4 h-4" />
                         <span className="font-medium">New Questions</span>
