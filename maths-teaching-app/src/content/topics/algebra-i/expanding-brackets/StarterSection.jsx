@@ -1,23 +1,31 @@
-// src/content/topics/algebra-i/expanding-brackets/StarterSection.jsx - Updated with proper generator calls
+// src/content/topics/algebra-i/expanding-brackets/StarterSection.jsx
+// Updated with 3D Pythagoras questions in the Last Lesson rotation
+
 import React from 'react';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
 import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
+import Cuboid3D from '../../../../components/math/shapes/3d/Cuboid3D';
 import SohcahtoaGenerators from '../../../../generators/geometry/sohcahtoaGenerators';
 import PythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
+import pythagoras3DGenerators from '../../../../generators/geometry/pythagoras3DGenerators';
 import { expressionsGenerators } from '../../../../generators/algebra/expressionsGenerator';
 import { equationGenerators } from '../../../../generators/algebra/equationGenerators';
 import _ from 'lodash';
 
 /**
- * Generate a mixed SOHCAHTOA question for "Last Lesson"
- * Uses existing unified generators to create both side-finding and angle questions
+ * Generate a mixed SOHCAHTOA / 3D Pythagoras question for "Last Lesson"
+ * Includes: finding sides, finding angles, AND 3D diagonals
+ * 
+ * Distribution:
+ * - 40% Find missing side (trig)
+ * - 30% Find missing angle (trig)
+ * - 30% 3D Pythagoras (base or space diagonal)
  */
 const generateMixedSohcahtoaQuestion = () => {
-  // 50% chance of finding a side, 30% chance of finding angle, 20% chance of calculator
   const randomChoice = Math.random();
   
-  if (randomChoice > 0.5) {
-    // Find missing side
+  if (randomChoice > 0.6) {
+    // Find missing side (40%)
     const generatedQuestion = SohcahtoaGenerators.generateFindMissingSideTrig({
       sectionType: 'starter',
       difficulty: 'easy'
@@ -34,8 +42,8 @@ const generateMixedSohcahtoaQuestion = () => {
         />
       )
     };
-  } else if (randomChoice > 0.2) {
-    // Find missing angle - NEW!
+  } else if (randomChoice > 0.3) {
+    // Find missing angle (30%)
     const generatedQuestion = SohcahtoaGenerators.generateFindMissingAngleTrig({
       sectionType: 'starter',
       difficulty: 'easy'
@@ -53,14 +61,30 @@ const generateMixedSohcahtoaQuestion = () => {
       )
     };
   } else {
-    // Calculator question (unchanged)
-    const generatedQuestion = SohcahtoaGenerators.generateTrigCalculator({
-      sectionType: 'starter'
+    // 3D Pythagoras (30%)
+    const diagonalType = Math.random() > 0.5 ? 'base' : 'space';
+    const generatedQuestion = pythagoras3DGenerators.generateFind3DDiagonal({
+      sectionType: 'starter',
+      difficulty: 'easy',
+      diagonalType
     });
     
     return {
-      question: generatedQuestion.question,
-      answer: generatedQuestion.answer
+      question: generatedQuestion.questionText || generatedQuestion.question,
+      answer: generatedQuestion.answer,
+      visualizationHeight: '200px', // Taller container for 3D shape
+      visualization: (
+        <Cuboid3D 
+          {...generatedQuestion.visualization}
+          style={{
+            scale: 38, // Slightly larger scale for starter section
+            maxHeight: '200px',
+            labelSize: 18, // Larger labels for starter boxes
+            vertexLabelSize: 20 // Even larger vertex labels
+          }}
+        />
+      ),
+      workingOut: generatedQuestion.workingOut
     };
   }
 };
@@ -139,7 +163,7 @@ const generateThinkOfNumberQuestion = () => {
 const StarterSection = ({ currentTopic, currentLessonId }) => {
   // Define the question generators for each section type
   const questionGenerators = [
-    // Last Lesson: Mixed SOHCAHTOA questions (sides and angles)
+    // Last Lesson: Mixed SOHCAHTOA + 3D Pythagoras questions
     generateMixedSohcahtoaQuestion,
     
     // Last Week: Mixed Pythagoras questions (hypotenuse and sides)

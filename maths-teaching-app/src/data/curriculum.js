@@ -40,11 +40,11 @@ export const curriculum = {
                 id: 4,
                 title: "3D Pythagoras & Applications",
                 sections: {
-                    starter: 'inverse/StarterSection',
-                    diagnostic: 'inverse/DiagnosticSection',
-                    learn: 'inverse/LearnSection',
-                    examples: 'inverse/ExamplesSection',
-                    challenge: 'inverse/ChallengeSection'
+                    starter: '3d-trig/StarterSection',
+                    diagnostic: '3d-trig/DiagnosticSection',
+                    learn: '3d-trig/LearnSection',
+                    examples: '3d-trig/ExamplesSection',
+                    challenge: '3d-trig/ChallengeSection'
                 }
             }
         ]

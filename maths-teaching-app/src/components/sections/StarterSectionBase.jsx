@@ -82,13 +82,16 @@ const QuestionDisplay = memo(({
                 )}
             </div>
 
-            {/* Visualization Container - compact, only if needed */}
+            {/* Visualization Container - height can be customized via data.visualizationHeight */}
             {hasVisualization && (
-                <div className="w-full flex justify-center items-center flex-shrink-0 mt-4" style={{ height: '100px' }}>
+                <div 
+                    className="w-full flex justify-center items-center flex-shrink-0 mt-4" 
+                    style={{ height: data.visualizationHeight || '100px' }}
+                >
                     {renderQuestionContent ? (
                         renderQuestionContent(data, type)
                     ) : isSymbolPuzzle && data.puzzleDisplay ? (
-                        <SymbolPuzzleDisplay puzzleDisplay={data.puzzleDisplay} containerHeight="100px" />
+                        <SymbolPuzzleDisplay puzzleDisplay={data.puzzleDisplay} containerHeight={data.visualizationHeight || "100px"} />
                     ) : React.isValidElement(data.visualization) ? (
                         data.visualization
                     ) : (
