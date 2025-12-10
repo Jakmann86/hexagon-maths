@@ -1,407 +1,401 @@
-// src/generators/algebra/recurringDecimalsGenerator.js - Phase 3 New Generator
+// src/generators/algebra/recurringDecimalsGenerator.js
+// Generators for Converting Recurring Decimals to Fractions
+// Following Pattern 2: Returns config objects, not React components
+
 import _ from 'lodash';
 
 /**
- * Generate recurring decimal to fraction conversion problems
- * Week 5 (Algebra V) - Recurring Decimals
- * Handles starter, diagnostic, and examples sections with section-aware output
- * Uses proper KaTeX notation for fractions and recurring decimals
+ * DIAGNOSTIC: Simple fraction to decimal recognition
+ * Questions like: "What is 1/9 as a decimal?" or "What fraction is 0.̄7?"
  */
-export const generateRecurringToFraction = (options = {}) => {
+export const generateSimpleRecurringDiagnostic = (options = {}) => {
   const {
-    difficulty = 'medium',
-    sectionType = 'diagnostic'
+    difficulty = 'easy',
+    questionDirection = null // 'toDecimal', 'toFraction', or null for random
   } = options;
 
-  // Define recurring decimals with their fractional equivalents
-  const recurringDecimals = {
-    easy: [
-      { decimal: '0.\\overline{3}', fraction: '\\frac{1}{3}', working: '0.333...', denominator: 3 },
-      { decimal: '0.\\overline{6}', fraction: '\\frac{2}{3}', working: '0.666...', denominator: 3 },
-      { decimal: '0.\\overline{1}', fraction: '\\frac{1}{9}', working: '0.111...', denominator: 9 },
-      { decimal: '0.\\overline{2}', fraction: '\\frac{2}{9}', working: '0.222...', denominator: 9 },
-      { decimal: '0.\\overline{5}', fraction: '\\frac{5}{9}', working: '0.555...', denominator: 9 },
-      { decimal: '0.\\overline{8}', fraction: '\\frac{8}{9}', working: '0.888...', denominator: 9 }
-    ],
-    medium: [
-      { decimal: '0.\\overline{12}', fraction: '\\frac{4}{33}', working: '0.121212...', denominator: 33 },
-      { decimal: '0.\\overline{27}', fraction: '\\frac{3}{11}', working: '0.272727...', denominator: 11 },
-      { decimal: '0.\\overline{45}', fraction: '\\frac{5}{11}', working: '0.454545...', denominator: 11 },
-      { decimal: '0.\\overline{18}', fraction: '\\frac{2}{11}', working: '0.181818...', denominator: 11 },
-      { decimal: '0.\\overline{36}', fraction: '\\frac{4}{11}', working: '0.363636...', denominator: 11 }
-    ],
-    hard: [
-      { decimal: '0.\\overline{142857}', fraction: '\\frac{1}{7}', working: '0.142857142857...', denominator: 7 },
-      { decimal: '0.\\overline{285714}', fraction: '\\frac{2}{7}', working: '0.285714285714...', denominator: 7 },
-      { decimal: '0.\\overline{571428}', fraction: '\\frac{4}{7}', working: '0.571428571428...', denominator: 7 },
-      { decimal: '0.1\\overline{6}', fraction: '\\frac{1}{6}', working: '0.1666...', denominator: 6 },
-      { decimal: '0.8\\overline{3}', fraction: '\\frac{5}{6}', working: '0.8333...', denominator: 6 }
-    ]
-  };
+  const direction = questionDirection || _.sample(['toDecimal', 'toFraction']);
 
-  const selectedSet = recurringDecimals[difficulty] || recurringDecimals.medium;
-  const selected = _.sample(selectedSet);
+  // Simple ninths and ninety-ninths
+  const simpleNinths = [
+    { fraction: '\\frac{1}{9}', decimal: '0.\\dot{1}', value: 1 },
+    { fraction: '\\frac{2}{9}', decimal: '0.\\dot{2}', value: 2 },
+    { fraction: '\\frac{4}{9}', decimal: '0.\\dot{4}', value: 4 },
+    { fraction: '\\frac{5}{9}', decimal: '0.\\dot{5}', value: 5 },
+    { fraction: '\\frac{7}{9}', decimal: '0.\\dot{7}', value: 7 },
+    { fraction: '\\frac{8}{9}', decimal: '0.\\dot{8}', value: 8 }
+  ];
 
-  // SECTION-AWARE OUTPUT FORMATTING
-  if (sectionType === 'starter') {
-    return {
-      question: `Convert the recurring decimal ${selected.decimal} to a fraction`,
-      answer: `${selected.decimal} = ${selected.fraction}`,
-      difficulty: 'algebra'
-    };
-  }
+  const simpleNinetyNinths = [
+    { fraction: '\\frac{1}{99}', decimal: '0.\\dot{0}\\dot{1}', value: 1 },
+    { fraction: '\\frac{12}{99}', decimal: '0.\\dot{1}\\dot{2}', value: 12 },
+    { fraction: '\\frac{23}{99}', decimal: '0.\\dot{2}\\dot{3}', value: 23 },
+    { fraction: '\\frac{45}{99}', decimal: '0.\\dot{4}\\dot{5}', value: 45 },
+    { fraction: '\\frac{67}{99}', decimal: '0.\\dot{6}\\dot{7}', value: 67 }
+  ];
 
-  else if (sectionType === 'diagnostic') {
-    // Generate incorrect fraction options
-    const incorrectOptions = [];
-    
-    // Common mistakes for recurring decimals
-    if (difficulty === 'easy') {
-      // For 0.333..., common mistakes include 3/10, 33/100, 1/3.3
-      incorrectOptions.push('\\frac{3}{10}');  // Just first digit
-      incorrectOptions.push('\\frac{33}{100}'); // Two digits as percentage-style
-      incorrectOptions.push('\\frac{3}{9}');   // Wrong simplification
-    } else {
-      // For more complex ones, generate systematic errors
-      incorrectOptions.push('\\frac{' + selected.working.replace(/[^0-9]/g, '').slice(0, 2) + '}{100}');
-      incorrectOptions.push('\\frac{1}{' + (selected.denominator + 1) + '}');
-      incorrectOptions.push('\\frac{' + (parseInt(selected.working.slice(2, 3)) || 1) + '}{10}');
-    }
+  const pool = difficulty === 'easy' ? simpleNinths : [...simpleNinths, ...simpleNinetyNinths];
+  const selected = _.sample(pool);
 
-    // Ensure we have enough unique options
-    while (incorrectOptions.length < 3) {
-      const randomNum = _.random(1, 20);
-      const randomDen = _.random(7, 50);
-      const newOption = `\\frac{${randomNum}}{${randomDen}}`;
-      if (!incorrectOptions.includes(newOption) && newOption !== selected.fraction) {
-        incorrectOptions.push(newOption);
-      }
-    }
+  if (direction === 'toDecimal') {
+    // Generate distractors
+    const correctAnswer = selected.decimal;
+    const incorrectOptions = [
+      `0.${selected.value}`, // Non-recurring
+      `0.\\dot{${(selected.value + 1) % 10}}`, // Wrong digit
+      `0.${selected.value}${selected.value}` // Repeated but not recurring
+    ].filter(opt => opt !== correctAnswer);
 
     return {
       questionDisplay: {
-        text: 'Convert to a fraction in its simplest form:',
-        math: selected.decimal
-      },
-      correctAnswer: selected.fraction,
-      options: [selected.fraction, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
-      explanation: `${selected.decimal} = ${selected.fraction} using the algebraic method for recurring decimals`
-    };
-  }
-
-  else if (sectionType === 'examples') {
-    // Generate detailed step-by-step solution using algebraic method
-    const steps = generateRecurringToFractionSteps(selected);
-    
-    return {
-      title: "Converting Recurring Decimals to Fractions",
-      questionText: `Convert ${selected.decimal} to a fraction`,
-      solution: steps
-    };
-  }
-
-  return generateRecurringToFraction({ ...options, sectionType: 'diagnostic' });
-};
-
-/**
- * Generate fraction to recurring decimal conversion problems
- * Shows which fractions produce recurring decimals and which terminate
- */
-export const generateFractionToRecurring = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'diagnostic'
-  } = options;
-
-  // Fractions that create recurring decimals vs terminating
-  const fractionSets = {
-    recurring: [
-      { fraction: '\\frac{1}{3}', decimal: '0.\\overline{3}', longForm: '0.333...' },
-      { fraction: '\\frac{2}{3}', decimal: '0.\\overline{6}', longForm: '0.666...' },
-      { fraction: '\\frac{1}{6}', decimal: '0.1\\overline{6}', longForm: '0.1666...' },
-      { fraction: '\\frac{1}{7}', decimal: '0.\\overline{142857}', longForm: '0.142857...' },
-      { fraction: '\\frac{1}{9}', decimal: '0.\\overline{1}', longForm: '0.111...' },
-      { fraction: '\\frac{2}{9}', decimal: '0.\\overline{2}', longForm: '0.222...' },
-      { fraction: '\\frac{1}{11}', decimal: '0.\\overline{09}', longForm: '0.090909...' },
-      { fraction: '\\frac{2}{11}', decimal: '0.\\overline{18}', longForm: '0.181818...' }
-    ],
-    terminating: [
-      { fraction: '\\frac{1}{2}', decimal: '0.5', longForm: '0.5' },
-      { fraction: '\\frac{1}{4}', decimal: '0.25', longForm: '0.25' },
-      { fraction: '\\frac{3}{4}', decimal: '0.75', longForm: '0.75' },
-      { fraction: '\\frac{1}{5}', decimal: '0.2', longForm: '0.2' },
-      { fraction: '\\frac{1}{8}', decimal: '0.125', longForm: '0.125' },
-      { fraction: '\\frac{3}{8}', decimal: '0.375', longForm: '0.375' },
-      { fraction: '\\frac{1}{10}', decimal: '0.1', longForm: '0.1' },
-      { fraction: '\\frac{1}{20}', decimal: '0.05', longForm: '0.05' }
-    ]
-  };
-
-  // Choose based on difficulty and what we want to test
-  const useRecurring = Math.random() > 0.3; // 70% chance of recurring decimal
-  const selectedSet = useRecurring ? fractionSets.recurring : fractionSets.terminating;
-  
-  // Filter by difficulty
-  let availableFractions;
-  if (difficulty === 'easy') {
-    availableFractions = selectedSet.filter(f => 
-      ['\\frac{1}{3}', '\\frac{2}{3}', '\\frac{1}{2}', '\\frac{1}{4}'].includes(f.fraction)
-    );
-  } else {
-    availableFractions = selectedSet;
-  }
-
-  const selected = _.sample(availableFractions);
-
-  if (sectionType === 'starter') {
-    return {
-      question: `Convert the fraction ${selected.fraction} to a decimal`,
-      answer: `${selected.fraction} = ${selected.decimal}`,
-      difficulty: 'algebra'
-    };
-  }
-
-  else if (sectionType === 'diagnostic') {
-    // Generate plausible decimal options
-    const incorrectOptions = [];
-    
-    if (useRecurring) {
-      // For recurring fractions, offer terminating alternatives and wrong recurring
-      incorrectOptions.push('0.33');  // Truncated version
-      incorrectOptions.push('0.34');  // Rounded incorrectly
-      incorrectOptions.push('0.\\overline{33}'); // Wrong recurring pattern
-    } else {
-      // For terminating fractions, offer recurring alternatives and wrong decimals
-      incorrectOptions.push(selected.decimal.slice(0, -1) + '\\overline{' + selected.decimal.slice(-1) + '}');
-      incorrectOptions.push((parseFloat(selected.decimal) + 0.1).toString());
-      incorrectOptions.push((parseFloat(selected.decimal) - 0.1).toString());
-    }
-
-    // Add more generic wrong options
-    while (incorrectOptions.length < 3) {
-      const wrongDec = (Math.random() * 0.9 + 0.1).toFixed(3);
-      if (!incorrectOptions.includes(wrongDec)) {
-        incorrectOptions.push(wrongDec);
-      }
-    }
-
-    return {
-      questionDisplay: {
-        text: 'Convert to a decimal:',
+        text: 'Write as a recurring decimal:',
         math: selected.fraction
       },
-      correctAnswer: selected.decimal,
-      options: [selected.decimal, ...incorrectOptions.slice(0, 3)].sort(() => Math.random() - 0.5),
-      explanation: `${selected.fraction} = ${selected.decimal} by long division`
+      correctAnswer,
+      options: _.shuffle([correctAnswer, ...incorrectOptions.slice(0, 3)]),
+      explanation: `${selected.fraction} = ${selected.decimal}`
     };
-  }
-
-  else if (sectionType === 'examples') {
-    const steps = [
-      {
-        explanation: "Convert the fraction to a decimal using long division",
-        formula: selected.fraction
-      },
-      {
-        explanation: useRecurring ? 
-          "The division produces a repeating pattern" : 
-          "The division terminates exactly",
-        formula: `\\text{Long division gives: } ${selected.longForm}`
-      },
-      {
-        explanation: useRecurring ? 
-          "Write using recurring decimal notation" : 
-          "The decimal terminates",
-        formula: `${selected.fraction} = ${selected.decimal}`
-      }
-    ];
-
-    return {
-      title: "Converting Fractions to Decimals",
-      questionText: `Convert ${selected.fraction} to a decimal`,
-      solution: steps
-    };
-  }
-
-  return generateFractionToRecurring({ ...options, sectionType: 'diagnostic' });
-};
-
-/**
- * Generate decimal classification problems
- * Students identify which decimals are recurring vs terminating
- */
-export const generateDecimalClassification = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'diagnostic'
-  } = options;
-
-  const decimals = {
-    recurring: [
-      { display: '0.\\overline{3}', description: '0.333...' },
-      { display: '0.\\overline{142857}', description: '0.142857142857...' },
-      { display: '0.1\\overline{6}', description: '0.1666...' },
-      { display: '0.\\overline{81}', description: '0.818181...' }
-    ],
-    terminating: [
-      { display: '0.25', description: '0.25' },
-      { display: '0.125', description: '0.125' },
-      { display: '0.75', description: '0.75' },
-      { display: '0.6', description: '0.6' }
-    ]
-  };
-
-  const isRecurring = Math.random() > 0.5;
-  const selectedSet = isRecurring ? decimals.recurring : decimals.terminating;
-  const selected = _.sample(selectedSet);
-
-  if (sectionType === 'starter') {
-    return {
-      question: `Is ${selected.display} a recurring or terminating decimal?`,
-      answer: `${selected.display} is ${isRecurring ? 'recurring' : 'terminating'} because ${isRecurring ? 'it repeats forever' : 'it ends'}`,
-      difficulty: 'algebra'
-    };
-  }
-
-  else if (sectionType === 'diagnostic') {
-    const options = ['Recurring', 'Terminating'];
-    const correctAnswer = isRecurring ? 'Recurring' : 'Terminating';
+  } else {
+    // toFraction
+    const correctAnswer = selected.fraction;
+    const baseValue = selected.value;
+    const incorrectOptions = [
+      `\\frac{${baseValue}}{10}`,
+      `\\frac{${baseValue}}{90}`,
+      `\\frac{${baseValue + 1}}{9}`
+    ].filter(opt => opt !== correctAnswer);
 
     return {
       questionDisplay: {
-        text: 'Classify this decimal:',
-        math: selected.display
+        text: 'Write as a fraction:',
+        math: selected.decimal
       },
       correctAnswer,
-      options: options.sort(() => Math.random() - 0.5),
-      explanation: `${selected.display} is ${correctAnswer.toLowerCase()} because ${isRecurring ? 'the digits repeat in a pattern' : 'the decimal expansion ends'}`
+      options: _.shuffle([correctAnswer, ...incorrectOptions.slice(0, 3)]),
+      explanation: `${selected.decimal} = ${selected.fraction}`
     };
   }
-
-  return generateDecimalClassification({ ...options, sectionType: 'diagnostic' });
 };
 
 /**
- * Generate why fractions recur problems
- * Explains the mathematical reason why certain fractions produce recurring decimals
+ * EXAMPLES TAB 1: Single digit recurring (0.̄4 = 4/9)
+ * "Show that 0.̄4 = 4/9"
  */
-export const generateWhyFractionsRecur = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'examples'
-  } = options;
+export const generateSingleDigitRecurring = (options = {}) => {
+  const { seed = Date.now() } = options;
 
-  const explanations = [
-    {
-      fraction: '\\frac{1}{3}',
-      reason: 'When we divide 1 by 3, the remainder is always 1, so the process repeats',
-      denomFactors: '3 = 3 (prime factor other than 2 or 5)'
-    },
-    {
-      fraction: '\\frac{1}{6}',
-      reason: '6 = 2 × 3, so while 2 gives terminating part, 3 causes recurring',
-      denomFactors: '6 = 2 \\times 3 (contains factor other than 2 or 5)'
-    },
-    {
-      fraction: '\\frac{1}{7}',
-      reason: 'When we divide by 7, we cycle through remainders 1,3,2,6,4,5 then repeat',
-      denomFactors: '7 = 7 (prime factor other than 2 or 5)'
-    }
-  ];
+  const digits = [1, 2, 3, 4, 5, 6, 7, 8];
+  const digit = digits[seed % digits.length] || _.sample(digits);
 
-  const selected = _.sample(explanations);
-
-  if (sectionType === 'examples') {
-    const solution = [
+  return {
+    title: 'Single Digit Recurring',
+    questionText: `Show that $0.\\dot{${digit}} = \\frac{${digit}}{9}$`,
+    answer: `\\frac{${digit}}{9}`,
+    solution: [
       {
-        explanation: "A fraction produces a recurring decimal if the denominator has prime factors other than 2 and 5",
-        formula: "\\text{Rule: Only denominators of the form } 2^a \\times 5^b \\text{ give terminating decimals}"
+        explanation: `Let x = 0.${digit}${digit}${digit}...`,
+        formula: `x = 0.\\dot{${digit}}`
       },
       {
-        explanation: `For ${selected.fraction}, examine the denominator`,
-        formula: selected.denomFactors
+        explanation: 'Multiply both sides by 10 to shift the decimal point',
+        formula: `10x = ${digit}.\\dot{${digit}}`
       },
       {
-        explanation: "Since the denominator contains factors other than 2 and 5, the decimal must recur",
-        formula: selected.reason
+        explanation: 'Subtract the original equation to eliminate the recurring part',
+        formula: `10x - x = ${digit}.\\dot{${digit}} - 0.\\dot{${digit}}`
       },
       {
-        explanation: "This is why we get a recurring decimal",
-        formula: `${selected.fraction} \\text{ produces a recurring decimal}`
+        explanation: 'Simplify',
+        formula: `9x = ${digit}`
+      },
+      {
+        explanation: 'Solve for x',
+        formula: `x = \\frac{${digit}}{9}`
       }
-    ];
-
-    return {
-      title: "Why Some Fractions Give Recurring Decimals",
-      questionText: `Explain why ${selected.fraction} gives a recurring decimal`,
-      solution
-    };
-  }
-
-  return generateWhyFractionsRecur({ ...options, sectionType: 'examples' });
+    ],
+    metadata: { type: 'single-digit', digit }
+  };
 };
 
 /**
- * Helper function to generate detailed algebraic steps for converting recurring decimals to fractions
+ * EXAMPLES TAB 2: Two digit recurring (0.̄1̄2 = 12/99)
+ * "Show that 0.̄1̄2 = 12/99"
  */
-const generateRecurringToFractionSteps = (decimalData) => {
-  // This creates the algebraic method: x = 0.333..., 10x = 3.333..., 9x = 3, x = 1/3
-  
-  const steps = [
-    {
-      explanation: "Let x equal the recurring decimal",
-      formula: `x = ${decimalData.decimal}`
+export const generateTwoDigitRecurring = (options = {}) => {
+  const { seed = Date.now() } = options;
+
+  const twoDigitOptions = [
+    { digits: '12', num: 12 },
+    { digits: '23', num: 23 },
+    { digits: '34', num: 34 },
+    { digits: '45', num: 45 },
+    { digits: '56', num: 56 },
+    { digits: '67', num: 67 },
+    { digits: '78', num: 78 },
+    { digits: '89', num: 89 },
+    { digits: '13', num: 13 },
+    { digits: '27', num: 27 },
+    { digits: '36', num: 36 },
+    { digits: '54', num: 54 },
+    { digits: '81', num: 81 }
+  ];
+
+  const selected = twoDigitOptions[seed % twoDigitOptions.length] || _.sample(twoDigitOptions);
+  const d1 = selected.digits[0];
+  const d2 = selected.digits[1];
+
+  // Check if fraction can be simplified
+  const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+  const divisor = gcd(selected.num, 99);
+  const simplified = divisor > 1 
+    ? `= \\frac{${selected.num / divisor}}{${99 / divisor}}`
+    : '';
+
+  return {
+    title: 'Two Digit Recurring',
+    questionText: `Show that $0.\\dot{${d1}}\\dot{${d2}} = \\frac{${selected.num}}{99}$`,
+    answer: `\\frac{${selected.num}}{99}${simplified}`,
+    solution: [
+      {
+        explanation: `Let x = 0.${selected.digits}${selected.digits}${selected.digits}...`,
+        formula: `x = 0.\\dot{${d1}}\\dot{${d2}}`
+      },
+      {
+        explanation: 'Multiply both sides by 100 to shift two decimal places',
+        formula: `100x = ${selected.digits}.\\dot{${d1}}\\dot{${d2}}`
+      },
+      {
+        explanation: 'Subtract the original equation',
+        formula: `100x - x = ${selected.digits}.\\dot{${d1}}\\dot{${d2}} - 0.\\dot{${d1}}\\dot{${d2}}`
+      },
+      {
+        explanation: 'Simplify',
+        formula: `99x = ${selected.num}`
+      },
+      {
+        explanation: 'Solve for x',
+        formula: `x = \\frac{${selected.num}}{99}${simplified}`
+      }
+    ],
+    metadata: { type: 'two-digit', digits: selected.digits }
+  };
+};
+
+/**
+ * EXAMPLES TAB 3: Three digit recurring (0.̄1̄2̄3 = 123/999)
+ * "Show that 0.̄1̄2̄3 = 123/999"
+ */
+export const generateThreeDigitRecurring = (options = {}) => {
+  const { seed = Date.now() } = options;
+
+  const threeDigitOptions = [
+    { digits: '123', num: 123 },
+    { digits: '234', num: 234 },
+    { digits: '345', num: 345 },
+    { digits: '456', num: 456 },
+    { digits: '567', num: 567 },
+    { digits: '142', num: 142 },
+    { digits: '285', num: 285 },
+    { digits: '428', num: 428 },
+    { digits: '571', num: 571 },
+    { digits: '714', num: 714 },
+    { digits: '857', num: 857 }
+  ];
+
+  const selected = threeDigitOptions[seed % threeDigitOptions.length] || _.sample(threeDigitOptions);
+  const d1 = selected.digits[0];
+  const d2 = selected.digits[1];
+  const d3 = selected.digits[2];
+
+  // Check if fraction can be simplified
+  const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+  const divisor = gcd(selected.num, 999);
+  const simplified = divisor > 1 
+    ? `= \\frac{${selected.num / divisor}}{${999 / divisor}}`
+    : '';
+
+  return {
+    title: 'Three Digit Recurring',
+    questionText: `Show that $0.\\dot{${d1}}${d2}\\dot{${d3}} = \\frac{${selected.num}}{999}$`,
+    answer: `\\frac{${selected.num}}{999}${simplified}`,
+    solution: [
+      {
+        explanation: `Let x = 0.${selected.digits}${selected.digits}...`,
+        formula: `x = 0.\\dot{${d1}}${d2}\\dot{${d3}}`
+      },
+      {
+        explanation: 'Multiply both sides by 1000 to shift three decimal places',
+        formula: `1000x = ${selected.digits}.\\dot{${d1}}${d2}\\dot{${d3}}`
+      },
+      {
+        explanation: 'Subtract the original equation',
+        formula: `1000x - x = ${selected.digits}.\\dot{${d1}}${d2}\\dot{${d3}} - 0.\\dot{${d1}}${d2}\\dot{${d3}}`
+      },
+      {
+        explanation: 'Simplify',
+        formula: `999x = ${selected.num}`
+      },
+      {
+        explanation: 'Solve for x',
+        formula: `x = \\frac{${selected.num}}{999}${simplified}`
+      }
+    ],
+    metadata: { type: 'three-digit', digits: selected.digits }
+  };
+};
+
+/**
+ * EXAMPLES TAB 4: Non-recurring prefix (0.1̄6 = 1/6)
+ * "Show that 0.1̄6 = 1/6" (where only the 6 recurs)
+ */
+export const generateNonRecurringPrefix = (options = {}) => {
+  const { seed = Date.now() } = options;
+
+  // Common examples where a digit doesn't recur
+  const prefixOptions = [
+    { 
+      display: '0.1\\dot{6}', 
+      prefix: '1', 
+      recurring: '6',
+      working: {
+        let10x: '1.\\dot{6}',
+        let100x: '16.\\dot{6}',
+        subtract: '100x - 10x = 16.\\dot{6} - 1.\\dot{6}',
+        result: '90x = 15',
+        answer: '\\frac{15}{90} = \\frac{1}{6}'
+      },
+      finalAnswer: '\\frac{1}{6}'
+    },
+    { 
+      display: '0.8\\dot{3}', 
+      prefix: '8', 
+      recurring: '3',
+      working: {
+        let10x: '8.\\dot{3}',
+        let100x: '83.\\dot{3}',
+        subtract: '100x - 10x = 83.\\dot{3} - 8.\\dot{3}',
+        result: '90x = 75',
+        answer: '\\frac{75}{90} = \\frac{5}{6}'
+      },
+      finalAnswer: '\\frac{5}{6}'
+    },
+    { 
+      display: '0.4\\dot{1}', 
+      prefix: '4', 
+      recurring: '1',
+      working: {
+        let10x: '4.\\dot{1}',
+        let100x: '41.\\dot{1}',
+        subtract: '100x - 10x = 41.\\dot{1} - 4.\\dot{1}',
+        result: '90x = 37',
+        answer: '\\frac{37}{90}'
+      },
+      finalAnswer: '\\frac{37}{90}'
+    },
+    { 
+      display: '0.2\\dot{7}', 
+      prefix: '2', 
+      recurring: '7',
+      working: {
+        let10x: '2.\\dot{7}',
+        let100x: '27.\\dot{7}',
+        subtract: '100x - 10x = 27.\\dot{7} - 2.\\dot{7}',
+        result: '90x = 25',
+        answer: '\\frac{25}{90} = \\frac{5}{18}'
+      },
+      finalAnswer: '\\frac{5}{18}'
+    },
+    { 
+      display: '0.5\\dot{8}', 
+      prefix: '5', 
+      recurring: '8',
+      working: {
+        let10x: '5.\\dot{8}',
+        let100x: '58.\\dot{8}',
+        subtract: '100x - 10x = 58.\\dot{8} - 5.\\dot{8}',
+        result: '90x = 53',
+        answer: '\\frac{53}{90}'
+      },
+      finalAnswer: '\\frac{53}{90}'
+    },
+    { 
+      display: '0.3\\dot{6}', 
+      prefix: '3', 
+      recurring: '6',
+      working: {
+        let10x: '3.\\dot{6}',
+        let100x: '36.\\dot{6}',
+        subtract: '100x - 10x = 36.\\dot{6} - 3.\\dot{6}',
+        result: '90x = 33',
+        answer: '\\frac{33}{90} = \\frac{11}{30}'
+      },
+      finalAnswer: '\\frac{11}{30}'
     }
   ];
 
-  // Determine multiplication factor based on recurring part length
-  const recurringPart = decimalData.working.replace(/[^0-9]/g, '').match(/(\d+)\1+/);
-  const recurringLength = recurringPart ? recurringPart[1].length : 1;
-  const multiplier = Math.pow(10, recurringLength);
+  const selected = prefixOptions[seed % prefixOptions.length] || _.sample(prefixOptions);
 
-  steps.push({
-    explanation: `Multiply both sides by ${multiplier} to shift the decimal point`,
-    formula: `${multiplier}x = ${multiplier} \\times ${decimalData.decimal}`
-  });
-
-  const shiftedDecimal = parseFloat(decimalData.working) * multiplier;
-  steps.push({
-    explanation: "The recurring parts now align",
-    formula: `${multiplier}x = ${shiftedDecimal.toFixed(6)}...`
-  });
-
-  steps.push({
-    explanation: "Subtract the original equation to eliminate the recurring part",
-    formula: `${multiplier}x - x = ${shiftedDecimal.toFixed(0)} - ${parseFloat(decimalData.working).toFixed(6)}...`
-  });
-
-  const coefficient = multiplier - 1;
-  const numerator = Math.round(shiftedDecimal - parseFloat(decimalData.working));
-  
-  steps.push({
-    explanation: "Simplify the left side",
-    formula: `${coefficient}x = ${numerator}`
-  });
-
-  steps.push({
-    explanation: "Solve for x",
-    formula: `x = \\frac{${numerator}}{${coefficient}}`
-  });
-
-  steps.push({
-    explanation: "Simplify to lowest terms",
-    formula: `x = ${decimalData.fraction}`
-  });
-
-  return steps;
+  return {
+    title: 'Non-Recurring Prefix',
+    questionText: `Show that $${selected.display} = ${selected.finalAnswer}$`,
+    answer: selected.finalAnswer,
+    solution: [
+      {
+        explanation: 'Let x equal the recurring decimal',
+        formula: `x = ${selected.display}`
+      },
+      {
+        explanation: 'Multiply by 10 to move past the non-recurring digit',
+        formula: `10x = ${selected.working.let10x}`
+      },
+      {
+        explanation: 'Multiply by 100 to move one full cycle of the recurring part',
+        formula: `100x = ${selected.working.let100x}`
+      },
+      {
+        explanation: 'Subtract 10x from 100x to eliminate the recurring part',
+        formula: selected.working.subtract
+      },
+      {
+        explanation: 'Simplify',
+        formula: selected.working.result
+      },
+      {
+        explanation: 'Solve for x and simplify the fraction',
+        formula: `x = ${selected.working.answer}`
+      }
+    ],
+    metadata: { type: 'non-recurring-prefix', display: selected.display }
+  };
 };
 
-// Export all recurring decimal generators
+/**
+ * Generate all examples for the Examples Section (4 tabs)
+ */
+export const generateRecurringDecimalsExamples = (options = {}) => {
+  const { seed = Date.now() } = options;
+  
+  return [
+    generateSingleDigitRecurring({ seed }),
+    generateTwoDigitRecurring({ seed: seed + 1000 }),
+    generateThreeDigitRecurring({ seed: seed + 2000 }),
+    generateNonRecurringPrefix({ seed: seed + 3000 })
+  ];
+};
+
+// Export all generators
 export const recurringDecimalsGenerators = {
-  generateRecurringToFraction,
-  generateFractionToRecurring,
-  generateDecimalClassification,
-  generateWhyFractionsRecur
+  // Diagnostic
+  generateSimpleRecurringDiagnostic,
+  
+  // Examples (4 types)
+  generateSingleDigitRecurring,
+  generateTwoDigitRecurring,
+  generateThreeDigitRecurring,
+  generateNonRecurringPrefix,
+  
+  // Combined
+  generateRecurringDecimalsExamples
 };
 
 export default recurringDecimalsGenerators;
