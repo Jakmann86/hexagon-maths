@@ -1,710 +1,566 @@
-// src/generators/geometry/pythagorasGenerators.js - Unified Architecture
+// src/generators/geometry/pythagorasGenerators.js
+// Pythagoras' Theorem Question Generator
+// Following Generator Output Specification v2.0
+//
+// Question Types:
+// 1. Find hypotenuse: Given two legs, find c
+// 2. Find missing side: Given hypotenuse and one leg, find the other
+// 3. Isosceles triangle area: Use Pythagoras to find height, then area
+// 4. 3D diagonal: Space diagonal in cuboid (challenge)
+
 import _ from 'lodash';
-import { PYTHAGOREAN_TRIPLES, createPythagoreanTriangle, createIsoscelesTriangle } from '../../factories/triangleFactory';
-import { createDistanceProblem } from '../../factories/coordinateFactory';
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+// Pythagorean triples for clean integer answers
+const PYTHAGOREAN_TRIPLES = [
+  [3, 4, 5],
+  [5, 12, 13],
+  [6, 8, 10],
+  [8, 15, 17],
+  [7, 24, 25],
+  [9, 12, 15],
+  [12, 16, 20],
+  [9, 40, 41],
+  [20, 21, 29],
+  [11, 60, 61]
+];
+
+// Scaled triples for variety
+const getScaledTriple = (triple, scale) => triple.map(x => x * scale);
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+
 /**
- * Ensure all options are unique and randomize order
+ * Round to specified decimal places
  */
-const generateUniqueOptions = (optionsArray) => {
-  const uniqueOptions = [];
-  const seen = new Set();
-
-  for (const option of optionsArray) {
-    if (!seen.has(option)) {
-      seen.add(option);
-      uniqueOptions.push(option);
-    }
-  }
-
-  // Add fallback options if needed
-  while (uniqueOptions.length < 4) {
-    const fallback = `${_.random(10, 20)}\\text{ cm}`;
-    if (!seen.has(fallback)) {
-      seen.add(fallback);
-      uniqueOptions.push(fallback);
-    }
-  }
-
-  return uniqueOptions.sort(() => Math.random() - 0.5);
+const roundTo = (num, places = 2) => {
+  const factor = Math.pow(10, places);
+  return Math.round(num * factor) / factor;
 };
 
 /**
- * Unified hypotenuse question generator
- * Handles starter, diagnostic, and examples sections with section-aware output
- * Examples section includes non-Pythagorean triangles with decimal answers
+ * Check if a number is a perfect square
  */
-export const generateFindHypotenuse = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'examples',
-    seed = Date.now(),
-    units = 'cm'
+const isPerfectSquare = (n) => {
+  const sqrt = Math.sqrt(n);
+  return sqrt === Math.floor(sqrt);
+};
+
+/**
+ * Format answer with optional units
+ */
+const formatAnswer = (value, units, places = 2) => {
+  const rounded = typeof value === 'number' ? roundTo(value, places) : value;
+  return units ? `${rounded} \\text{ ${units}}` : `${rounded}`;
+};
+
+// ============================================================
+// GENERATORS: FIND HYPOTENUSE
+// ============================================================
+
+/**
+ * Find the hypotenuse given two legs
+ * a² + b² = c² → c = √(a² + b²)
+ */
+const generateFindHypotenuse = (options = {}) => {
+  const { 
+    difficulty = 'medium', 
+    units = 'cm',
+    usePythagoreanTriple = null // null = auto-decide based on difficulty
   } = options;
-
-  let a, b, c, isExact, answerType;
-
-  // UNIFIED MATH LOGIC - different approaches for different sections
-  if (sectionType === 'examples') {
-    // 50% Pythagorean triples, 50% non-Pythagorean for variety
-    const usePythagoreanTriple = Math.random() > 0.5;
-
-    if (usePythagoreanTriple) {
-      // Use Pythagorean triple for exact answers
-      const triples = difficulty === 'easy'
-        ? PYTHAGOREAN_TRIPLES.slice(0, 2)
-        : PYTHAGOREAN_TRIPLES.slice(0, 5);
-      const triple = seed ? triples[seed % triples.length] : _.sample(triples);
-      [a, b, c] = triple;
-      isExact = true;
-      answerType = 'integer';
-    } else {
-      // Use non-Pythagorean for decimal answers
-      a = _.random(3, 8);
+  
+  let a, b, c, isExact;
+  
+  // Decide whether to use Pythagorean triple
+  const useTriple = usePythagoreanTriple !== null 
+    ? usePythagoreanTriple 
+    : (difficulty === 'easy' || Math.random() > 0.4);
+  
+  if (useTriple) {
+    // Use Pythagorean triple for exact integer answer
+    const triples = difficulty === 'easy' 
+      ? PYTHAGOREAN_TRIPLES.slice(0, 3)
+      : difficulty === 'hard'
+      ? PYTHAGOREAN_TRIPLES.slice(3, 8)
+      : PYTHAGOREAN_TRIPLES.slice(0, 6);
+    
+    const triple = _.sample(triples);
+    
+    // Optionally scale for variety
+    const scale = difficulty === 'hard' && Math.random() > 0.5 ? 2 : 1;
+    [a, b, c] = getScaledTriple(triple, scale);
+    isExact = true;
+  } else {
+    // Non-Pythagorean for decimal answer
+    a = _.random(3, 8);
+    b = _.random(3, 8);
+    // Avoid accidentally creating a Pythagorean triple
+    while (isPerfectSquare(a*a + b*b)) {
       b = _.random(3, 8);
-      const exactC = Math.sqrt(a * a + b * b);
-      c = Math.round(exactC * 100) / 100; // Round to 2 decimal places
-      isExact = false;
-      answerType = 'decimal';
     }
-  } else {
-    // Starter and diagnostic: always use Pythagorean triples for clean answers
-    const triples = difficulty === 'easy'
-      ? PYTHAGOREAN_TRIPLES.slice(0, 2)
-      : PYTHAGOREAN_TRIPLES.slice(0, 4);
-    const triple = seed ? triples[seed % triples.length] : _.sample(triples);
-    [a, b, c] = triple;
-    isExact = true;
-    answerType = 'integer';
+    c = roundTo(Math.sqrt(a*a + b*b), 2);
+    isExact = false;
   }
-
-  // Generate orientation variety for all sections EXCEPT starter
-  let orientationConfig = {};
-  if (sectionType !== 'starter') {
-    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
-    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
-    orientationConfig.orientation = orientations[orientationIndex];
-  }
-
-  // SECTION-AWARE OUTPUT FORMATTING
-  if (sectionType === 'starter') {
-    return {
-      question: `Find the length of the hypotenuse in this right-angled triangle with base ${a} ${units} and height ${b} ${units}.`,
-      answer: `\\text{Using Pythagoras' theorem: } ${a}^2 + ${b}^2 = c^2\\\\
-               ${a * a} + ${b * b} = c^2\\\\
-               ${a * a + b * b} = c^2\\\\
-               c = \\sqrt{${a * a + b * b}} = ${c}\\text{ ${units}}`,
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        unknownSide: 'hypotenuse',
-        units,
-        sectionType: 'starter'
-      })
-    };
-  }
-
-  else if (sectionType === 'diagnostic') {
-    // Generate appropriate distractors
-    const distractors = [
-      a + b, // Common mistake: adding instead of using Pythagoras
-      Math.round(Math.sqrt(Math.abs(a * a - b * b))), // Subtracting instead of adding
-      c + _.random(1, 2) // Close but wrong
-    ];
-
-    return {
-      questionDisplay: {
-        text: `Find the hypotenuse of this right triangle with base ${a} ${units} and height ${b} ${units}.`
-      },
-      correctAnswer: `${c}\\text{ ${units}}`,
-      options: generateUniqueOptions([
-        `${c}\\text{ ${units}}`,
-        ...distractors.map(d => `${d}\\text{ ${units}}`)
-      ]),
-      explanation: `Use Pythagoras' theorem: c² = ${a}² + ${b}² = ${a * a + b * b}, so c = ${c} ${units}`,
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        unknownSide: 'hypotenuse',
-        ...orientationConfig,
-        units,
-        sectionType: 'diagnostic'
-      })
-    };
-  }
-
-  else if (sectionType === 'examples') {
-    // Create solution steps based on answer type
-    const solution = isExact ? [
-      {
-        explanation: "Use Pythagoras' theorem: a² + b² = c²",
-        formula: "a^2 + b^2 = c^2"
-      },
-      {
-        explanation: "Substitute the known values",
-        formula: `${a}^2 + ${b}^2 = c^2`
-      },
-      {
-        explanation: "Calculate the squares",
-        formula: `${a * a} + ${b * b} = c^2`
-      },
-      {
-        explanation: "Add the values",
-        formula: `${a * a + b * b} = c^2`
-      },
-      {
-        explanation: "Take the square root of both sides",
-        formula: `c = \\sqrt{${a * a + b * b}} = ${c}`
-      }
-    ] : [
-      {
-        explanation: "Use Pythagoras' theorem: a² + b² = c²",
-        formula: "a^2 + b^2 = c^2"
-      },
-      {
-        explanation: "Substitute the known values",
-        formula: `${a}^2 + ${b}^2 = c^2`
-      },
-      {
-        explanation: "Calculate the squares",
-        formula: `${a * a} + ${b * b} = c^2`
-      },
-      {
-        explanation: "Add the values",
-        formula: `${a * a + b * b} = c^2`
-      },
-      {
-        explanation: "Take the square root using a calculator",
-        formula: `c = \\sqrt{${a * a + b * b}} = ${c}\\text{ ${units}}`
-      }
-    ];
-
-    return {
-      title: "Finding the Hypotenuse",
-      questionText: `Find the length of the hypotenuse in this right-angled triangle with base ${a} ${units} and height ${b} ${units}.`,
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        unknownSide: 'hypotenuse',
-        ...orientationConfig,
-        units,
-        sectionType: 'examples'
-      }),
-      solution
-    };
-  }
-
-  // Fallback to diagnostic format
-  return generateFindHypotenuse({ ...options, sectionType: 'diagnostic' });
-};
-
-/**
- * Unified missing side (leg) question generator
- * Handles starter, diagnostic, and examples sections with section-aware output
- * Examples section includes non-Pythagorean triangles with decimal answers
- */
-export const generateFindMissingSide = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'examples',
-    seed = Date.now(),
-    units = 'cm'
-  } = options;
-
-  let a, b, c, legToFind, isExact, answerType;
-
-  // UNIFIED MATH LOGIC
-  if (sectionType === 'examples') {
-    // 50% Pythagorean triples, 50% non-Pythagorean for variety
-    const usePythagoreanTriple = Math.random() > 0.5;
-
-    if (usePythagoreanTriple) {
-      // Use Pythagorean triple for exact answers
-      const triples = difficulty === 'easy'
-        ? PYTHAGOREAN_TRIPLES.slice(0, 2)
-        : PYTHAGOREAN_TRIPLES.slice(0, 5);
-      const triple = seed ? triples[seed % triples.length] : _.sample(triples);
-      [a, b, c] = triple;
-      isExact = true;
-      answerType = 'integer';
-    } else {
-      // Use non-Pythagorean: start with hypotenuse and one side, calculate other
-      c = _.random(8, 15);
-      const knownSide = _.random(3, Math.floor(c * 0.8)); // Ensure valid triangle
-      legToFind = (seed % 2 === 0) ? 'base' : 'height';
-
-      if (legToFind === 'base') {
-        b = knownSide;
-        const exactA = Math.sqrt(c * c - b * b);
-        a = Math.round(exactA * 100) / 100;
-      } else {
-        a = knownSide;
-        const exactB = Math.sqrt(c * c - a * a);
-        b = Math.round(exactB * 100) / 100;
-      }
-      isExact = false;
-      answerType = 'decimal';
-    }
-  } else {
-    // Starter and diagnostic: always use Pythagorean triples
-    const triples = difficulty === 'easy'
-      ? PYTHAGOREAN_TRIPLES.slice(0, 2)
-      : PYTHAGOREAN_TRIPLES.slice(0, 4);
-    const triple = seed ? triples[seed % triples.length] : _.sample(triples);
-    [a, b, c] = triple;
-    isExact = true;
-    answerType = 'integer';
-  }
-
-  // Determine which leg to find if not already set
-  if (!legToFind) {
-    legToFind = (seed % 2 === 0) ? 'base' : 'height';
-  }
-  const missingValue = legToFind;
-  const correctAnswer = legToFind === 'base' ? a : b;
-
-  // Generate orientation variety for all sections EXCEPT starter
-  let orientationConfig = {};
-  if (sectionType !== 'starter') {
-    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
-    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
-    orientationConfig.orientation = orientations[orientationIndex];
-  }
-
-  // SECTION-AWARE OUTPUT FORMATTING
-  if (sectionType === 'starter') {
-    const questionText = legToFind === 'base'
-      ? `Find the length of the base in this right-angled triangle with hypotenuse ${c} ${units} and height ${b} ${units}.`
-      : `Find the length of the height in this right-angled triangle with hypotenuse ${c} ${units} and base ${a} ${units}.`;
-
-    const answerFormula = legToFind === 'base'
-      ? `\\text{Using Pythagoras' theorem: } a^2 + ${b}^2 = ${c}^2\\\\
-         a^2 = ${c}^2 - ${b}^2 = ${c * c} - ${b * b} = ${c * c - b * b}\\\\
-         a = \\sqrt{${c * c - b * b}} = ${a}\\text{ ${units}}`
-      : `\\text{Using Pythagoras' theorem: } ${a}^2 + b^2 = ${c}^2\\\\
-         b^2 = ${c}^2 - ${a}^2 = ${c * c} - ${a * a} = ${c * c - a * a}\\\\
-         b = \\sqrt{${c * c - a * a}} = ${b}\\text{ ${units}}`;
-
-    return {
-      question: questionText,
-      answer: answerFormula,
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        unknownSide: missingValue,
-        units,
-        sectionType: 'starter'
-      })
-    };
-  }
-
-  else if (sectionType === 'diagnostic') {
-    const questionText = legToFind === 'base'
-      ? `Find the base of this right triangle with hypotenuse ${c} ${units} and height ${b} ${units}.`
-      : `Find the height of this right triangle with hypotenuse ${c} ${units} and base ${a} ${units}.`;
-
-    // Generate distractors
-    const distractors = [
-      Math.round(Math.sqrt(c * c + (legToFind === 'base' ? b * b : a * a))), // Adding instead of subtracting
-      correctAnswer + _.random(1, 2), // Close but wrong
-      Math.round((c + (legToFind === 'base' ? b : a)) / 2) // Averaging instead of Pythagoras
-    ];
-
-    return {
-      questionDisplay: { text: questionText },
-      correctAnswer: `${correctAnswer}\\text{ ${units}}`,
-      options: generateUniqueOptions([
-        `${correctAnswer}\\text{ ${units}}`,
-        ...distractors.map(d => `${d}\\text{ ${units}}`)
-      ]),
-      explanation: `Use Pythagoras' theorem: ${legToFind} = √(${c}² - ${legToFind === 'base' ? b : a}²) = ${correctAnswer} ${units}`,
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        unknownSide: missingValue,
-        ...orientationConfig,
-        units,
-        sectionType: 'diagnostic'
-      })
-    };
-  }
-
-  else if (sectionType === 'examples') {
-    const questionText = legToFind === 'base'
-      ? `Find the length of the base in this right-angled triangle with hypotenuse ${c} ${units} and height ${b} ${units}.`
-      : `Find the length of the height in this right-angled triangle with hypotenuse ${c} ${units} and base ${a} ${units}.`;
-
-    // Create solution steps
-    const solution = legToFind === 'base' ? [
-      {
-        explanation: "Use Pythagoras' theorem: a² + b² = c²",
-        formula: "a^2 + b^2 = c^2"
-      },
-      {
-        explanation: "Rearrange to find the missing side",
-        formula: `a^2 = c^2 - b^2`
-      },
-      {
-        explanation: "Substitute the known values",
-        formula: `a^2 = ${c}^2 - ${b}^2`
-      },
-      {
-        explanation: "Calculate the squares",
-        formula: `a^2 = ${c * c} - ${b * b}`
-      },
-      {
-        explanation: "Subtract the values",
-        formula: `a^2 = ${c * c - b * b}`
-      },
-      {
-        explanation: isExact ? "Take the square root of both sides" : "Take the square root using a calculator",
-        formula: `a = \\sqrt{${c * c - b * b}} = ${a}`
-      }
-    ] : [
-      {
-        explanation: "Use Pythagoras' theorem: a² + b² = c²",
-        formula: "a^2 + b^2 = c^2"
-      },
-      {
-        explanation: "Rearrange to find the missing side",
-        formula: `b^2 = c^2 - a^2`
-      },
-      {
-        explanation: "Substitute the known values",
-        formula: `b^2 = ${c}^2 - ${a}^2`
-      },
-      {
-        explanation: "Calculate the squares",
-        formula: `b^2 = ${c * c} - ${a * a}`
-      },
-      {
-        explanation: "Subtract the values",
-        formula: `b^2 = ${c * c - a * a}`
-      },
-      {
-        explanation: isExact ? "Take the square root of both sides" : "Take the square root using a calculator",
-        formula: `b = \\sqrt{${c * c - a * a}} = ${b}`
-      }
-    ];
-
-    return {
-      title: `Finding the ${legToFind === 'base' ? 'Base' : 'Height'}`,
-      questionText,
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        unknownSide: missingValue,
-        ...orientationConfig,
-        units,
-        sectionType: 'examples'
-      }),
-      solution
-    };
-  }
-
-  // Fallback to diagnostic format
-  return generateFindMissingSide({ ...options, sectionType: 'diagnostic' });
-};
-
-/**
- * Hypotenuse identification question (diagnostic only)
- */
-export const generateIdentifyHypotenuse = (options = {}) => {
-  const { units = 'cm' } = options;
-
-  // Choose a simple Pythagorean triple
-  const triple = _.sample(PYTHAGOREAN_TRIPLES.slice(0, 3));
-  const [a, b, c] = triple;
-
-  // Randomly decide between numeric or algebraic labels
-  const useAlgebraic = Math.random() > 0.5;
-
-  if (useAlgebraic) {
-    return {
-      questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
-      correctAnswer: 'c',
-      options: ['a', 'b', 'c', 'None of these'].sort(() => Math.random() - 0.5),
-      explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
-      visualization: createPythagoreanTriangle({
-        base: a,
-        height: b,
-        showRightAngle: true,
-        labelStyle: 'algebraic',
-        units,
-        sectionType: 'diagnostic',
-        style: {
-          fillColor: '#9b59b6',
-          fillOpacity: 0.2
-        }
-      })
-    };
-  }
-
+  
+  const cSquared = a*a + b*b;
+  
   return {
-    questionDisplay: 'Which side is the hypotenuse in this right-angled triangle?',
-    correctAnswer: `${c}\\text{ ${units}}`,
-    options: [
-      `${a}\\text{ ${units}}`,
-      `${b}\\text{ ${units}}`,
-      `${c}\\text{ ${units}}`,
-      'None of these'
-    ].sort(() => Math.random() - 0.5),
-    explanation: 'The hypotenuse is the longest side in a right-angled triangle, opposite to the right angle.',
-    visualization: createPythagoreanTriangle({
+    instruction: 'Find the length of the hypotenuse',
+    questionMath: `a = ${a}, \\quad b = ${b}`,
+    questionText: `Find the hypotenuse of a right-angled triangle with sides ${a} ${units} and ${b} ${units}.`,
+    
+    answer: formatAnswer(c, units),
+    answerUnits: units,
+    
+    workingOut: `a^2 + b^2 = c^2 \\\\ ${a}^2 + ${b}^2 = c^2 \\\\ ${a*a} + ${b*b} = c^2 \\\\ c = \\sqrt{${cSquared}} = ${c}`,
+    
+    solution: [
+      {
+        explanation: "Write Pythagoras' theorem",
+        formula: 'a^2 + b^2 = c^2'
+      },
+      {
+        explanation: 'Substitute the known values',
+        formula: `${a}^2 + ${b}^2 = c^2`
+      },
+      {
+        explanation: 'Calculate the squares',
+        formula: `${a*a} + ${b*b} = c^2`
+      },
+      {
+        explanation: 'Add',
+        formula: `${cSquared} = c^2`
+      },
+      {
+        explanation: 'Take the square root',
+        formula: `c = \\sqrt{${cSquared}} = ${c} \\text{ ${units}}`
+      }
+    ],
+    
+    // Visualization config (Pattern 2 - NOT a React component)
+    visualization: {
+      type: 'right-triangle',
       base: a,
       height: b,
+      hypotenuse: c,
+      unknownSide: 'hypotenuse',
       showRightAngle: true,
-      labelStyle: 'custom',
-      labels: [`${a} ${units}`, `${b} ${units}`, `${c} ${units}`],
-      units,
-      sectionType: 'diagnostic',
-      style: {
-        fillColor: '#9b59b6',
-        fillOpacity: 0.2
-      }
-    })
+      labels: {
+        base: `${a} ${units}`,
+        height: `${b} ${units}`,
+        hypotenuse: '?'
+      },
+      units
+    },
+    visualizationType: 'right-triangle',
+    visualizationHeight: '120px',
+    
+    metadata: {
+      type: 'pythagoras',
+      subType: 'find-hypotenuse',
+      difficulty,
+      topic: 'pythagoras',
+      isExact,
+      tags: ['geometry', 'gcse', 'foundation'],
+      values: { a, b, c }
+    },
+    
+    title: 'Finding the Hypotenuse',
+    keyRule: 'a^2 + b^2 = c^2'
   };
 };
 
+// ============================================================
+// GENERATORS: FIND MISSING SIDE (LEG)
+// ============================================================
+
 /**
- * Unified isosceles triangle area question generator
- * Handles starter, diagnostic, and examples sections with section-aware output
- * Uses Pythagoras to find height, then calculates area
+ * Find a missing leg given hypotenuse and one leg
+ * a² + b² = c² → a = √(c² - b²)
  */
-export const generateIsoscelesArea = (options = {}) => {
-  const {
-    difficulty = 'medium',
-    sectionType = 'starter',
-    seed = Date.now(),
-    units = 'cm'
+const generateFindMissingSide = (options = {}) => {
+  const { 
+    difficulty = 'medium', 
+    units = 'cm',
+    findBase = null // null = random, true = find base, false = find height
   } = options;
-
-  // Generate reasonable dimensions for an isosceles triangle
-  let base, legLength, height, area;
   
-  if (difficulty === 'easy') {
-    base = _.random(6, 10);
-    legLength = _.random(5, 7);
-  } else if (difficulty === 'medium') {
-    base = _.random(8, 14);
-    legLength = _.random(6, 9);
-  } else {
-    base = _.random(10, 16);
-    legLength = _.random(7, 12);
-  }
-
-  // Calculate height using Pythagoras (h² + (base/2)² = leg²)
-  const halfBase = base / 2;
-  const exactHeight = Math.sqrt(legLength * legLength - halfBase * halfBase);
-  height = Math.round(exactHeight * 100) / 100;
+  let a, b, c, isExact;
+  const findingBase = findBase !== null ? findBase : Math.random() > 0.5;
   
-  // Calculate area
-  const exactArea = (base * height) / 2;
-  area = Math.round(exactArea * 100) / 100;
-
-  // Generate orientation variety for all sections EXCEPT starter
-  let orientationConfig = {};
-  if (sectionType !== 'starter') {
-    const orientations = ['default', 'rotate90', 'rotate180', 'rotate270'];
-    const orientationIndex = Math.floor((seed % 1000) / 250) % orientations.length;
-    orientationConfig.orientation = orientations[orientationIndex];
-  }
-
-  // SECTION-AWARE OUTPUT FORMATTING
-  if (sectionType === 'starter') {
-    return {
-      question: `Find the area of this isosceles triangle with base ${base} ${units} and equal sides ${legLength} ${units}.`,
-      answer: `\\text{First find height using Pythagoras:}\\\\
-               h^2 + ${halfBase}^2 = ${legLength}^2\\\\
-               h^2 = ${legLength * legLength} - ${halfBase * halfBase} = ${legLength * legLength - halfBase * halfBase}\\\\
-               h = \\sqrt{${legLength * legLength - halfBase * halfBase}} = ${height}\\text{ ${units}}\\\\
-               \\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${area}\\text{ ${units}}^2`,
-      visualization: createIsoscelesTriangle({
-        base,
-        height,
-        showEqualSides: true,
-        showHeight: true,
-        labelStyle: "custom",
-        labels: [`${base} ${units}`, `${legLength} ${units}`, `${legLength} ${units}`],
-        units,
-        sectionType: 'starter',
-        style: {
-          fillColor: '#2ecc71',
-          fillOpacity: 0.2
-        }
-      })
-    };
-  }
-
-  else if (sectionType === 'diagnostic') {
-    // Generate distractors
-    const distractors = [
-      Math.round((base * legLength) / 2), // Using leg instead of height
-      Math.round(base * height), // Forgetting the 1/2
-      Math.round((base + height) / 2) // Adding instead of multiplying
-    ];
-
-    return {
-      questionDisplay: {
-        text: `Find the area of this isosceles triangle with base ${base} ${units} and equal sides ${legLength} ${units}.`
-      },
-      correctAnswer: `${area}\\text{ ${units}}^2`,
-      options: generateUniqueOptions([
-        `${area}\\text{ ${units}}^2`,
-        ...distractors.map(d => `${d}\\text{ ${units}}^2`)
-      ]),
-      explanation: `First find height: h = √(${legLength}² - ${halfBase}²) = ${height} ${units}. Then Area = ½ × ${base} × ${height} = ${area} ${units}²`,
-      visualization: createIsoscelesTriangle({
-        base,
-        height,
-        showEqualSides: true,
-        showHeight: true,
-        labelStyle: "custom",
-        labels: [`${base} ${units}`, `${legLength} ${units}`, `${legLength} ${units}`],
-        ...orientationConfig,
-        units,
-        sectionType: 'diagnostic',
-        style: {
-          fillColor: '#2ecc71',
-          fillOpacity: 0.2
-        }
-      })
-    };
-  }
-
-  else if (sectionType === 'examples') {
-    const solution = [
+  // Always use Pythagorean triples for this type (cleaner)
+  const triples = difficulty === 'easy' 
+    ? PYTHAGOREAN_TRIPLES.slice(0, 3)
+    : difficulty === 'hard'
+    ? PYTHAGOREAN_TRIPLES.slice(3, 8)
+    : PYTHAGOREAN_TRIPLES.slice(0, 6);
+  
+  const triple = _.sample(triples);
+  const scale = difficulty === 'hard' && Math.random() > 0.6 ? 2 : 1;
+  [a, b, c] = getScaledTriple(triple, scale);
+  isExact = true;
+  
+  // What we're finding
+  const unknownSide = findingBase ? 'base' : 'height';
+  const unknownValue = findingBase ? a : b;
+  const knownLeg = findingBase ? b : a;
+  const knownLegName = findingBase ? 'height' : 'base';
+  
+  const cSquared = c * c;
+  const knownLegSquared = knownLeg * knownLeg;
+  const unknownSquared = cSquared - knownLegSquared;
+  
+  return {
+    instruction: `Find the ${unknownSide}`,
+    questionMath: `c = ${c}, \\quad ${knownLegName} = ${knownLeg}`,
+    questionText: `Find the ${unknownSide} of a right-angled triangle with hypotenuse ${c} ${units} and ${knownLegName} ${knownLeg} ${units}.`,
+    
+    answer: formatAnswer(unknownValue, units),
+    answerUnits: units,
+    
+    workingOut: `a^2 + b^2 = c^2 \\\\ ${findingBase ? '?' : a}^2 + ${findingBase ? b : '?'}^2 = ${c}^2 \\\\ ${unknownSide}^2 = ${cSquared} - ${knownLegSquared} = ${unknownSquared} \\\\ ${unknownSide} = \\sqrt{${unknownSquared}} = ${unknownValue}`,
+    
+    solution: [
       {
-        explanation: "To find the area of an isosceles triangle, we first need to find the height using Pythagoras' theorem",
-        formula: "h^2 + \\left(\\frac{\\text{base}}{2}\\right)^2 = \\text{leg}^2"
+        explanation: "Write Pythagoras' theorem",
+        formula: 'a^2 + b^2 = c^2'
       },
       {
-        explanation: "Substitute the known values",
-        formula: `h^2 + \\left(\\frac{${base}}{2}\\right)^2 = ${legLength}^2`
+        explanation: 'Substitute known values',
+        formula: findingBase 
+          ? `a^2 + ${b}^2 = ${c}^2`
+          : `${a}^2 + b^2 = ${c}^2`
       },
       {
-        explanation: "Simplify the base division",
-        formula: `h^2 + ${halfBase}^2 = ${legLength}^2`
+        explanation: 'Rearrange to find the unknown',
+        formula: `${unknownSide}^2 = ${c}^2 - ${knownLeg}^2`
       },
       {
-        explanation: "Calculate the squares",
-        formula: `h^2 + ${halfBase * halfBase} = ${legLength * legLength}`
+        explanation: 'Calculate',
+        formula: `${unknownSide}^2 = ${cSquared} - ${knownLegSquared} = ${unknownSquared}`
       },
       {
-        explanation: "Rearrange to find h²",
-        formula: `h^2 = ${legLength * legLength} - ${halfBase * halfBase} = ${legLength * legLength - halfBase * halfBase}`
-      },
-      {
-        explanation: "Take the square root to find the height",
-        formula: `h = \\sqrt{${legLength * legLength - halfBase * halfBase}} = ${height}\\text{ ${units}}`
-      },
-      {
-        explanation: "Now calculate the area using the triangle area formula",
-        formula: `\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}`
-      },
-      {
-        explanation: "Substitute the values",
-        formula: `\\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${area}\\text{ ${units}}^2`
+        explanation: 'Take the square root',
+        formula: `${unknownSide} = \\sqrt{${unknownSquared}} = ${unknownValue} \\text{ ${units}}`
       }
-    ];
-
-    return {
-      title: "Finding Area of Isosceles Triangle",
-      questionText: `Find the area of this isosceles triangle with base ${base} ${units} and equal sides ${legLength} ${units}.`,
-      visualization: createIsoscelesTriangle({
-        base,
-        height,
-        showEqualSides: true,
-        showHeight: false, // Will be toggled via interactive state
-        labelStyle: "custom",
-        labels: [`${base} ${units}`, `${legLength} ${units}`, `${legLength} ${units}`],
-        ...orientationConfig,
-        units,
-        sectionType: 'examples',
-        style: {
-          fillColor: '#2ecc71',
-          fillOpacity: 0.2
-        }
-      }),
-      solution
-    };
-  }
-
-  // Fallback to diagnostic format
-  return generateIsoscelesArea({ ...options, sectionType: 'diagnostic' });
+    ],
+    
+    visualization: {
+      type: 'right-triangle',
+      base: a,
+      height: b,
+      hypotenuse: c,
+      unknownSide,
+      showRightAngle: true,
+      labels: {
+        base: findingBase ? '?' : `${a} ${units}`,
+        height: findingBase ? `${b} ${units}` : '?',
+        hypotenuse: `${c} ${units}`
+      },
+      units
+    },
+    visualizationType: 'right-triangle',
+    visualizationHeight: '120px',
+    
+    metadata: {
+      type: 'pythagoras',
+      subType: 'find-missing-side',
+      difficulty,
+      topic: 'pythagoras',
+      isExact,
+      tags: ['geometry', 'gcse', 'foundation'],
+      values: { a, b, c, unknownSide }
+    },
+    
+    title: `Finding a Missing Side`,
+    keyRule: 'a^2 = c^2 - b^2'
+  };
 };
 
-// Export unified generators
+// ============================================================
+// GENERATORS: ISOSCELES TRIANGLE AREA
+// ============================================================
+
+/**
+ * Find area of isosceles triangle using Pythagoras
+ * Split triangle in half, use Pythagoras to find height, then Area = ½bh
+ */
+const generateIsoscelesArea = (options = {}) => {
+  const { difficulty = 'medium', units = 'cm' } = options;
+  
+  // Generate isosceles triangle with nice numbers
+  // The equal sides and base should give integer height
+  let base, equalSide, halfBase, height, area;
+  
+  // Pre-computed nice isosceles triangles
+  const niceTriangles = [
+    { base: 6, equalSide: 5 },   // height = 4, area = 12
+    { base: 8, equalSide: 5 },   // height = 3, area = 12
+    { base: 10, equalSide: 13 }, // height = 12, area = 60
+    { base: 16, equalSide: 10 }, // height = 6, area = 48
+    { base: 14, equalSide: 25 }, // height = 24, area = 168
+    { base: 6, equalSide: 10 },  // height = √91 ≈ 9.54 (decimal)
+    { base: 12, equalSide: 10 }, // height = 8, area = 48
+    { base: 8, equalSide: 10 },  // height = √84 ≈ 9.17 (decimal)
+  ];
+  
+  // Filter based on difficulty
+  const easyTriangles = niceTriangles.filter(t => {
+    const h = Math.sqrt(t.equalSide * t.equalSide - (t.base/2) * (t.base/2));
+    return Number.isInteger(h) && t.base <= 10;
+  });
+  
+  const selected = difficulty === 'easy' 
+    ? _.sample(easyTriangles)
+    : _.sample(niceTriangles);
+  
+  base = selected.base;
+  equalSide = selected.equalSide;
+  halfBase = base / 2;
+  height = roundTo(Math.sqrt(equalSide * equalSide - halfBase * halfBase), 2);
+  area = roundTo(0.5 * base * height, 2);
+  
+  const equalSideSquared = equalSide * equalSide;
+  const halfBaseSquared = halfBase * halfBase;
+  const heightSquared = equalSideSquared - halfBaseSquared;
+  
+  return {
+    instruction: 'Find the area',
+    questionMath: `\\text{Base} = ${base}, \\quad \\text{Equal sides} = ${equalSide}`,
+    questionText: `Find the area of an isosceles triangle with base ${base} ${units} and equal sides ${equalSide} ${units}.`,
+    
+    answer: formatAnswer(area, `${units}²`),
+    answerUnits: `${units}²`,
+    
+    workingOut: `\\text{Split in half: } \\frac{${base}}{2} = ${halfBase} \\\\ h^2 + ${halfBase}^2 = ${equalSide}^2 \\\\ h^2 = ${equalSideSquared} - ${halfBaseSquared} = ${heightSquared} \\\\ h = ${height} \\\\ \\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${area}`,
+    
+    solution: [
+      {
+        explanation: 'Split the isosceles triangle in half to create a right-angled triangle',
+        formula: `\\text{Half of base} = \\frac{${base}}{2} = ${halfBase} \\text{ ${units}}`
+      },
+      {
+        explanation: "Use Pythagoras to find the height",
+        formula: `h^2 + ${halfBase}^2 = ${equalSide}^2`
+      },
+      {
+        explanation: 'Rearrange for h²',
+        formula: `h^2 = ${equalSide}^2 - ${halfBase}^2 = ${equalSideSquared} - ${halfBaseSquared} = ${heightSquared}`
+      },
+      {
+        explanation: 'Find height',
+        formula: `h = \\sqrt{${heightSquared}} = ${height} \\text{ ${units}}`
+      },
+      {
+        explanation: 'Calculate area using Area = ½ × base × height',
+        formula: `\\text{Area} = \\frac{1}{2} \\times ${base} \\times ${height} = ${area} \\text{ ${units}}^2`
+      }
+    ],
+    
+    visualization: {
+      type: 'isosceles-triangle',
+      base,
+      equalSide,
+      height,
+      showHeight: false, // Teacher reveals this
+      labels: {
+        base: `${base} ${units}`,
+        leftSide: `${equalSide} ${units}`,
+        rightSide: `${equalSide} ${units}`,
+        height: '?'
+      },
+      units
+    },
+    visualizationType: 'isosceles-triangle',
+    visualizationHeight: '140px',
+    
+    metadata: {
+      type: 'pythagoras',
+      subType: 'isosceles-area',
+      difficulty,
+      topic: 'pythagoras',
+      tags: ['geometry', 'gcse', 'higher', 'problem-solving'],
+      values: { base, equalSide, height, area }
+    },
+    
+    title: 'Isosceles Triangle Area',
+    keyRule: '\\text{Split isosceles in half, use Pythagoras for height, then Area} = \\frac{1}{2}bh'
+  };
+};
+
+// ============================================================
+// GENERATORS: 3D DIAGONAL (Challenge)
+// ============================================================
+
+/**
+ * Find space diagonal of a cuboid using Pythagoras twice
+ * First find base diagonal, then use that with height
+ */
+const generate3DDiagonal = (options = {}) => {
+  const { difficulty = 'hard', units = 'cm' } = options;
+  
+  // Generate dimensions that give nice answers
+  // d² = l² + w² + h²
+  let length, width, height, baseDiagonal, spaceDiagonal;
+  
+  if (difficulty === 'easy') {
+    // Cube - simpler
+    const side = _.sample([3, 4, 5, 6]);
+    length = width = height = side;
+  } else {
+    // Cuboid with nice numbers
+    const niceCuboids = [
+      { l: 3, w: 4, h: 12 },  // space diagonal = 13
+      { l: 2, w: 6, h: 9 },   // space diagonal = 11
+      { l: 1, w: 4, h: 8 },   // space diagonal = 9
+      { l: 4, w: 4, h: 7 },   // space diagonal = 9
+      { l: 3, w: 6, h: 6 },   // space diagonal = 9
+      { l: 2, w: 3, h: 6 },   // space diagonal = 7
+    ];
+    const selected = _.sample(niceCuboids);
+    length = selected.l;
+    width = selected.w;
+    height = selected.h;
+  }
+  
+  baseDiagonal = roundTo(Math.sqrt(length*length + width*width), 2);
+  spaceDiagonal = roundTo(Math.sqrt(length*length + width*width + height*height), 2);
+  
+  const baseDiagSquared = length*length + width*width;
+  const spaceDiagSquared = baseDiagSquared + height*height;
+  
+  return {
+    instruction: 'Find the space diagonal',
+    questionMath: `l = ${length}, \\quad w = ${width}, \\quad h = ${height}`,
+    questionText: `Find the space diagonal of a cuboid with dimensions ${length} ${units} × ${width} ${units} × ${height} ${units}.`,
+    
+    answer: formatAnswer(spaceDiagonal, units),
+    answerUnits: units,
+    
+    workingOut: `\\text{Base diagonal: } d_1^2 = ${length}^2 + ${width}^2 = ${baseDiagSquared} \\\\ d_1 = ${baseDiagonal} \\\\ \\text{Space diagonal: } d^2 = d_1^2 + ${height}^2 = ${baseDiagSquared} + ${height*height} = ${spaceDiagSquared} \\\\ d = ${spaceDiagonal}`,
+    
+    solution: [
+      {
+        explanation: 'First find the diagonal across the base',
+        formula: `d_1^2 = ${length}^2 + ${width}^2 = ${length*length} + ${width*width} = ${baseDiagSquared}`
+      },
+      {
+        explanation: 'Find base diagonal',
+        formula: `d_1 = \\sqrt{${baseDiagSquared}} = ${baseDiagonal} \\text{ ${units}}`
+      },
+      {
+        explanation: 'Now use base diagonal and height to find space diagonal',
+        formula: `d^2 = d_1^2 + h^2 = ${baseDiagSquared} + ${height}^2`
+      },
+      {
+        explanation: 'Calculate',
+        formula: `d^2 = ${baseDiagSquared} + ${height*height} = ${spaceDiagSquared}`
+      },
+      {
+        explanation: 'Find space diagonal',
+        formula: `d = \\sqrt{${spaceDiagSquared}} = ${spaceDiagonal} \\text{ ${units}}`
+      }
+    ],
+    
+    visualization: {
+      type: 'cuboid-3d',
+      length,
+      width,
+      height,
+      showBaseDiagonal: false,
+      showSpaceDiagonal: false,
+      labels: {
+        length: `${length} ${units}`,
+        width: `${width} ${units}`,
+        height: `${height} ${units}`
+      },
+      units
+    },
+    visualizationType: 'cuboid-3d',
+    visualizationHeight: '160px',
+    
+    metadata: {
+      type: 'pythagoras',
+      subType: '3d-diagonal',
+      difficulty,
+      topic: 'pythagoras-3d',
+      tags: ['geometry', 'gcse', 'higher', 'challenge'],
+      values: { length, width, height, baseDiagonal, spaceDiagonal }
+    },
+    
+    title: '3D Pythagoras - Space Diagonal',
+    keyRule: 'd^2 = l^2 + w^2 + h^2'
+  };
+};
+
+// ============================================================
+// RANDOM/MIXED GENERATORS
+// ============================================================
+
+/**
+ * Generate random Pythagoras question based on difficulty
+ */
+const generateRandom = (options = {}) => {
+  const { difficulty = 'medium', types = null } = options;
+  
+  const allTypes = types || (difficulty === 'easy'
+    ? ['hypotenuse', 'missing-side']
+    : difficulty === 'hard'
+    ? ['hypotenuse', 'missing-side', 'isosceles', '3d-diagonal']
+    : ['hypotenuse', 'missing-side', 'isosceles']
+  );
+  
+  const type = _.sample(allTypes);
+  
+  switch (type) {
+    case 'hypotenuse':
+      return generateFindHypotenuse({ difficulty });
+    case 'missing-side':
+      return generateFindMissingSide({ difficulty });
+    case 'isosceles':
+      return generateIsoscelesArea({ difficulty });
+    case '3d-diagonal':
+      return generate3DDiagonal({ difficulty });
+    default:
+      return generateFindHypotenuse({ difficulty });
+  }
+};
+
+/**
+ * Generate for specific Examples tab
+ */
+const generateForExamplesTab = (tabIndex, options = {}) => {
+  switch (tabIndex) {
+    case 1: // Tab 1: Find Hypotenuse
+      return generateFindHypotenuse({ difficulty: 'medium', ...options });
+    case 2: // Tab 2: Find Missing Side
+      return generateFindMissingSide({ difficulty: 'medium', ...options });
+    case 3: // Tab 3: Isosceles Area
+      return generateIsoscelesArea({ difficulty: 'medium', ...options });
+    default:
+      return generateRandom(options);
+  }
+};
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
 export const pythagorasGenerators = {
-  // New unified functions
+  // Individual generators
   generateFindHypotenuse,
   generateFindMissingSide,
-  generateIdentifyHypotenuse,
   generateIsoscelesArea,
-
-  // Legacy aliases for backward compatibility (temporary)
-  findHypotenuse: (options) => generateFindHypotenuse(options),
-  findMissingSide: (options) => generateFindMissingSide(options),
-  identifyHypotenuse: (options) => generateIdentifyHypotenuse(options),
-  isoscelesArea: (options) => generateIsoscelesArea(options),
-
-  // Coordinate challenge for challenge section
-  generateCoordinateChallenge: () => {
-    // Generate points until we get a non-horizontal, non-vertical line
-    let point1, point2, dx, dy;
-
-    do {
-      point1 = [_.random(-4, 4), _.random(-4, 4)];
-      point2 = [_.random(-4, 4), _.random(-4, 4)];
-      dx = point2[0] - point1[0];
-      dy = point2[1] - point1[1];
-    } while (dx === 0 || dy === 0);
-
-    // ✨ USE THE FACTORY instead of manually creating config
-    const visualizationConfig = createDistanceProblem({
-      point1,
-      point2,
-      sectionType: 'challenge',
-      showSolution: false  // Let UI control this via showAnswers
-    });
-
-    const solution = [
-      {
-        explanation: "To find the distance between two points, we use the distance formula, which is derived from the Pythagorean theorem.",
-        formula: "d = \\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}"
-      },
-      {
-        explanation: "Substitute the coordinates of points A and B:",
-        formula: `d = \\sqrt{(${point2[0]} - ${point1[0]})^2 + (${point2[1]} - ${point1[1]})^2}`
-      },
-      {
-        explanation: "Calculate the differences:",
-        formula: `d = \\sqrt{(${dx})^2 + (${dy})^2}`
-      },
-      {
-        explanation: "Square the differences:",
-        formula: `d = \\sqrt{${dx * dx} + ${dy * dy}}`
-      },
-      {
-        explanation: "Add the squares:",
-        formula: `d = \\sqrt{${dx * dx + dy * dy}}`
-      },
-      {
-        explanation: "Take the square root to find the distance:",
-        formula: `d = ${visualizationConfig.distance}`  // ✨ Use factory's calculated distance
-      }
-    ];
-
-    return {
-      title: "Finding Distance in the Coordinate Plane",
-      questionText: `Find the distance between the points A(${point1[0]}, ${point1[1]}) and B(${point2[0]}, ${point2[1]}) on the coordinate plane.`,
-      visualizationConfig,  // ✨ Now properly structured from factory
-      solution,
-      // ✨ Expose calculated values for the customizePythagorasGrid function
-      dx: visualizationConfig.dx,
-      dy: visualizationConfig.dy,
-      distance: visualizationConfig.distance
-    };
-  }
+  generate3DDiagonal,
+  
+  // Utility generators
+  generateRandom,
+  generateForExamplesTab
 };
 
 export default pythagorasGenerators;

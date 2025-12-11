@@ -1,4 +1,7 @@
 // src/content/topics/trigonometry-i/pythagoras/ChallengeSection.jsx
+// Pythagoras Challenge Section - Red theme
+// Coordinate geometry challenge - preserves original content
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../../../components/common/Card';
 import { RefreshCw } from 'lucide-react';
@@ -6,33 +9,31 @@ import { useSectionTheme } from '../../../../hooks/useSectionTheme';
 import { useUI } from '../../../../context/UIContext';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import CoordinateGrid from '../../../../components/math/CoordinateGrid';
-import PythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
+import { pythagorasGenerators } from '../../../../generators/geometry/pythagorasGenerators';
 
 const ChallengeSection = ({ currentTopic, currentLessonId }) => {
-  // Get theme colors for challenge section
   const theme = useSectionTheme('challenge');
   const { showAnswers } = useUI();
 
-  // State for challenge questions and current index
-  const [challenges, setChallenges] = useState([]);
-  const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
+  // State for challenge
+  const [challenge, setChallenge] = useState(null);
   const [visualizationKey, setVisualizationKey] = useState(Date.now());
 
-  // Generate challenges on mount
+  // Generate challenge on mount
   useEffect(() => {
-    generateChallenges();
+    generateChallenge();
   }, []);
 
-  // Function to generate new challenges
-  const generateChallenges = () => {
-    const newChallenges = [PythagorasGenerators.generateCoordinateChallenge()];
-    setChallenges(newChallenges);
-    setVisualizationKey(Date.now()); // Force visualization to re-render
+  // Generate new challenge
+  const generateChallenge = () => {
+    const newChallenge = pythagorasGenerators.generateCoordinateChallenge();
+    setChallenge(newChallenge);
+    setVisualizationKey(Date.now());
   };
 
-  // Customize the coordinate grid for Pythagoras visualizations
-  const customizePythagorasGrid = (board, jsxPoints, challenge) => {
-    if (!board || !jsxPoints || jsxPoints.length < 2) return;
+  // Customize the coordinate grid for Pythagoras
+  const customizePythagorasGrid = (board, jsxPoints) => {
+    if (!board || !jsxPoints || jsxPoints.length < 2 || !challenge) return;
 
     const p1 = jsxPoints[0];
     const p2 = jsxPoints[1];
@@ -40,16 +41,16 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
 
     // Create right angle point
     const rightAnglePoint = board.create('point', [p2.X(), p1.Y()], {
-      name: '', // Remove 'C' label
+      name: '',
       size: 4,
       fixed: true,
-      strokeColor: '#2ecc71', // Green
+      strokeColor: '#2ecc71',
       fillColor: '#2ecc71',
-      withLabel: false, // Ensure no label is shown
-      visible: false // Keep this point hidden
+      withLabel: false,
+      visible: false
     });
 
-    // Create right triangle legs
+    // Create right triangle legs (dashed)
     board.create('segment', [p1, rightAnglePoint], {
       strokeColor: '#2ecc71',
       strokeWidth: 2,
@@ -70,7 +71,7 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
       type: 'square',
       fillColor: '#2ecc71',
       fillOpacity: 0.3,
-      name: '', // Remove "90°" label
+      name: '',
       withLabel: false
     });
 
@@ -107,52 +108,37 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
       `${distance}`
     ], {
       fontSize: 14,
-      color: '#9b59b6', // Purple
+      color: '#9b59b6',
       fixed: true
     });
   };
 
-  // Render function for the challenge
-  const renderVisualization = (challenge) => {
+  // Render visualization
+  const renderVisualization = () => {
     if (!challenge) return null;
 
-    // Extract the visualization config from the challenge
-    const { visualizationConfig } = challenge;
-
-    // Prepare the callback for Pythagoras-specific customization
-    const onBoardCreated = showAnswers ?
-      (board, jsxPoints) => customizePythagorasGrid(board, jsxPoints, challenge) :
-      null;
+    const onBoardCreated = showAnswers 
+      ? (board, jsxPoints) => customizePythagorasGrid(board, jsxPoints)
+      : null;
 
     return (
       <CoordinateGrid
-        {...visualizationConfig}
+        {...challenge.visualizationConfig}
         sectionType="challenge"
-        containerHeight={420}  // ← INCREASED from 350 to 420
+        containerHeight={420}
         onBoardCreated={onBoardCreated}
         key={visualizationKey}
       />
     );
   };
 
-  // Get the current challenge
-  const currentChallenge = challenges[currentChallengeIndex] || null;
-
-  // Handle generating a new challenge
-  const handleNewChallenge = () => {
-    generateChallenges();
-    setCurrentChallengeIndex(0);
-  };
-
-  // If no challenges available yet, show loading
-  if (!currentChallenge) {
+  // Loading state
+  if (!challenge) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex justify-center items-center mb-4">
-            <RefreshCw className="w-6 h-6 text-red-500 animate-spin" />
-          </div>
-          <div className="text-gray-600">Loading challenge problems...</div>
+          <RefreshCw className="w-8 h-8 text-red-500 animate-spin mb-2" />
+          <p className="text-gray-600">Loading challenge...</p>
         </div>
       </div>
     );
@@ -161,41 +147,20 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
   return (
     <div className="space-y-6 mb-8">
       <div className="border-2 border-t-4 border-red-500 rounded-lg shadow-md bg-white overflow-hidden">
-        {/* Header with title and new challenge button */}
-        <div className="px-6 pt-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-800">
-              {currentChallenge.title || "Coordinate Geometry Challenge"}
-            </h3>
-
-            <div className="flex items-center gap-2">
-              {/* Challenge navigation */}
-              {challenges.length > 1 && (
-                <div className="flex gap-2 mr-4">
-                  {challenges.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${index === currentChallengeIndex
-                        ? 'bg-red-500 text-white'
-                        : 'bg-red-100 text-red-700 hover:bg-red-200'
-                        }`}
-                      onClick={() => setCurrentChallengeIndex(index)}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* New challenge button */}
-              <button
-                onClick={handleNewChallenge}
-                className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all"
-              >
-                <RefreshCw size={18} />
-                <span>New Challenge</span>
-              </button>
+        {/* Header */}
+        <div className="bg-red-500 text-white px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold">Challenge Problem</h2>
+              <p className="text-red-100 text-sm">Apply Pythagoras to coordinate geometry</p>
             </div>
+            <button
+              onClick={generateChallenge}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+            >
+              <RefreshCw size={18} />
+              <span>New Challenge</span>
+            </button>
           </div>
         </div>
 
@@ -203,23 +168,23 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
           <CardContent className="p-6">
             <div className="space-y-6">
               {/* Problem Statement */}
-              <div className="bg-red-50 p-5 rounded-lg mb-6">
-                <div className="text-lg text-gray-800">
-                  {currentChallenge.questionText}
-                </div>
+              <div className="bg-red-50 p-5 rounded-lg border border-red-200">
+                <p className="text-lg text-gray-800">
+                  {challenge.questionText}
+                </p>
               </div>
 
               {/* Coordinate Grid Visualization */}
-              <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '460px' }}>  {/* ← INCREASED from 400px to 460px */}
-                {renderVisualization(currentChallenge)}
+              <div className="bg-gray-50 p-4 rounded-lg" style={{ height: '460px' }}>
+                {renderVisualization()}
               </div>
 
-              {/* Solution Steps - only visible when showAnswers is true */}
-              {showAnswers && currentChallenge.solution && (
+              {/* Solution - only visible when showAnswers is true */}
+              {showAnswers && challenge.solution && (
                 <div className="p-5 bg-green-50 rounded-lg border border-green-200">
                   <h4 className="font-medium text-green-800 mb-4">Solution:</h4>
                   <div className="space-y-3">
-                    {currentChallenge.solution.map((step, index) => (
+                    {challenge.solution.map((step, index) => (
                       <div key={index} className="mb-3">
                         <p className="text-gray-700">{step.explanation}</p>
                         {step.formula && (
@@ -235,6 +200,36 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Teacher Notes */}
+        {showAnswers && (
+          <div className="px-6 pb-6">
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Teaching Notes</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h4 className="font-medium text-green-800 mb-2">Key Points</h4>
+                  <ul className="list-disc list-inside space-y-1 text-green-700 text-sm">
+                    <li>The distance formula IS Pythagoras' theorem</li>
+                    <li>Draw the right triangle on the grid</li>
+                    <li>Horizontal distance = |x₂ - x₁|</li>
+                    <li>Vertical distance = |y₂ - y₁|</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-800 mb-2">Extension</h4>
+                  <ul className="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <li>What if the line was horizontal/vertical?</li>
+                    <li>Can you find the midpoint too?</li>
+                    <li>How does this link to the formula sheet?</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,217 +1,210 @@
 // src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import ExamplesSectionBase from '../../../../components/sections/ExamplesSectionBase';
-import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
-import IsoscelesTriangle from '../../../../components/math/shapes/triangles/IsoscelesTriangle';
+// Pythagoras Examples Section - Orange theme
+// Worked examples with step-by-step solutions
+
+import React, { useState, useMemo } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { useUI } from '../../../../context/UIContext';
+import MathDisplay from '../../../../components/common/MathDisplay';
+import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
 import { pythagorasGenerators } from '../../../../generators/geometry/pythagorasGenerators';
 
-/**
- * ExamplesSection for Pythagoras' Theorem lesson
- * Implements Pattern 2 architecture with unified generators:
- * - Generators create configuration objects
- * - Section converts configurations to React components
- */
-const ExamplesSection = ({ currentTopic, currentLessonId }) => {
-  // State setup
-  const [examples, setExamples] = useState([]);
-  const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
-  const [interactiveState, setInteractiveState] = useState({
-    showHeight: false,
-    showAngles: false
-  });
+// ============================================================
+// EXAMPLE CARD COMPONENT
+// ============================================================
 
-  const initializedRef = useRef(false);
-  const regenerateCountRef = useRef(0);
-
-  // Generate examples using Pattern 2 architecture with unified generators
-  const generateExamples = useCallback(() => {
-    // Increment counter for key generation
-    regenerateCountRef.current += 1;
-    const seed = Date.now() + regenerateCountRef.current * 1000;
-    
-    try {
-      // Generate the three example configurations using unified generators
-      const hypotenuseExample = pythagorasGenerators.generateFindHypotenuse({ 
-        seed, 
-        sectionType: 'examples',
-        difficulty: 'medium',
-        units: 'cm'
-      });
+const ExampleCard = ({ example, showAnswers }) => {
+  const steps = example.solution || [];
+  
+  return (
+    <div className="space-y-6">
+      {/* Question */}
+      <div className="bg-orange-50 p-5 rounded-xl border border-orange-200">
+        <h3 className="font-semibold text-orange-800 mb-2">{example.title}</h3>
+        <p className="text-gray-700">{example.questionText}</p>
+      </div>
       
-      const missingSideExample = pythagorasGenerators.generateFindMissingSide({ 
-        seed: seed + 1000, // Offset to ensure different questions 
-        sectionType: 'examples',
-        difficulty: 'medium',
-        units: 'cm'
-      });
-      
-      // *** FIXED: Use proper isosceles generator instead of hard-coded placeholder ***
-      const isoscelesExample = pythagorasGenerators.generateIsoscelesArea({
-        seed: seed + 2000, // Offset to ensure different questions
-        sectionType: 'examples',
-        difficulty: 'medium',
-        units: 'cm'
-      });
-      
-      // *** FORCE DEFAULT ORIENTATION for consistent display in examples ***
-      if (isoscelesExample.visualization) {
-        isoscelesExample.visualization.orientation = 'default';
-      }
-      
-      // Create examples array with configuration objects (not components yet)
-      const exampleItems = [
-        {
-          title: hypotenuseExample.title,
-          question: hypotenuseExample.questionText,
-          steps: hypotenuseExample.solution,
-          // Store visualization config (Pattern 2)
-          visualizationConfig: hypotenuseExample.visualization
-        },
-        {
-          title: missingSideExample.title,
-          question: missingSideExample.questionText,
-          steps: missingSideExample.solution,
-          visualizationConfig: missingSideExample.visualization
-        },
-        {
-          // *** FIXED: Use generated example instead of hard-coded ***
-          title: isoscelesExample.title,
-          question: isoscelesExample.questionText,
-          steps: isoscelesExample.solution,
-          visualizationConfig: isoscelesExample.visualization
-        }
-      ];
-      
-      // Set the examples in state
-      setExamples(exampleItems);
-      
-      // Reset interactive state
-      setInteractiveState({
-        showHeight: false,
-        showAngles: false
-      });
-    } catch (error) {
-      console.error("Error generating examples:", error);
-      // Fallback to default examples if generators fail
-      setExamples([{
-        title: "Example Question",
-        question: "There was an error generating examples.",
-        steps: [{ explanation: "Error: " + error.message }]
-      }]);
-    }
-  }, []);
-
-  // Initialize examples on first mount
-  useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      generateExamples();
-    }
-  }, [generateExamples]);
-
-  // Handle step actions for interactive elements
-  const handleStepAction = useCallback((step) => {
-    if (!step) return;
-    
-    // Update interactive state based on step actions
-    setInteractiveState(prevState => {
-      const newState = { ...prevState };
-      
-      if (step.toggleHeight) {
-        newState.showHeight = true;
-      }
-      
-      if (step.toggleAngle) {
-        newState.showAngles = true;
-      }
-      
-      if (step.reset) {
-        newState.showHeight = false;
-        newState.showAngles = false;
-      }
-      
-      return newState;
-    });
-  }, []);
-
-  // KEY PATTERN 2 FUNCTION: Convert configuration to component here
-  const renderExampleContent = useCallback((example) => {
-    if (!example) return null;
-    
-    // Generate a unique key for the visualization
-    const visualizationKey = `triangle-${regenerateCountRef.current}-${currentExampleIndex}`;
-    
-    // Create the visualization component from configuration
-    const renderVisualization = () => {
-      if (!example.visualizationConfig) return null;
-      
-      // If it's already a React element, just return it
-      if (React.isValidElement(example.visualizationConfig)) {
-        return example.visualizationConfig;
-      }
-      
-      // Check if this is an isosceles triangle configuration
-      if (example.visualizationConfig.showEqualSides) {
-        // Render IsoscelesTriangle with the configuration
-        return (
-          <IsoscelesTriangle 
-            {...example.visualizationConfig} 
-            key={visualizationKey}
-            showHeight={interactiveState.showHeight} // Apply interactive state
-            containerHeight={280} // Standard size for examples
-          />
-        );
-      } 
-      
-      // Otherwise it's a right triangle
-      return (
-        <RightTriangle 
-          {...example.visualizationConfig} 
-          key={visualizationKey}
-          showAngles={interactiveState.showAngles ? [true, false] : [false, false]} // Apply interactive state
-          containerHeight={280} // Standard size for examples
+      {/* Two column layout: Visualization + Working Area - BIGGER */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Visualization - larger */}
+        <div 
+          className="bg-gray-50 rounded-xl p-6 border border-gray-200 flex items-center justify-center" 
+          style={{ minHeight: '280px' }}
+        >
+          {example.visualization ? (
+            <RightTriangleSVG 
+              config={example.visualization}
+              showAnswer={showAnswers}
+            />
+          ) : (
+            <p className="text-gray-400">No diagram</p>
+          )}
+        </div>
+        
+        {/* Blank working area for teacher IWB - larger, no label */}
+        <div 
+          className="bg-white rounded-xl border-2 border-dashed border-gray-300"
+          style={{ minHeight: '280px' }}
         />
-      );
-    };
-    
-    return (
-      <div className="flex flex-col-reverse md:flex-row gap-6 items-center pt-4">
-        {/* Visualization section */}
-        <div className="md:w-2/5 flex justify-start pl-4 pt-8 mb-6 md:mb-0">
-          <div className="w-full">
-            {renderVisualization()}
+      </div>
+      
+      {/* Solution steps - only shown when answers revealed */}
+      {showAnswers && (
+        <div className="border-t border-gray-200 pt-4">
+          {/* Answer highlight */}
+          <div className="bg-orange-500 text-white p-4 rounded-xl text-center mb-4">
+            <p className="font-medium">Answer:</p>
+            <div className="text-xl">
+              <MathDisplay math={example.answer} displayMode={false} />
+            </div>
+          </div>
+          
+          {/* Working steps */}
+          <h4 className="font-semibold text-gray-700 mb-3">Solution Steps</h4>
+          <div className="space-y-2">
+            {steps.map((step, i) => (
+              <div
+                key={i}
+                className="p-3 rounded-lg bg-gray-50 border border-gray-200"
+              >
+                <p className="text-sm text-gray-600 mb-1">{step.explanation}</p>
+                <MathDisplay math={step.formula} displayMode={true} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
+const ExamplesSection = ({ currentTopic, currentLessonId }) => {
+  const { showAnswers } = useUI();
+  
+  // Example tabs
+  const tabs = [
+    { id: 1, label: 'Find Hypotenuse' },
+    { id: 2, label: 'Find Shorter Side' },
+    { id: 3, label: 'Isosceles Area' }
+  ];
+  
+  const [activeTab, setActiveTab] = useState(1);
+  const [regenerateKey, setRegenerateKey] = useState(0);
+  
+  // Generate example for current tab
+  const currentExample = useMemo(() => {
+    return pythagorasGenerators.generateForExamplesTab(activeTab, { 
+      difficulty: 'medium' 
+    });
+  }, [activeTab, regenerateKey]);
+  
+  const regenerateExample = () => {
+    setRegenerateKey(prev => prev + 1);
+  };
+  
+  return (
+    <div className="space-y-6 mb-8">
+      {/* Main examples card - Orange theme */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-t-4 border-orange-500">
+        
+        {/* Header */}
+        <div className="bg-orange-500 text-white px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold">Worked Examples</h2>
+              <p className="text-orange-100 text-sm">Step through each solution</p>
+            </div>
+            <button
+              onClick={regenerateExample}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+            >
+              <RefreshCw size={18} />
+              <span>New Example</span>
+            </button>
           </div>
         </div>
         
-        {/* Question section with working area */}
-        <div className="md:w-3/5">
-          <div className="p-5 bg-orange-50 rounded-lg mb-6">
-            <p className="text-gray-700 font-medium">{example.question}</p>
-          </div>
-
-          {/* Working area for teacher */}
-          <div className="bg-gray-50 p-6 rounded-lg min-h-40 h-48 border border-dashed border-gray-300">
-            {/* Empty space for teacher's working */}
-          </div>
+        {/* Tab navigation */}
+        <div className="flex border-b border-gray-200 bg-orange-50">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'text-orange-700 border-b-2 border-orange-500 bg-white'
+                  : 'text-gray-500 hover:text-orange-600 hover:bg-orange-100'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-      </div>
-    );
-  }, [currentExampleIndex, regenerateCountRef, interactiveState]);
-
-  return (
-    <div className="space-y-6 mb-8">
-      <div className="border-2 border-t-4 border-orange-500 rounded-lg shadow-md bg-white overflow-hidden">
-        <ExamplesSectionBase
-          examples={examples}
-          generateExamples={generateExamples}
-          renderExampleContent={renderExampleContent}
-          currentTopic={currentTopic}
-          currentLessonId={currentLessonId}
-          currentExampleIndex={currentExampleIndex}
-          setCurrentExampleIndex={setCurrentExampleIndex}
-          onStepAction={handleStepAction}
-          themeKey="examples"
-        />
+        
+        {/* Example content */}
+        <div className="p-6">
+          <ExampleCard 
+            example={currentExample} 
+            showAnswers={showAnswers}
+          />
+        </div>
+        
+        {/* Teacher notes - visible when showAnswers is true */}
+        {showAnswers && (
+          <div className="px-6 pb-6">
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Teaching Notes</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Green box */}
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h4 className="font-medium text-green-800 mb-2">Delivery Tips</h4>
+                  <ul className="list-disc list-inside space-y-1 text-green-700 text-sm">
+                    <li>Work through on the board alongside the screen</li>
+                    <li>Pause at each step and ask "What do we do next?"</li>
+                    <li>Get students to check the answer makes sense</li>
+                    <li>Generate new examples for independent practice</li>
+                  </ul>
+                </div>
+                
+                {/* Blue box */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-800 mb-2">Key Points</h4>
+                  <ul className="list-disc list-inside space-y-1 text-blue-700 text-sm">
+                    <li>Always identify the hypotenuse first</li>
+                    <li>Label clearly: a, b for legs, c for hypotenuse</li>
+                    <li>Show the squaring step explicitly</li>
+                    <li>Emphasise the final square root</li>
+                  </ul>
+                </div>
+                
+                {/* Purple box */}
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <h4 className="font-medium text-purple-800 mb-2">Extension</h4>
+                  <ul className="list-disc list-inside space-y-1 text-purple-700 text-sm">
+                    <li>What if we know the hypotenuse and one other side?</li>
+                    <li>How do we rearrange the formula?</li>
+                    <li>Can you find a missing shorter side?</li>
+                  </ul>
+                </div>
+                
+                {/* Amber box */}
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                  <h4 className="font-medium text-amber-800 mb-2">Watch For</h4>
+                  <ul className="list-disc list-inside space-y-1 text-amber-700 text-sm">
+                    <li>Students who forget to square root at the end</li>
+                    <li>Calculator errors with order of operations</li>
+                    <li>Confusing which side is which</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
