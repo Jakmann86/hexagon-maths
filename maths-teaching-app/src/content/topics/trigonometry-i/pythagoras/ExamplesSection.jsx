@@ -1,6 +1,6 @@
 // src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
 // Pythagoras Examples Section - Orange theme
-// Worked examples with step-by-step solutions
+// V2.0 - Uses unified generators with proper LaTeX formatting
 
 import React, { useState, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
@@ -8,6 +8,156 @@ import { useUI } from '../../../../context/UIContext';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
 import { pythagorasGenerators } from '../../../../generators/geometry/pythagorasGenerators';
+import _ from 'lodash';
+
+// ============================================================
+// V2 EXAMPLE GENERATORS - Local wrappers for examples section
+// ============================================================
+
+/**
+ * Generate find hypotenuse example with full solution steps
+ */
+const generateFindHypotenuseExample = () => {
+  // Use Pythagorean triple for clean numbers
+  const triples = [[3, 4, 5], [5, 12, 13], [6, 8, 10], [8, 15, 17], [7, 24, 25]];
+  const [a, b, c] = _.sample(triples);
+  
+  return {
+    title: 'Finding the Hypotenuse',
+    questionText: `Find the length of the hypotenuse in this right-angled triangle with base ${a} cm and height ${b} cm.`,
+    visualization: {
+      base: a,
+      height: b,
+      unknownSide: 'hypotenuse',
+      showRightAngle: true,
+      units: 'cm'
+    },
+    answer: `c = ${c}\\text{ cm}`,
+    solution: [
+      { explanation: "Write down Pythagoras' theorem", formula: "a^2 + b^2 = c^2" },
+      { explanation: "Substitute the known values", formula: `${a}^2 + ${b}^2 = c^2` },
+      { explanation: "Calculate the squares", formula: `${a * a} + ${b * b} = c^2` },
+      { explanation: "Add the values", formula: `${a * a + b * b} = c^2` },
+      { explanation: "Take the square root", formula: `c = \\sqrt{${a * a + b * b}} = ${c}\\text{ cm}` }
+    ]
+  };
+};
+
+/**
+ * Generate find missing side example with full solution steps
+ */
+const generateFindMissingSideExample = () => {
+  // Use Pythagorean triple for clean numbers
+  const triples = [[3, 4, 5], [5, 12, 13], [6, 8, 10], [8, 15, 17]];
+  const [a, b, c] = _.sample(triples);
+  
+  // Randomly choose to find base or height
+  const findBase = Math.random() > 0.5;
+  
+  if (findBase) {
+    return {
+      title: 'Finding a Shorter Side',
+      questionText: `Find the length of the base in this right-angled triangle with hypotenuse ${c} cm and height ${b} cm.`,
+      visualization: {
+        base: a,
+        height: b,
+        hypotenuse: c,
+        unknownSide: 'base',
+        showRightAngle: true,
+        units: 'cm'
+      },
+      answer: `a = ${a}\\text{ cm}`,
+      solution: [
+        { explanation: "Write down Pythagoras' theorem", formula: "a^2 + b^2 = c^2" },
+        { explanation: "Rearrange to find a²", formula: "a^2 = c^2 - b^2" },
+        { explanation: "Substitute the known values", formula: `a^2 = ${c}^2 - ${b}^2` },
+        { explanation: "Calculate the squares", formula: `a^2 = ${c * c} - ${b * b}` },
+        { explanation: "Subtract", formula: `a^2 = ${c * c - b * b}` },
+        { explanation: "Take the square root", formula: `a = \\sqrt{${c * c - b * b}} = ${a}\\text{ cm}` }
+      ]
+    };
+  } else {
+    return {
+      title: 'Finding a Shorter Side',
+      questionText: `Find the length of the height in this right-angled triangle with hypotenuse ${c} cm and base ${a} cm.`,
+      visualization: {
+        base: a,
+        height: b,
+        hypotenuse: c,
+        unknownSide: 'height',
+        showRightAngle: true,
+        units: 'cm'
+      },
+      answer: `b = ${b}\\text{ cm}`,
+      solution: [
+        { explanation: "Write down Pythagoras' theorem", formula: "a^2 + b^2 = c^2" },
+        { explanation: "Rearrange to find b²", formula: "b^2 = c^2 - a^2" },
+        { explanation: "Substitute the known values", formula: `b^2 = ${c}^2 - ${a}^2` },
+        { explanation: "Calculate the squares", formula: `b^2 = ${c * c} - ${a * a}` },
+        { explanation: "Subtract", formula: `b^2 = ${c * c - a * a}` },
+        { explanation: "Take the square root", formula: `b = \\sqrt{${c * c - a * a}} = ${b}\\text{ cm}` }
+      ]
+    };
+  }
+};
+
+/**
+ * Generate isosceles triangle area example
+ */
+const generateIsoscelesAreaExample = () => {
+  // Generate isosceles triangle with nice numbers
+  const bases = [6, 8, 10, 12];
+  const base = _.sample(bases);
+  const halfBase = base / 2;
+  
+  // Equal sides (must be longer than half base for valid triangle)
+  const legLengths = [5, 10, 13, 15].filter(l => l > halfBase);
+  const leg = _.sample(legLengths);
+  
+  // Calculate height using Pythagoras
+  const heightSquared = leg * leg - halfBase * halfBase;
+  const height = Math.sqrt(heightSquared);
+  const heightRounded = Math.round(height * 100) / 100;
+  
+  // Calculate area
+  const area = (base * height) / 2;
+  const areaRounded = Math.round(area * 100) / 100;
+  
+  return {
+    title: 'Isosceles Triangle Area',
+    questionText: `Find the area of an isosceles triangle with base ${base} cm and equal sides ${leg} cm.`,
+    visualization: {
+      base: base,
+      height: heightRounded,
+      showRightAngle: true,
+      labels: {
+        base: `${base} cm`,
+        height: '?',
+        hypotenuse: `${leg} cm`
+      },
+      units: 'cm'
+    },
+    answer: `\\text{Area} = ${areaRounded}\\text{ cm}^2`,
+    solution: [
+      { explanation: "The height splits the base in half, creating a right triangle", formula: `\\text{Half base} = \\frac{${base}}{2} = ${halfBase}\\text{ cm}` },
+      { explanation: "Use Pythagoras to find the height", formula: `h^2 + ${halfBase}^2 = ${leg}^2` },
+      { explanation: "Rearrange to find h²", formula: `h^2 = ${leg}^2 - ${halfBase}^2 = ${leg * leg} - ${halfBase * halfBase} = ${heightSquared}` },
+      { explanation: "Take the square root", formula: `h = \\sqrt{${heightSquared}} = ${heightRounded}\\text{ cm}` },
+      { explanation: "Now find the area", formula: `\\text{Area} = \\frac{1}{2} \\times \\text{base} \\times \\text{height}` },
+      { explanation: "Substitute the values", formula: `\\text{Area} = \\frac{1}{2} \\times ${base} \\times ${heightRounded} = ${areaRounded}\\text{ cm}^2` }
+    ]
+  };
+};
+
+// Map tab IDs to generators
+const generateForTab = (tabId) => {
+  switch (tabId) {
+    case 1: return generateFindHypotenuseExample();
+    case 2: return generateFindMissingSideExample();
+    case 3: return generateIsoscelesAreaExample();
+    default: return generateFindHypotenuseExample();
+  }
+};
 
 // ============================================================
 // EXAMPLE CARD COMPONENT
@@ -95,11 +245,9 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
   const [activeTab, setActiveTab] = useState(1);
   const [regenerateKey, setRegenerateKey] = useState(0);
   
-  // Generate example for current tab
+  // Generate example for current tab using local v2 generators
   const currentExample = useMemo(() => {
-    return pythagorasGenerators.generateForExamplesTab(activeTab, { 
-      difficulty: 'medium' 
-    });
+    return generateForTab(activeTab);
   }, [activeTab, regenerateKey]);
   
   const regenerateExample = () => {

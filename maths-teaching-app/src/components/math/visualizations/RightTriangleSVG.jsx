@@ -38,7 +38,8 @@ const RightTriangleSVG = ({
     labels = {},
     units = 'cm',
     showRightAngle = true,
-    knownSides = null // For SOHCAHTOA find-angle: ['opposite', 'hypotenuse'] etc
+    knownSides = null, // For SOHCAHTOA find-angle: ['opposite', 'hypotenuse'] etc
+    orientation = 'default' // 'default', 'rotate90', 'rotate180', 'rotate270', 'flip'
   } = config;
 
   // Calculate hypotenuse if not provided
@@ -57,11 +58,52 @@ const RightTriangleSVG = ({
   const visualRatio = Math.min(maxBase / 4, maxHeight / 3);
   const scale = visualRatio;
 
-  // Triangle points (right angle at bottom-left)
-  const points = {
+  // Base triangle points (right angle at bottom-left)
+  const basePoints = {
     rightAngle: { x: padding, y: svgHeight - padding },
     baseEnd: { x: padding + 3.5 * scale, y: svgHeight - padding },
     top: { x: padding, y: svgHeight - padding - 2.8 * scale }
+  };
+
+  // Transform points based on orientation
+  const centerX = svgWidth / 2;
+  const centerY = svgHeight / 2;
+  
+  const transformPoint = (point) => {
+    // Translate to origin
+    let x = point.x - centerX;
+    let y = point.y - centerY;
+    
+    switch (orientation) {
+      case 'rotate90':
+        // Rotate 90° clockwise
+        [x, y] = [y, -x];
+        break;
+      case 'rotate180':
+        // Rotate 180°
+        [x, y] = [-x, -y];
+        break;
+      case 'rotate270':
+        // Rotate 270° clockwise (90° counter-clockwise)
+        [x, y] = [-y, x];
+        break;
+      case 'flip':
+        // Horizontal flip
+        x = -x;
+        break;
+      default:
+        // No transformation
+        break;
+    }
+    
+    // Translate back
+    return { x: x + centerX, y: y + centerY };
+  };
+  
+  const points = {
+    rightAngle: transformPoint(basePoints.rightAngle),
+    baseEnd: transformPoint(basePoints.baseEnd),
+    top: transformPoint(basePoints.top)
   };
 
   // For SOHCAHTOA with angle at bottom-right:
@@ -117,9 +159,6 @@ const RightTriangleSVG = ({
     }
     return `${angle}°`;
   };
-
-  // Right angle marker size
-  const rightAngleSize = 12;
 
   // Create arc path using the same approach as parallel lines
   const createArcPath = (center, startAngle, endAngle, radius) => {
@@ -273,61 +312,145 @@ const RightTriangleSVG = ({
 
         {/* Right angle marker */}
         {showRightAngle && (
-          <path
-            d={`M ${points.rightAngle.x + rightAngleSize} ${points.rightAngle.y} 
-                L ${points.rightAngle.x + rightAngleSize} ${points.rightAngle.y - rightAngleSize} 
-                L ${points.rightAngle.x} ${points.rightAngle.y - rightAngleSize}`}
-            fill="none"
-            stroke="#1a1a1a"
-            strokeWidth="1.5"
-          />
+          <g>
+            {/* Calculate right angle marker based on the two adjacent sides */}
+            {(() => {
+              // Vectors from right angle to other points
+              const toBase = { 
+                x: points.baseEnd.x - points.rightAngle.x, 
+                y: points.baseEnd.y - points.rightAngle.y 
+              };
+              const toTop = { 
+                x: points.top.x - points.rightAngle.x, 
+                y: points.top.y - points.rightAngle.y 
+              };
+              
+              // Normalize vectors
+              const baseLen = Math.sqrt(toBase.x * toBase.x + toBase.y * toBase.y);
+              const topLen = Math.sqrt(toTop.x * toTop.x + toTop.y * toTop.y);
+              
+              const baseUnit = { x: toBase.x / baseLen, y: toBase.y / baseLen };
+              const topUnit = { x: toTop.x / topLen, y: toTop.y / topLen };
+              
+              // Right angle marker size
+              const markerSize = 12;
+              
+              // Points for the right angle marker
+              const p1 = {
+                x: points.rightAngle.x + baseUnit.x * markerSize,
+                y: points.rightAngle.y + baseUnit.y * markerSize
+              };
+              const p2 = {
+                x: points.rightAngle.x + baseUnit.x * markerSize + topUnit.x * markerSize,
+                y: points.rightAngle.y + baseUnit.y * markerSize + topUnit.y * markerSize
+              };
+              const p3 = {
+                x: points.rightAngle.x + topUnit.x * markerSize,
+                y: points.rightAngle.y + topUnit.y * markerSize
+              };
+              
+              return (
+                <path
+                  d={`M ${p1.x} ${p1.y} L ${p2.x} ${p2.y} L ${p3.x} ${p3.y}`}
+                  fill="none"
+                  stroke="#1a1a1a"
+                  strokeWidth="1.5"
+                />
+              );
+            })()}
+          </g>
         )}
 
         {/* Angle arc (for SOHCAHTOA) */}
         {renderAngleArc()}
 
-        {/* Base label (bottom) - adjacent */}
-        {baseLabel && (
-          <text
-            x={(points.rightAngle.x + points.baseEnd.x) / 2}
-            y={points.rightAngle.y + 18}
-            textAnchor="middle"
-            fontSize="13"
-            fill="#1a1a1a"
-            fontWeight="500"
-          >
-            {baseLabel}
-          </text>
-        )}
+        {/* Labels - positioned relative to midpoints of sides */}
+        {baseLabel && (() => {
+          const midX = (points.rightAngle.x + points.baseEnd.x) / 2;
+          const midY = (points.rightAngle.y + points.baseEnd.y) / 2;
+          // Offset perpendicular to the line (outward from triangle center)
+          const dx = points.baseEnd.x - points.rightAngle.x;
+          const dy = points.baseEnd.y - points.rightAngle.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          // Perpendicular direction (away from triangle)
+          const perpX = dy / len;
+          const perpY = -dx / len;
+          // Check which direction is away from triangle center
+          const triCenterX = (points.rightAngle.x + points.baseEnd.x + points.top.x) / 3;
+          const triCenterY = (points.rightAngle.y + points.baseEnd.y + points.top.y) / 3;
+          const toCenter = (midX + perpX * 10 - triCenterX) * perpX + (midY + perpY * 10 - triCenterY) * perpY;
+          const sign = toCenter > 0 ? 1 : -1;
+          
+          return (
+            <text
+              x={midX + sign * perpX * 16}
+              y={midY + sign * perpY * 16}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="13"
+              fill="#1a1a1a"
+              fontWeight="500"
+            >
+              {baseLabel}
+            </text>
+          );
+        })()}
 
-        {/* Height label (left side) - opposite */}
-        {heightLabel && (
-          <text
-            x={points.rightAngle.x - 14}
-            y={(points.rightAngle.y + points.top.y) / 2}
-            textAnchor="middle"
-            fontSize="13"
-            fill="#1a1a1a"
-            fontWeight="500"
-            transform={`rotate(-90, ${points.rightAngle.x - 14}, ${(points.rightAngle.y + points.top.y) / 2})`}
-          >
-            {heightLabel}
-          </text>
-        )}
+        {heightLabel && (() => {
+          const midX = (points.rightAngle.x + points.top.x) / 2;
+          const midY = (points.rightAngle.y + points.top.y) / 2;
+          const dx = points.top.x - points.rightAngle.x;
+          const dy = points.top.y - points.rightAngle.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          const perpX = dy / len;
+          const perpY = -dx / len;
+          const triCenterX = (points.rightAngle.x + points.baseEnd.x + points.top.x) / 3;
+          const triCenterY = (points.rightAngle.y + points.baseEnd.y + points.top.y) / 3;
+          const toCenter = (midX + perpX * 10 - triCenterX) * perpX + (midY + perpY * 10 - triCenterY) * perpY;
+          const sign = toCenter > 0 ? 1 : -1;
+          
+          return (
+            <text
+              x={midX + sign * perpX * 16}
+              y={midY + sign * perpY * 16}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="13"
+              fill="#1a1a1a"
+              fontWeight="500"
+            >
+              {heightLabel}
+            </text>
+          );
+        })()}
 
-        {/* Hypotenuse label (along diagonal) */}
-        {hypotenuseLabel && (
-          <text
-            x={(points.baseEnd.x + points.top.x) / 2 + 14}
-            y={(points.baseEnd.y + points.top.y) / 2 - 8}
-            textAnchor="middle"
-            fontSize="13"
-            fill="#1a1a1a"
-            fontWeight="500"
-          >
-            {hypotenuseLabel}
-          </text>
-        )}
+        {hypotenuseLabel && (() => {
+          const midX = (points.baseEnd.x + points.top.x) / 2;
+          const midY = (points.baseEnd.y + points.top.y) / 2;
+          const dx = points.top.x - points.baseEnd.x;
+          const dy = points.top.y - points.baseEnd.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          const perpX = dy / len;
+          const perpY = -dx / len;
+          const triCenterX = (points.rightAngle.x + points.baseEnd.x + points.top.x) / 3;
+          const triCenterY = (points.rightAngle.y + points.baseEnd.y + points.top.y) / 3;
+          const toCenter = (midX + perpX * 10 - triCenterX) * perpX + (midY + perpY * 10 - triCenterY) * perpY;
+          const sign = toCenter > 0 ? 1 : -1;
+          
+          return (
+            <text
+              x={midX + sign * perpX * 16}
+              y={midY + sign * perpY * 16}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="13"
+              fill="#1a1a1a"
+              fontWeight="500"
+            >
+              {hypotenuseLabel}
+            </text>
+          );
+        })()}
       </svg>
     </div>
   );
