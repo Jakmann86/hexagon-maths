@@ -1,5 +1,6 @@
 // src/components/sections/StarterSectionBase.jsx
-// UPGRADED VERSION v2.0
+// UPGRADED VERSION v2.1
+// - Added 'square' case to VisualizationRenderer
 // - Colored headers with subtitles
 // - Expandable working out
 // - Works with standardised generator outputs
@@ -17,6 +18,7 @@ import MagicSquareDisplay from '../math/puzzles/MagicSquareDisplay';
 import SymbolPuzzleDisplay from '../math/puzzles/SymbolPuzzleDisplay';
 import RightTriangleSVG from '../math/visualizations/RightTriangleSVG';
 import IsoscelesTriangleDisplay from '../math/visualizations/IsoscelesTriangleDisplay';
+import SquareSVG from '../math/visualizations/SquareSVG';
 
 // ============================================================
 // VISUALIZATION RENDERER (Pattern 2 conversion)
@@ -70,6 +72,19 @@ const VisualizationRenderer = ({ visualization, visualizationType, showAnswers }
           config={visualization}
           showAnswer={showAnswers}
           sectionType="starter"
+        />
+      );
+    
+    // NEW: Square visualization support
+    case 'square':
+      return (
+        <SquareSVG
+          sideLength={visualization.sideLength}
+          showSide={visualization.showDimensions !== false}
+          showArea={visualization.showArea || false}
+          areaLabel={visualization.areaLabel}
+          units={visualization.units || 'cm'}
+          showAnswer={showAnswers}
         />
       );
     

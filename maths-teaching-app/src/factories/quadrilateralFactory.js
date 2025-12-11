@@ -1,4 +1,5 @@
 // src/factories/quadrilateralFactory.js
+// V2.1 - Added type field for VisualizationRenderer compatibility
 import _ from 'lodash';
 
 /**
@@ -29,9 +30,9 @@ export const createSquare = ({
   
   // Set default style with blue theme if not provided
   const defaultStyle = {
-    fillColor: '#3498db',     // Nice blue color
+    fillColor: '#3498db',
     fillOpacity: 0.2,
-    strokeColor: '#0284c7',   // Slightly darker blue for stroke
+    strokeColor: '#0284c7',
     strokeWidth: 2
   };
   
@@ -41,8 +42,9 @@ export const createSquare = ({
     ...style
   };
   
-  // Return ONLY configuration object, not a React component
+  // Return configuration object WITH type for VisualizationRenderer
   return {
+    type: 'square',  // ← CRITICAL: Enables auto-rendering in StarterSectionBase
     sideLength,
     showDimensions,
     showArea,
@@ -56,17 +58,6 @@ export const createSquare = ({
 /**
  * Creates configuration for a rectangle with appropriate styling and labels
  * Returns ONLY a configuration object, not a React component
- * 
- * @param {Object} config - Configuration options
- * @param {number} config.width - Width of rectangle
- * @param {number} config.height - Height of rectangle
- * @param {boolean} config.showDimensions - Whether to show dimensions
- * @param {boolean} config.showArea - Whether to show area
- * @param {string} config.areaLabel - Optional custom area label
- * @param {string} config.units - Units to display
- * @param {string} config.sectionType - Section type for styling
- * @param {Object} config.style - Custom styling properties
- * @returns {Object} Configuration object for Rectangle component
  */
 export const createRectangle = ({
   width = 6,
@@ -78,37 +69,33 @@ export const createRectangle = ({
   sectionType = 'diagnostic',
   style = {}
 }) => {
-  // Calculate area for use in labels if needed
   const area = width * height;
   
-  // Set default style with blue theme if not provided
   const defaultStyle = {
-    fillColor: '#3498db',     // Nice blue color
+    fillColor: '#3498db',
     fillOpacity: 0.2,
-    strokeColor: '#0284c7',   // Slightly darker blue for stroke
+    strokeColor: '#0284c7',
     strokeWidth: 2
   };
   
-  // Merge provided style with defaults
   const mergedStyle = {
     ...defaultStyle,
     ...style
   };
   
-  // Return ONLY configuration object, not a React component
   return {
+    type: 'rectangle',  // ← For future VisualizationRenderer support
     width,
     height,
     showDimensions,
     showArea,
-    areaLabel: areaLabel || (showArea ? `Area = ${width * height} ${units}²` : null),
+    areaLabel: areaLabel || (showArea ? `Area = ${area} ${units}²` : null),
     units,
     sectionType,
     style: mergedStyle
   };
 };
 
-// Export a group of factory functions
 export default {
   createSquare,
   createRectangle

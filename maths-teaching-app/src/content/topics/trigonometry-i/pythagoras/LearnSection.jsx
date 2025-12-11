@@ -1,13 +1,11 @@
 // src/content/topics/trigonometry-i/pythagoras/LearnSection.jsx
-// Pythagoras Learn Section - Green theme
-// Interactive visualization showing squares on sides and area relationships
+// Pythagoras Learn Section - V2.1
+// Fixed: No ABC labels, better label positioning, more toggle control
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Card, CardContent } from '../../../../components/common/Card';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import { useUI } from '../../../../context/UIContext';
-import { useSectionTheme } from '../../../../hooks/useSectionTheme';
-import { RefreshCw, Eye, EyeOff, RotateCcw, Type, Ruler, Calculator } from 'lucide-react';
+import { RotateCcw, Eye, EyeOff, Type, Ruler, Calculator, Square, AlertTriangle } from 'lucide-react';
 
 // ============================================================
 // GEOMETRY UTILITIES
@@ -25,25 +23,18 @@ const GeometryUtils = {
     };
   },
   
-  calculateHypotenuseSquarePoints: (base, height, verticalOffset = 0) => {
+  calculateHypotenuseSquarePoints: (base, height) => {
     const hypLen = Math.sqrt(base * base + height * height);
-    
-    // Calculate unit vectors perpendicular to hypotenuse
     const hypUnitX = base / hypLen;
     const hypUnitY = -height / hypLen;
-    
-    // Get perpendicular vector (rotated 90 degrees)
     const perpUnitX = hypUnitY;
     const perpUnitY = -hypUnitX;
-    
-    // Ensure correct orientation (outward from triangle)
     const dotProduct = perpUnitX * 1 + perpUnitY * 1;
     const adjustedPerpUnitX = dotProduct < 0 ? -perpUnitX : perpUnitX;
     const adjustedPerpUnitY = dotProduct < 0 ? -perpUnitY : perpUnitY;
     
-    // Calculate square corners
-    const p1 = [0, height + verticalOffset];
-    const p2 = [base, 0 + verticalOffset];
+    const p1 = [0, height];
+    const p2 = [base, 0];
     const p3 = [p2[0] + adjustedPerpUnitX * hypLen, p2[1] + adjustedPerpUnitY * hypLen];
     const p4 = [p1[0] + adjustedPerpUnitX * hypLen, p1[1] + adjustedPerpUnitY * hypLen];
     
@@ -52,259 +43,220 @@ const GeometryUtils = {
 };
 
 // ============================================================
-// SVG VISUALIZATION COMPONENT
+// FALLBACK SVG (when JSXGraph unavailable)
 // ============================================================
 
-const PythagorasVisualization = ({ 
-  base = 3, 
-  height = 4, 
-  showSquares = true,
-  showAreaLabels = true,
-  showSideLengths = true,
-  showFormula = false
-}) => {
-  const areas = useMemo(() => GeometryUtils.calculateSquareAreas(base, height), [base, height]);
-  const hypotenuse = useMemo(() => GeometryUtils.calculateHypotenuse(base, height), [base, height]);
+const PythagorasFallbackSVG = ({ base, height, showSquares, showAreaLabels, showSideLengths, showHypArea, showLegsArea }) => {
+  const areas = GeometryUtils.calculateSquareAreas(base, height);
+  const hypotenuse = Math.round(GeometryUtils.calculateHypotenuse(base, height) * 10) / 10;
   
-  // SVG viewBox calculations
-  const padding = 2;
-  const maxDim = Math.max(base, height);
-  const viewBoxSize = maxDim * 3 + padding * 2;
-  const offsetX = maxDim + padding;
-  const offsetY = padding + maxDim;
+  const svgWidth = 400;
+  const svgHeight = 360;
+  const scale = 30;
+  const offsetX = 150;
+  const offsetY = 200;
   
-  // Triangle points (origin at right angle)
-  const trianglePoints = [
-    [0, 0],           // Right angle vertex
-    [base, 0],        // Base end
-    [0, -height]      // Height end (negative Y because SVG Y is inverted)
-  ];
-  
-  // Square on base (below the base)
-  const baseSquarePoints = [
-    [0, 0],
-    [base, 0],
-    [base, base],
-    [0, base]
-  ];
-  
-  // Square on height (to the left)
-  const heightSquarePoints = [
-    [0, 0],
-    [0, -height],
-    [-height, -height],
-    [-height, 0]
-  ];
-  
-  // Square on hypotenuse
-  const hypPoints = GeometryUtils.calculateHypotenuseSquarePoints(base, height);
-  // Transform for SVG (invert Y)
-  const hypSquarePoints = hypPoints.map(p => [p[0], -p[1] + height]);
-  
-  // Helper to create polygon points string
-  const toPointsString = (points, ox = offsetX, oy = offsetY) => 
-    points.map(p => `${ox + p[0]},${oy + p[1]}`).join(' ');
+  const p1 = { x: offsetX, y: offsetY };
+  const p2 = { x: offsetX + base * scale, y: offsetY };
+  const p3 = { x: offsetX, y: offsetY - height * scale };
   
   return (
-    <svg 
-      viewBox={`0 0 ${viewBoxSize * 1.2} ${viewBoxSize * 1.2}`}
-      className="w-full h-full"
-      style={{ maxHeight: '400px' }}
-    >
-      {/* Squares on sides */}
-      {showSquares && (
+    <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full">
+      <rect width={svgWidth} height={svgHeight} fill="#fffbeb" />
+      
+      {showSquares && showLegsArea && (
         <>
-          {/* Base square (red) */}
-          <polygon
-            points={toPointsString(baseSquarePoints)}
-            fill="#fee2e2"
-            stroke="#ef4444"
-            strokeWidth="2"
-          />
-          
-          {/* Height square (blue) */}
-          <polygon
-            points={toPointsString(heightSquarePoints)}
-            fill="#dbeafe"
-            stroke="#3b82f6"
-            strokeWidth="2"
-          />
-          
-          {/* Hypotenuse square (green) */}
-          <polygon
-            points={toPointsString(hypSquarePoints)}
-            fill="#dcfce7"
-            stroke="#22c55e"
-            strokeWidth="2"
-          />
+          <rect x={p1.x} y={p1.y} width={base * scale} height={base * scale} fill="#fecaca" stroke="#dc2626" strokeWidth="2" />
+          <rect x={p1.x - height * scale} y={p1.y - height * scale} width={height * scale} height={height * scale} fill="#bfdbfe" stroke="#2563eb" strokeWidth="2" />
+          {showAreaLabels && (
+            <>
+              <text x={p1.x + base * scale / 2} y={p1.y + base * scale / 2 + 5} textAnchor="middle" fill="#dc2626" fontWeight="bold" fontSize="14">{areas.base} cm²</text>
+              <text x={p1.x - height * scale / 2} y={p1.y - height * scale / 2} textAnchor="middle" fill="#2563eb" fontWeight="bold" fontSize="14">{areas.height} cm²</text>
+            </>
+          )}
         </>
       )}
       
-      {/* Triangle (purple) */}
-      <polygon
-        points={toPointsString(trianglePoints)}
-        fill="#f3e8ff"
-        stroke="#9333ea"
-        strokeWidth="3"
-      />
+      <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`} fill="#c4b5fd" fillOpacity="0.5" stroke="#7c3aed" strokeWidth="3" />
+      <path d={`M ${p1.x + 15} ${p1.y} L ${p1.x + 15} ${p1.y - 15} L ${p1.x} ${p1.y - 15}`} fill="none" stroke="#7c3aed" strokeWidth="2" />
       
-      {/* Right angle marker */}
-      <path
-        d={`M ${offsetX + 0.8} ${offsetY} L ${offsetX + 0.8} ${offsetY - 0.8} L ${offsetX} ${offsetY - 0.8}`}
-        fill="none"
-        stroke="#9333ea"
-        strokeWidth="1.5"
-      />
-      
-      {/* Area labels */}
-      {showSquares && showAreaLabels && (
-        <>
-          {/* Base square area */}
-          <text
-            x={offsetX + base / 2}
-            y={offsetY + base / 2}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="14"
-            fontWeight="600"
-            fill="#dc2626"
-          >
-            {areas.base} cm²
-          </text>
-          
-          {/* Height square area */}
-          <text
-            x={offsetX - height / 2}
-            y={offsetY - height / 2}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="14"
-            fontWeight="600"
-            fill="#2563eb"
-          >
-            {areas.height} cm²
-          </text>
-          
-          {/* Hypotenuse square area */}
-          <text
-            x={offsetX + (hypSquarePoints[0][0] + hypSquarePoints[2][0]) / 2}
-            y={offsetY + (hypSquarePoints[0][1] + hypSquarePoints[2][1]) / 2}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="14"
-            fontWeight="600"
-            fill="#16a34a"
-          >
-            {areas.hypotenuse} cm²
-          </text>
-        </>
-      )}
-      
-      {/* Side length labels */}
       {showSideLengths && (
         <>
-          {/* Base label */}
-          <text
-            x={offsetX + base / 2}
-            y={offsetY + (showSquares ? -0.5 : 1)}
-            textAnchor="middle"
-            fontSize="13"
-            fontWeight="500"
-            fill="#1f2937"
-          >
-            {base} cm
-          </text>
-          
-          {/* Height label */}
-          <text
-            x={offsetX + (showSquares ? 0.7 : -0.7)}
-            y={offsetY - height / 2}
-            textAnchor="middle"
-            fontSize="13"
-            fontWeight="500"
-            fill="#1f2937"
-          >
-            {height} cm
-          </text>
-          
-          {/* Hypotenuse label */}
-          <text
-            x={offsetX + base / 2 + 0.8}
-            y={offsetY - height / 2 - 0.5}
-            textAnchor="middle"
-            fontSize="13"
-            fontWeight="500"
-            fill="#1f2937"
-          >
-            {Math.round(hypotenuse * 10) / 10} cm
-          </text>
+          <text x={p1.x + base * scale / 2} y={p1.y - 8} textAnchor="middle" fill="#374151" fontSize="13">{base} cm</text>
+          <text x={p1.x - 16} y={p1.y - height * scale / 2} textAnchor="end" fill="#374151" fontSize="13">{height} cm</text>
+          {showHypArea && <text x={(p2.x + p3.x) / 2 + 15} y={(p2.y + p3.y) / 2} textAnchor="start" fill="#374151" fontSize="13">{hypotenuse} cm</text>}
         </>
-      )}
-      
-      {/* Formula box */}
-      {showFormula && (
-        <g>
-          <rect
-            x={viewBoxSize * 0.65}
-            y={2}
-            width={viewBoxSize * 0.5}
-            height={4}
-            fill="white"
-            stroke="#e5e7eb"
-            strokeWidth="1"
-            rx="0.3"
-          />
-          <text x={viewBoxSize * 0.7} y={3.2} fontSize="12" fontWeight="600" fill="#374151">
-            a² + b² = c²
-          </text>
-          <text x={viewBoxSize * 0.7} y={4.5} fontSize="11" fill="#6b7280">
-            {base}² + {height}² = {Math.round(hypotenuse * 10) / 10}²
-          </text>
-          <text x={viewBoxSize * 0.7} y={5.6} fontSize="11" fill="#6b7280">
-            {areas.base} + {areas.height} = {areas.hypotenuse}
-          </text>
-        </g>
       )}
     </svg>
   );
 };
 
 // ============================================================
-// SLIDER COMPONENT
+// JSXGRAPH VISUALIZATION
 // ============================================================
 
-const Slider = ({ value, onChange, min, max, label, color = 'green' }) => (
+const PythagorasJSXGraph = ({ 
+  base = 3, height = 4, 
+  showSquares = true, showAreaLabels = true, showSideLengths = true, showFormula = false,
+  showHypArea = true, showLegsArea = true
+}) => {
+  const containerRef = useRef(null);
+  const boardRef = useRef(null);
+  const idRef = useRef(`pythagoras-${Math.random().toString(36).substr(2, 9)}`);
+  const [jsxGraphAvailable, setJsxGraphAvailable] = useState(null);
+  
+  const areas = useMemo(() => GeometryUtils.calculateSquareAreas(base, height), [base, height]);
+  const hypotenuse = useMemo(() => GeometryUtils.calculateHypotenuse(base, height), [base, height]);
+  
+  useEffect(() => {
+    const check = () => {
+      if (window.JXG && window.JXG.JSXGraph) setJsxGraphAvailable(true);
+      else setTimeout(() => setJsxGraphAvailable(window.JXG && window.JXG.JSXGraph ? true : false), 500);
+    };
+    check();
+  }, []);
+  
+  useEffect(() => {
+    if (!containerRef.current || !jsxGraphAvailable) return;
+    
+    if (boardRef.current) {
+      try { window.JXG.JSXGraph.freeBoard(boardRef.current); } catch (e) {}
+    }
+    
+    try {
+      const maxDim = Math.max(base, height);
+      const padding = maxDim * 0.6;
+      const bbox = [-maxDim - padding, maxDim + padding + 1, maxDim + padding + 1, -maxDim - padding];
+      
+      const board = window.JXG.JSXGraph.initBoard(idRef.current, {
+        boundingbox: bbox, axis: false, showCopyright: false, showNavigation: false,
+        pan: { enabled: false }, zoom: { enabled: false }, keepAspectRatio: true
+      });
+      
+      boardRef.current = board;
+      
+      // Triangle points - NO LABELS (removed A, B, C)
+      const p1 = board.create('point', [0, 0], { visible: false, fixed: true });
+      const p2 = board.create('point', [base, 0], { visible: false, fixed: true });
+      const p3 = board.create('point', [0, height], { visible: false, fixed: true });
+      
+      // Triangle - NO LABELS
+      board.create('polygon', [p1, p2, p3], {
+        fillColor: '#9333ea', fillOpacity: 0.3, strokeWidth: 3, strokeColor: '#7c3aed',
+        vertices: { visible: false }, withLabel: false
+      });
+      
+      // Right angle marker - NO LABEL
+      board.create('angle', [p2, p1, p3], {
+        radius: 0.5, type: 'square', fillColor: '#9333ea', fillOpacity: 0.3,
+        strokeWidth: 1.5, strokeColor: '#7c3aed', withLabel: false
+      });
+      
+      // Squares
+      if (showSquares) {
+        // Base and height squares (red & blue) - only if showLegsArea
+        if (showLegsArea) {
+          board.create('polygon', [[0, 0], [base, 0], [base, -base], [0, -base]], {
+            fillColor: '#ef4444', fillOpacity: 0.25, strokeWidth: 2, strokeColor: '#dc2626',
+            vertices: { visible: false }, withLabel: false
+          });
+          board.create('polygon', [[0, 0], [0, height], [-height, height], [-height, 0]], {
+            fillColor: '#3b82f6', fillOpacity: 0.25, strokeWidth: 2, strokeColor: '#2563eb',
+            vertices: { visible: false }, withLabel: false
+          });
+          
+          if (showAreaLabels) {
+            board.create('text', [base / 2, -base / 2, `${areas.base} cm²`], { fontSize: 14, color: '#dc2626', anchorX: 'middle', anchorY: 'middle', fontWeight: 'bold' });
+            board.create('text', [-height / 2, height / 2, `${areas.height} cm²`], { fontSize: 14, color: '#2563eb', anchorX: 'middle', anchorY: 'middle', fontWeight: 'bold' });
+          }
+        }
+        
+        // Hypotenuse square (green) - only if showHypArea
+        if (showHypArea) {
+          const hypPoints = GeometryUtils.calculateHypotenuseSquarePoints(base, height);
+          board.create('polygon', hypPoints, {
+            fillColor: '#22c55e', fillOpacity: 0.25, strokeWidth: 2, strokeColor: '#16a34a',
+            vertices: { visible: false }, withLabel: false
+          });
+          
+          if (showAreaLabels) {
+            const hypCenter = [(hypPoints[0][0] + hypPoints[2][0]) / 2, (hypPoints[0][1] + hypPoints[2][1]) / 2];
+            board.create('text', [hypCenter[0], hypCenter[1], `${areas.hypotenuse} cm²`], { fontSize: 14, color: '#16a34a', anchorX: 'middle', anchorY: 'middle', fontWeight: 'bold' });
+          }
+        }
+      }
+      
+      // Side length labels - IMPROVED POSITIONING
+      if (showSideLengths) {
+        // Base label - BELOW the base line (pushed down more)
+        if (showLegsArea || !showSquares) {
+          board.create('text', [base / 2, showSquares ? -0.7 : -0.5, `${base} cm`], { fontSize: 13, color: '#374151', anchorX: 'middle', anchorY: 'middle' });
+        }
+        
+        // Height label - TO THE LEFT of the height line (pushed left more)
+        if (showLegsArea || !showSquares) {
+          board.create('text', [showSquares ? -0.9 : -0.6, height / 2, `${height} cm`], { fontSize: 13, color: '#374151', anchorX: 'middle', anchorY: 'middle' });
+        }
+        
+        // Hypotenuse label - only if showing hyp area
+        if (showHypArea) {
+          const hypRounded = Math.round(hypotenuse * 10) / 10;
+          board.create('text', [base / 2 + 0.8, height / 2 + 0.6, `${hypRounded} cm`], { fontSize: 13, color: '#374151', anchorX: 'middle', anchorY: 'middle' });
+        }
+      }
+      
+      if (showFormula) {
+        const boxX = maxDim + padding * 0.3;
+        const boxY = maxDim + padding * 0.5;
+        board.create('text', [boxX, boxY, 'a² + b² = c²'], { fontSize: 16, color: '#1f2937', fontWeight: 'bold', anchorX: 'left' });
+        board.create('text', [boxX, boxY - 0.8, `${base}² + ${height}² = ${Math.round(hypotenuse * 10) / 10}²`], { fontSize: 14, color: '#4b5563', anchorX: 'left' });
+        board.create('text', [boxX, boxY - 1.5, `${areas.base} + ${areas.height} = ${areas.hypotenuse}`], { fontSize: 14, color: '#4b5563', anchorX: 'left' });
+      }
+    } catch (error) {
+      console.error('JSXGraph error:', error);
+      setJsxGraphAvailable(false);
+    }
+    
+    return () => {
+      if (boardRef.current) { try { window.JXG.JSXGraph.freeBoard(boardRef.current); } catch (e) {} boardRef.current = null; }
+    };
+  }, [base, height, showSquares, showAreaLabels, showSideLengths, showFormula, showHypArea, showLegsArea, areas, hypotenuse, jsxGraphAvailable]);
+  
+  if (jsxGraphAvailable === null) {
+    return <div className="w-full flex items-center justify-center" style={{ height: '360px' }}><div className="text-gray-400">Loading...</div></div>;
+  }
+  
+  if (jsxGraphAvailable === false) {
+    return (
+      <div className="w-full">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 mb-2 flex items-center gap-2 text-amber-700 text-sm">
+          <AlertTriangle size={16} /><span>Interactive version unavailable</span>
+        </div>
+        <PythagorasFallbackSVG base={base} height={height} showSquares={showSquares} showAreaLabels={showAreaLabels} showSideLengths={showSideLengths} showHypArea={showHypArea} showLegsArea={showLegsArea} />
+      </div>
+    );
+  }
+  
+  return <div id={idRef.current} ref={containerRef} className="w-full" style={{ height: '360px' }} />;
+};
+
+// ============================================================
+// COMPONENTS
+// ============================================================
+
+const Slider = ({ value, onChange, min, max, label }) => (
   <div className="space-y-2">
     <div className="flex justify-between items-center">
-      <label className={`text-sm font-medium text-${color}-700`}>{label}</label>
-      <span className={`text-lg font-bold text-${color}-600`}>{value}</span>
+      <label className="text-sm font-medium text-green-700">{label}</label>
+      <span className="text-lg font-bold text-green-600">{value}</span>
     </div>
-    <input
-      type="range"
-      min={min}
-      max={max}
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
-      className={`w-full h-2 bg-${color}-100 rounded-lg appearance-none cursor-pointer accent-${color}-500`}
-    />
+    <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full h-2 bg-green-100 rounded-lg appearance-none cursor-pointer accent-green-500" />
   </div>
 );
 
-// ============================================================
-// TOGGLE BUTTON COMPONENT
-// ============================================================
-
 const ToggleButton = ({ active, onClick, icon: Icon, label }) => (
-  <button
-    onClick={onClick}
-    className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium ${
-      active 
-        ? 'bg-green-500 text-white shadow-md' 
-        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-    }`}
-  >
-    <Icon size={16} />
-    <span>{label}</span>
+  <button onClick={onClick} className={`px-3 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium ${active ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+    <Icon size={16} /><span>{label}</span>
   </button>
 );
 
@@ -314,223 +266,168 @@ const ToggleButton = ({ active, onClick, icon: Icon, label }) => (
 
 const LearnSection = ({ currentTopic, currentLessonId }) => {
   const { showAnswers } = useUI();
-  const theme = useSectionTheme('learn');
   
-  // Interactive state
   const [base, setBase] = useState(3);
   const [height, setHeight] = useState(4);
   const [showSquares, setShowSquares] = useState(true);
   const [showAreaLabels, setShowAreaLabels] = useState(true);
   const [showSideLengths, setShowSideLengths] = useState(true);
   const [showFormula, setShowFormula] = useState(false);
+  const [showHypArea, setShowHypArea] = useState(true);
+  const [showLegsArea, setShowLegsArea] = useState(true);
   
-  // Calculated values
   const areas = useMemo(() => GeometryUtils.calculateSquareAreas(base, height), [base, height]);
   const hypotenuse = useMemo(() => Math.round(GeometryUtils.calculateHypotenuse(base, height) * 10) / 10, [base, height]);
   
-  // Reset to defaults
   const resetView = () => {
-    setBase(3);
-    setHeight(4);
-    setShowSquares(true);
-    setShowAreaLabels(true);
-    setShowSideLengths(true);
-    setShowFormula(false);
+    setBase(3); setHeight(4);
+    setShowSquares(true); setShowAreaLabels(true); setShowSideLengths(true); setShowFormula(false);
+    setShowHypArea(true); setShowLegsArea(true);
   };
 
   return (
     <div className="space-y-6 mb-8">
-      <Card className="border-2 border-t-4 border-green-500 shadow-md overflow-hidden">
-        <CardContent className="p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+      <div className="border-2 border-t-4 border-green-500 rounded-xl bg-white shadow-md overflow-hidden">
+        
+        <div className="bg-green-500 text-white px-6 py-4">
+          <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-xl font-semibold text-gray-800">
-                Pythagoras' Theorem: Visual Proof
-              </h3>
-              <p className="text-gray-500 text-sm">
-                Explore how the areas of squares relate to the sides
-              </p>
+              <h2 className="text-xl font-bold">Pythagoras' Theorem: Visual Proof</h2>
+              <p className="text-green-100 text-sm">Explore how the areas of squares relate to the sides</p>
             </div>
-            <button
-              onClick={resetView}
-              className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-all"
-            >
-              <RotateCcw size={18} />
-              <span>Reset</span>
+            <button onClick={resetView} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all">
+              <RotateCcw size={18} /><span>Reset</span>
             </button>
           </div>
+        </div>
 
-          {/* Main content - two columns */}
+        <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            {/* Left: Visualization */}
             <div className="space-y-4">
-              <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200" style={{ minHeight: '380px' }}>
-                <PythagorasVisualization
-                  base={base}
-                  height={height}
-                  showSquares={showSquares}
-                  showAreaLabels={showAreaLabels}
-                  showSideLengths={showSideLengths}
-                  showFormula={showFormula}
-                />
+              <div className="bg-amber-50 rounded-xl border-2 border-amber-200 overflow-hidden">
+                <PythagorasJSXGraph base={base} height={height} showSquares={showSquares} showAreaLabels={showAreaLabels} showSideLengths={showSideLengths} showFormula={showFormula} showHypArea={showHypArea} showLegsArea={showLegsArea} />
               </div>
               
-              {/* Toggle Controls */}
               <div className="flex flex-wrap justify-center gap-2">
-                <ToggleButton
-                  active={showSquares}
-                  onClick={() => setShowSquares(!showSquares)}
-                  icon={showSquares ? Eye : EyeOff}
-                  label="Squares"
-                />
-                <ToggleButton
-                  active={showAreaLabels}
-                  onClick={() => setShowAreaLabels(!showAreaLabels)}
-                  icon={Type}
-                  label="Areas"
-                />
-                <ToggleButton
-                  active={showSideLengths}
-                  onClick={() => setShowSideLengths(!showSideLengths)}
-                  icon={Ruler}
-                  label="Lengths"
-                />
-                <ToggleButton
-                  active={showFormula}
-                  onClick={() => setShowFormula(!showFormula)}
-                  icon={Calculator}
-                  label="Formula"
-                />
+                <ToggleButton active={showSquares} onClick={() => setShowSquares(!showSquares)} icon={showSquares ? Eye : EyeOff} label="Squares" />
+                <ToggleButton active={showAreaLabels} onClick={() => setShowAreaLabels(!showAreaLabels)} icon={Type} label="Areas" />
+                <ToggleButton active={showSideLengths} onClick={() => setShowSideLengths(!showSideLengths)} icon={Ruler} label="Lengths" />
+                <ToggleButton active={showFormula} onClick={() => setShowFormula(!showFormula)} icon={Calculator} label="Formula" />
+              </div>
+              
+              <div className="flex flex-wrap justify-center gap-2 pt-2 border-t border-gray-200">
+                <ToggleButton active={showLegsArea} onClick={() => setShowLegsArea(!showLegsArea)} icon={Square} label="a² + b²" />
+                <ToggleButton active={showHypArea} onClick={() => setShowHypArea(!showHypArea)} icon={Square} label="c²" />
               </div>
             </div>
 
-            {/* Right: Controls and Information */}
             <div className="space-y-4">
-              {/* Sliders */}
               <div className="bg-green-50 p-4 rounded-xl border border-green-200 space-y-4">
                 <h4 className="font-semibold text-green-800">Adjust Triangle</h4>
-                <Slider
-                  value={base}
-                  onChange={setBase}
-                  min={1}
-                  max={8}
-                  label="Base (a)"
-                  color="green"
-                />
-                <Slider
-                  value={height}
-                  onChange={setHeight}
-                  min={1}
-                  max={8}
-                  label="Height (b)"
-                  color="green"
-                />
+                <Slider value={base} onChange={setBase} min={1} max={8} label="Base (a)" />
+                <Slider value={height} onChange={setHeight} min={1} max={8} label="Height (b)" />
               </div>
               
-              {/* Area relationship display */}
               <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
                 <h4 className="font-semibold text-purple-800 mb-3">The Relationship</h4>
                 <div className="text-center space-y-2">
                   <MathDisplay math="a^2 + b^2 = c^2" displayMode={true} />
                   <div className="grid grid-cols-3 gap-2 mt-4">
-                    <div className="bg-red-100 p-2 rounded-lg text-center">
-                      <div className="text-xs text-red-600">a²</div>
-                      <div className="text-lg font-bold text-red-700">{areas.base}</div>
-                    </div>
-                    <div className="bg-blue-100 p-2 rounded-lg text-center">
-                      <div className="text-xs text-blue-600">b²</div>
-                      <div className="text-lg font-bold text-blue-700">{areas.height}</div>
-                    </div>
-                    <div className="bg-green-100 p-2 rounded-lg text-center">
-                      <div className="text-xs text-green-600">c²</div>
-                      <div className="text-lg font-bold text-green-700">{areas.hypotenuse}</div>
-                    </div>
+                    {showLegsArea ? (
+                      <>
+                        <div className="bg-red-100 p-2 rounded-lg text-center">
+                          <div className="text-xs text-red-600">a²</div>
+                          <div className="text-lg font-bold text-red-700">{areas.base}</div>
+                        </div>
+                        <div className="bg-blue-100 p-2 rounded-lg text-center">
+                          <div className="text-xs text-blue-600">b²</div>
+                          <div className="text-lg font-bold text-blue-700">{areas.height}</div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="col-span-2 bg-gray-100 p-2 rounded-lg text-center text-gray-400">Hidden</div>
+                    )}
+                    {showHypArea ? (
+                      <div className="bg-green-100 p-2 rounded-lg text-center">
+                        <div className="text-xs text-green-600">c²</div>
+                        <div className="text-lg font-bold text-green-700">{areas.hypotenuse}</div>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-100 p-2 rounded-lg text-center text-gray-400">?</div>
+                    )}
                   </div>
                 </div>
               </div>
               
-              {/* Equation check */}
               <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
                 <h4 className="font-semibold text-amber-800 mb-2">Check It!</h4>
                 <div className="text-center">
-                  <MathDisplay 
-                    math={`${areas.base} + ${areas.height} = ${areas.hypotenuse}`} 
-                    displayMode={true} 
-                  />
-                  <p className="text-amber-700 text-sm mt-2">
-                    Red square + Blue square = Green square
-                  </p>
+                  {showLegsArea && showHypArea ? (
+                    <>
+                      <MathDisplay math={`${areas.base} + ${areas.height} = ${areas.hypotenuse}`} displayMode={true} />
+                      <p className="text-amber-700 text-sm mt-2">Red square + Blue square = Green square</p>
+                    </>
+                  ) : (
+                    <p className="text-amber-600 text-sm">Toggle the squares to see the relationship</p>
+                  )}
                 </div>
               </div>
               
-              {/* Key insight */}
               <div className="bg-green-500 text-white p-4 rounded-xl text-center">
-                <p className="font-medium">
-                  The hypotenuse is c = √{areas.hypotenuse} = {hypotenuse} cm
-                </p>
+                {showHypArea ? (
+                  <p className="font-medium">The hypotenuse is c = √{areas.hypotenuse} = {hypotenuse} cm</p>
+                ) : (
+                  <p className="font-medium">Toggle "c²" to reveal the hypotenuse</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Teacher Notes - only visible with "Show Answers" */}
           {showAnswers && (
-            <div className="mt-8 border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                Teaching Notes
-              </h3>
-              
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Teaching Notes</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Green box - How to use */}
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h4 className="font-medium text-green-800 mb-3">How to Use This Visual</h4>
-                  <ol className="list-decimal list-inside space-y-2 text-green-700 text-sm">
-                    <li>Start with the 3-4-5 triangle (default)</li>
-                    <li>Show all squares and ask "What do you notice?"</li>
-                    <li>Hide areas, get students to calculate each</li>
-                    <li>Change dimensions and verify the relationship holds</li>
-                    <li>Challenge: "Will this work for ANY right triangle?"</li>
+                  <h4 className="font-medium text-green-800 mb-2">Suggested Sequence</h4>
+                  <ol className="text-sm text-green-700 space-y-1 list-decimal list-inside">
+                    <li>Start with 3-4-5 triangle (default)</li>
+                    <li>Hide the c² square first - ask students to predict</li>
+                    <li>Reveal and verify: 9 + 16 = 25</li>
+                    <li>Try other values, verify each time</li>
+                    <li>Challenge: what if a = b? (isosceles)</li>
                   </ol>
                 </div>
-                
-                {/* Blue box - Key questions */}
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-medium text-blue-800 mb-3">Key Questions</h4>
-                  <ul className="list-disc list-inside space-y-2 text-blue-700 text-sm">
-                    <li>"What does each coloured square represent?"</li>
-                    <li>"Why is this called squaring a number?"</li>
-                    <li>"Which square is always the biggest? Why?"</li>
-                    <li>"What happens when a = b?"</li>
-                    <li>"Can you find c without building the green square?"</li>
+                  <h4 className="font-medium text-blue-800 mb-2">Key Questions</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• What do you notice about the green square?</li>
+                    <li>• Why do we call it "squared"?</li>
+                    <li>• Which side is always the longest?</li>
+                    <li>• Does the formula work for non-right triangles?</li>
                   </ul>
                 </div>
-                
-                {/* Purple box - Key concept */}
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <h4 className="font-medium text-purple-800 mb-3">The Key Insight</h4>
-                  <div className="text-purple-700 text-sm space-y-2">
-                    <p>The area of the square on the hypotenuse <strong>equals</strong> the sum of the areas of the squares on the other two sides.</p>
-                    <p>This is what Pythagoras' theorem states - visually!</p>
-                    <p className="font-medium">From areas → To finding lengths using square roots</p>
-                  </div>
+                  <h4 className="font-medium text-purple-800 mb-2">Common Misconceptions</h4>
+                  <ul className="text-sm text-purple-700 space-y-1">
+                    <li>• Thinking a + b = c (adding sides not squares)</li>
+                    <li>• Confusing which side is the hypotenuse</li>
+                    <li>• Forgetting to take the square root at the end</li>
+                  </ul>
                 </div>
-                
-                {/* Amber box - Misconceptions */}
                 <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                  <h4 className="font-medium text-amber-800 mb-3">Common Misconceptions</h4>
-                  <ul className="list-disc list-inside space-y-2 text-amber-700 text-sm">
-                    <li><strong>"a + b = c"</strong> - We add the SQUARES, not the sides</li>
-                    <li><strong>Wrong side</strong> - c must be the hypotenuse (longest side)</li>
-                    <li><strong>Non-right triangles</strong> - Only works for right-angled triangles</li>
-                    <li><strong>Forgetting √</strong> - c² = 25 means c = √25 = 5, not c = 25</li>
+                  <h4 className="font-medium text-amber-800 mb-2">Extension</h4>
+                  <ul className="text-sm text-amber-700 space-y-1">
+                    <li>• Pythagorean triples: (3,4,5), (5,12,13), (8,15,17)</li>
+                    <li>• What happens if c² {"<"} a² + b²? (acute)</li>
+                    <li>• What happens if c² {">"} a² + b²? (obtuse)</li>
                   </ul>
                 </div>
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
