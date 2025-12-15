@@ -235,7 +235,7 @@ const QuestionDisplay = memo(({
       </div>
 
       {/* Question Body */}
-      <div className={`${colors.body} p-4 flex-grow flex flex-col`} style={{ minHeight: '180px' }}>
+      <div className={`${colors.body} p-4 flex-grow flex flex-col`} style={{ minHeight: '250px' }}>
         {/* Question Content - Centered */}
         <div className="flex-grow flex flex-col justify-center items-center text-center">
           {/* Question Text */}

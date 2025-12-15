@@ -1,5 +1,5 @@
 // src/components/math/visualizations/RightTriangleSVG.jsx
-// Pure SVG Right Triangle - V2.1 with improved label positioning
+// Pure SVG Right Triangle - V2.2 with orientation-aware label positioning
 
 import React from 'react';
 
@@ -35,7 +35,7 @@ const RightTriangleSVG = ({
   const visualRatio = Math.min(maxBase / 4, maxHeight / 3);
   const scale = visualRatio;
 
-  // Base triangle points
+  // Base triangle points (before transformation)
   const basePoints = {
     rightAngle: { x: padding, y: svgHeight - padding },
     baseEnd: { x: padding + 3.5 * scale, y: svgHeight - padding },
@@ -146,40 +146,77 @@ const RightTriangleSVG = ({
     return null;
   };
 
-  // Calculate label positions with better offsets
+  // Calculate label positions - ORIENTATION AWARE
+  // Push labels AWAY from the triangle center, perpendicular to each edge
   const getLabelPosition = (side) => {
     const triCenterX = (points.rightAngle.x + points.baseEnd.x + points.top.x) / 3;
     const triCenterY = (points.rightAngle.y + points.baseEnd.y + points.top.y) / 3;
+    const labelOffset = 20;
     
     if (side === 'base') {
+      // Base is from rightAngle to baseEnd
       const midX = (points.rightAngle.x + points.baseEnd.x) / 2;
       const midY = (points.rightAngle.y + points.baseEnd.y) / 2;
-      // Push label DOWN (away from triangle) - increased offset
-      return { x: midX, y: midY + 18 };
+      
+      // Get perpendicular direction
+      const dx = points.baseEnd.x - points.rightAngle.x;
+      const dy = points.baseEnd.y - points.rightAngle.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const perpX = -dy / len;
+      const perpY = dx / len;
+      
+      // Choose direction away from triangle center
+      const testX = midX + perpX * 10;
+      const testY = midY + perpY * 10;
+      const distFromCenter = Math.sqrt((testX - triCenterX) ** 2 + (testY - triCenterY) ** 2);
+      const distFromCenterOpp = Math.sqrt((midX - perpX * 10 - triCenterX) ** 2 + (midY - perpY * 10 - triCenterY) ** 2);
+      const sign = distFromCenter > distFromCenterOpp ? 1 : -1;
+      
+      return { x: midX + sign * perpX * labelOffset, y: midY + sign * perpY * labelOffset };
     }
     
     if (side === 'height') {
+      // Height is from rightAngle to top
       const midX = (points.rightAngle.x + points.top.x) / 2;
       const midY = (points.rightAngle.y + points.top.y) / 2;
-      // Push label LEFT (away from triangle) - increased offset
-      return { x: midX - 22, y: midY };
+      
+      // Get perpendicular direction
+      const dx = points.top.x - points.rightAngle.x;
+      const dy = points.top.y - points.rightAngle.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const perpX = -dy / len;
+      const perpY = dx / len;
+      
+      // Choose direction away from triangle center
+      const testX = midX + perpX * 10;
+      const testY = midY + perpY * 10;
+      const distFromCenter = Math.sqrt((testX - triCenterX) ** 2 + (testY - triCenterY) ** 2);
+      const distFromCenterOpp = Math.sqrt((midX - perpX * 10 - triCenterX) ** 2 + (midY - perpY * 10 - triCenterY) ** 2);
+      const sign = distFromCenter > distFromCenterOpp ? 1 : -1;
+      
+      return { x: midX + sign * perpX * labelOffset, y: midY + sign * perpY * labelOffset };
     }
     
     if (side === 'hypotenuse') {
+      // Hypotenuse is from baseEnd to top
       const midX = (points.baseEnd.x + points.top.x) / 2;
       const midY = (points.baseEnd.y + points.top.y) / 2;
-      // Push label UP-RIGHT (away from triangle)
+      
+      // Get perpendicular direction
       const dx = points.top.x - points.baseEnd.x;
       const dy = points.top.y - points.baseEnd.y;
       const len = Math.sqrt(dx * dx + dy * dy);
       const perpX = -dy / len;
       const perpY = dx / len;
-      // Determine which direction is away from center
+      
+      // Choose direction away from triangle center
       const testX = midX + perpX * 10;
       const testY = midY + perpY * 10;
-      const awayFromCenter = (testX - triCenterX) * perpX + (testY - triCenterY) * perpY > 0;
-      const sign = awayFromCenter ? 1 : -1;
-      return { x: midX + sign * perpX * 18, y: midY + sign * perpY * 18 };
+      const distFromCenter = Math.sqrt((testX - triCenterX) ** 2 + (testY - triCenterY) ** 2);
+      const distFromCenterOpp = Math.sqrt((midX - perpX * 10 - triCenterX) ** 2 + (midY - perpY * 10 - triCenterY) ** 2);
+      const sign = distFromCenter > distFromCenterOpp ? 1 : -1;
+      
+      return { x: midX + sign * perpX * labelOffset, y: midY + sign * perpY * labelOffset };
     }
     
     return { x: 0, y: 0 };

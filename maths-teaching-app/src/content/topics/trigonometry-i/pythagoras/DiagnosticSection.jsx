@@ -1,153 +1,143 @@
 // src/content/topics/trigonometry-i/pythagoras/DiagnosticSection.jsx
-// Pythagoras Diagnostic - Purple theme
-// V2.0 - Uses unified generators with LaTeX formatting
-// 3 question types: square area, square root from area, identify hypotenuse
+// Pythagoras Diagnostic Section - V2.2
+// Updated: 1,2,3 buttons in header (rounded-square style)
 
-import React, { useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { RefreshCw, Check, X } from 'lucide-react';
 import { useUI } from '../../../../context/UIContext';
 import MathDisplay from '../../../../components/common/MathDisplay';
-import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
 import SquareSVG from '../../../../components/math/visualizations/SquareSVG';
+import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
+import { squareGenerators } from '../../../../generators/geometry/squareGenerators';
+import pythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
 import _ from 'lodash';
 
 // ============================================================
-// V2 QUESTION GENERATORS - LaTeX formatted answers
+// CUSTOM SQUARE ROOT GENERATOR (with non-perfect squares)
+// Ensures all 4 options are unique
 // ============================================================
 
-/**
- * Generate square area question (given side, find area)
- * Returns v2 format with LaTeX options
- */
-const generateSquareArea = () => {
-  const side = _.random(3, 9);
-  const area = side * side;
+const generateUniqueOptions = (correctValue, possibleDistractors, formatFn) => {
+  const optionSet = new Set();
+  optionSet.add(correctValue);
   
-  // Generate plausible distractors
-  const distractors = _.shuffle([
-    side * 4,              // Perimeter mistake
-    side * 2,              // Doubling mistake  
-    side + side,           // Adding mistake
-    area + _.random(1, 5), // Close but wrong
-    area - _.random(1, 3)  // Close but wrong
-  ]).slice(0, 3);
-  
-  const options = _.shuffle([
-    { value: area, latex: `${area}\\text{ cm}^2`, isCorrect: true },
-    { value: distractors[0], latex: `${distractors[0]}\\text{ cm}^2`, isCorrect: false },
-    { value: distractors[1], latex: `${distractors[1]}\\text{ cm}^2`, isCorrect: false },
-    { value: distractors[2], latex: `${distractors[2]}\\text{ cm}^2`, isCorrect: false }
-  ]);
-  
-  return {
-    type: 'squareArea',
-    title: 'Area of a Square',
-    question: 'Find the area of this square:',
-    visualization: { 
-      type: 'square', 
-      sideLength: side, 
-      showSide: true, 
-      showArea: false 
-    },
-    options,
-    correctValue: area,
-    explanation: `\\text{Area} = \\text{side}^2 = ${side}^2 = ${area}\\text{ cm}^2`
-  };
-};
-
-/**
- * Generate square root question (given area, find side)
- * Returns v2 format with LaTeX options
- */
-const generateSquareRoot = () => {
-  const side = _.random(4, 10);
-  const area = side * side;
-  
-  // Generate plausible distractors
-  const distractors = _.shuffle([
-    area / 4,               // Dividing by 4 mistake
-    area / 2,               // Halving mistake
-    side + 1,               // Close but wrong
-    side - 1,               // Close but wrong
-    Math.floor(Math.sqrt(area + 10)) // Wrong square root
-  ]).filter(d => d > 0 && d !== side).slice(0, 3);
-  
-  const options = _.shuffle([
-    { value: side, latex: `${side}\\text{ cm}`, isCorrect: true },
-    { value: distractors[0], latex: `${distractors[0]}\\text{ cm}`, isCorrect: false },
-    { value: distractors[1], latex: `${distractors[1]}\\text{ cm}`, isCorrect: false },
-    { value: distractors[2], latex: `${distractors[2]}\\text{ cm}`, isCorrect: false }
-  ]);
-  
-  return {
-    type: 'squareRoot',
-    title: 'Square Root',
-    question: 'Find the side length of this square:',
-    visualization: { 
-      type: 'square', 
-      sideLength: side, 
-      showSide: false, 
-      showArea: true, 
-      areaLabel: `${area} cm²` 
-    },
-    options,
-    correctValue: side,
-    explanation: `\\text{Side} = \\sqrt{${area}} = ${side}\\text{ cm}`
-  };
-};
-
-/**
- * Generate identify hypotenuse question
- * Returns v2 format with orientation support
- */
-const generateIdentifyHypotenuse = () => {
-  // Random orientation for variety
-  const orientations = ['default', 'rotate90', 'rotate180', 'rotate270', 'flip'];
-  const orientation = _.sample(orientations);
-  
-  // Use letters or numbers randomly
-  const useLetters = Math.random() > 0.5;
-  
-  let labels, hypotenuseLabel, options;
-  
-  if (useLetters) {
-    labels = { base: 'a', height: 'b', hypotenuse: 'c' };
-    hypotenuseLabel = 'c';
-    options = _.shuffle([
-      { value: 'a', latex: 'a', isCorrect: false },
-      { value: 'b', latex: 'b', isCorrect: false },
-      { value: 'c', latex: 'c', isCorrect: true }
-    ]);
-  } else {
-    // Use Pythagorean triple values
-    const triples = [[3, 4, 5], [5, 12, 13], [6, 8, 10], [8, 15, 17]];
-    const [a, b, c] = _.sample(triples);
-    labels = { base: `${a}`, height: `${b}`, hypotenuse: `${c}` };
-    hypotenuseLabel = `${c}`;
-    options = _.shuffle([
-      { value: `${a}`, latex: `${a}\\text{ cm}`, isCorrect: false },
-      { value: `${b}`, latex: `${b}\\text{ cm}`, isCorrect: false },
-      { value: `${c}`, latex: `${c}\\text{ cm}`, isCorrect: true }
-    ]);
+  for (const d of possibleDistractors) {
+    if (d > 0 && d !== correctValue && !optionSet.has(d)) {
+      optionSet.add(d);
+      if (optionSet.size >= 4) break;
+    }
   }
   
-  return {
-    type: 'identifyHypotenuse',
-    title: 'Identify Hypotenuse',
-    question: 'Which side is the hypotenuse?',
-    visualization: { 
-      type: 'triangle', 
-      base: 6, 
-      height: 4, 
-      labels,
-      showRightAngle: true,
-      orientation
-    },
-    options,
-    correctValue: hypotenuseLabel,
-    explanation: `\\text{The hypotenuse is the longest side, opposite the right angle: } ${useLetters ? 'c' : hypotenuseLabel + '\\text{ cm}'}`
-  };
+  // If we still don't have 4, add some random variations
+  let offset = 1;
+  while (optionSet.size < 4) {
+    const candidate = correctValue + offset;
+    if (!optionSet.has(candidate) && candidate > 0) {
+      optionSet.add(candidate);
+    }
+    offset = offset > 0 ? -offset : -offset + 1;
+  }
+  
+  return _.shuffle(Array.from(optionSet).map(formatFn));
 };
+
+const generateSquareRootQuestion = () => {
+  const useCalculator = Math.random() > 0.5;
+  
+  if (useCalculator) {
+    // Non-perfect squares - calculator needed
+    const nonPerfectAreas = [20, 30, 45, 50, 72, 75, 80, 90, 125, 150];
+    const area = _.sample(nonPerfectAreas);
+    const side = Math.round(Math.sqrt(area) * 100) / 100;
+    
+    // Generate unique distractors
+    const possibleDistractors = [
+      Math.round((side + 0.5) * 100) / 100,
+      Math.round((side - 0.5) * 100) / 100,
+      Math.round((side + 1) * 100) / 100,
+      Math.round((side - 1) * 100) / 100,
+      Math.round(area / 4 * 100) / 100,
+      Math.round(area / 2 * 100) / 100,
+      Math.round(area / 3 * 100) / 100,
+    ];
+    
+    const options = generateUniqueOptions(
+      side, 
+      possibleDistractors, 
+      v => `${v}\\text{ cm}`
+    );
+    
+    return {
+      questionDisplay: {
+        text: 'Find the side length of a square with area',
+        math: `${area}\\text{ cm}^2`
+      },
+      correctAnswer: `${side}\\text{ cm}`,
+      options,
+      explanation: `Side length = √${area} ≈ ${side} cm (calculator needed)`,
+      visualization: {
+        type: 'square',
+        sideLength: side,
+        showDimensions: false,
+        showArea: true,
+        areaLabel: `${area} cm²`,
+        units: 'cm'
+      },
+      needsCalculator: true
+    };
+  } else {
+    // Perfect squares - no calculator
+    const perfectSquares = [16, 25, 36, 49, 64, 81, 100, 121, 144];
+    const area = _.sample(perfectSquares);
+    const side = Math.sqrt(area);
+    
+    // Generate unique distractors
+    const possibleDistractors = [
+      area / 4,
+      area / 2,
+      side + 1,
+      side - 1,
+      side + 2,
+      side * 2,
+      area / 3,
+    ];
+    
+    const options = generateUniqueOptions(
+      side, 
+      possibleDistractors, 
+      v => `${v}\\text{ cm}`
+    );
+    
+    return {
+      questionDisplay: {
+        text: 'Find the side length of a square with area',
+        math: `${area}\\text{ cm}^2`
+      },
+      correctAnswer: `${side}\\text{ cm}`,
+      options,
+      explanation: `Side length = √${area} = ${side} cm`,
+      visualization: {
+        type: 'square',
+        sideLength: side,
+        showDimensions: false,
+        showArea: true,
+        areaLabel: `${area} cm²`,
+        units: 'cm'
+      },
+      needsCalculator: false
+    };
+  }
+};
+
+// ============================================================
+// QUESTION TYPES
+// ============================================================
+
+const QUESTION_TYPES = [
+  { id: 'squareArea', label: '1', title: 'Find Square Area' },
+  { id: 'squareRoot', label: '2', title: 'Find Side Length' },
+  { id: 'identifyHypotenuse', label: '3', title: 'Identify Hypotenuse' }
+];
 
 // ============================================================
 // MAIN COMPONENT
@@ -155,189 +145,197 @@ const generateIdentifyHypotenuse = () => {
 
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
   const { showAnswers } = useUI();
-  
-  // State for all question data
-  const [q1, setQ1] = useState(() => generateSquareArea());
-  const [q2, setQ2] = useState(() => generateSquareRoot());
-  const [q3, setQ3] = useState(() => generateIdentifyHypotenuse());
-  
-  // State for selected answers (store the value, not the latex)
-  const [selected, setSelected] = useState({ q1: null, q2: null, q3: null });
-  
-  // State for which question is currently visible (1, 2, or 3)
-  const [activeQuestion, setActiveQuestion] = useState(1);
-  
-  // Mapping active state to its data and setter function
-  const questionMap = {
-    1: { 
-      data: q1, 
-      setter: setQ1, 
-      generator: generateSquareArea, 
-      selectedValue: selected.q1,
-      selectSetter: (v) => setSelected(s => ({ ...s, q1: v }))
-    },
-    2: { 
-      data: q2, 
-      setter: setQ2, 
-      generator: generateSquareRoot,
-      selectedValue: selected.q2,
-      selectSetter: (v) => setSelected(s => ({ ...s, q2: v }))
-    },
-    3: { 
-      data: q3, 
-      setter: setQ3, 
-      generator: generateIdentifyHypotenuse,
-      selectedValue: selected.q3,
-      selectSetter: (v) => setSelected(s => ({ ...s, q3: v }))
-    },
+  const [activeTypeIndex, setActiveTypeIndex] = useState(0);
+  const [regenerateKey, setRegenerateKey] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [hasAnswered, setHasAnswered] = useState(false);
+
+  // Generate question based on active type
+  const currentQuestion = useMemo(() => {
+    const typeId = QUESTION_TYPES[activeTypeIndex].id;
+    
+    switch (typeId) {
+      case 'squareArea':
+        return squareGenerators.generateSquareArea({ sectionType: 'diagnostic', units: 'cm' });
+      case 'squareRoot':
+        return generateSquareRootQuestion();
+      case 'identifyHypotenuse':
+        return pythagorasGenerators.identifyHypotenuse();
+      default:
+        return null;
+    }
+  }, [activeTypeIndex, regenerateKey]);
+
+  const handleTypeChange = (index) => {
+    setActiveTypeIndex(index);
+    setSelectedAnswer(null);
+    setHasAnswered(false);
   };
-  
-  const currentQ = questionMap[activeQuestion];
-  
-  // Handler to regenerate the current question
+
   const handleRegenerate = () => {
-    currentQ.setter(currentQ.generator());
-    currentQ.selectSetter(null);
+    setRegenerateKey(prev => prev + 1);
+    setSelectedAnswer(null);
+    setHasAnswered(false);
   };
-  
-  // Render visualization based on type
-  const renderVisualization = (viz) => {
-    if (viz.type === 'square') {
+
+  const handleAnswerSelect = (option) => {
+    if (hasAnswered) return;
+    setSelectedAnswer(option);
+    setHasAnswered(true);
+  };
+
+  const isCorrect = selectedAnswer === currentQuestion?.correctAnswer;
+
+  // Render question text
+  const renderQuestionDisplay = () => {
+    if (!currentQuestion?.questionDisplay) return null;
+    
+    const qd = currentQuestion.questionDisplay;
+    if (typeof qd === 'string') {
+      return <p className="text-lg text-gray-800">{qd}</p>;
+    }
+    if (qd.text && qd.math) {
+      return (
+        <p className="text-lg text-gray-800">
+          {qd.text} <MathDisplay math={qd.math} displayMode={false} />
+        </p>
+      );
+    }
+    return null;
+  };
+
+  // Render visualization
+  const renderVisualization = () => {
+    if (!currentQuestion?.visualization) return null;
+    
+    const viz = currentQuestion.visualization;
+    
+    // Square visualization
+    if (viz.type === 'square' || viz.sideLength !== undefined) {
       return (
         <SquareSVG
           sideLength={viz.sideLength}
-          showSide={viz.showSide}
-          showArea={viz.showArea}
+          showSide={viz.showDimensions !== false && !viz.showArea}
+          showArea={viz.showArea || false}
           areaLabel={viz.areaLabel}
-          units="cm"
-          size="normal"
+          units={viz.units || 'cm'}
+          showAnswer={showAnswers}
         />
       );
     }
     
-    if (viz.type === 'triangle') {
+    // Right triangle visualization
+    if (viz.type === 'right-triangle' || viz.base !== undefined) {
       return (
         <RightTriangleSVG
-          config={{
-            base: viz.base,
-            height: viz.height,
-            showRightAngle: viz.showRightAngle,
-            labels: viz.labels,
-            orientation: viz.orientation
-          }}
-          showAnswer={false}
+          config={viz}
+          showAnswer={showAnswers}
         />
       );
     }
     
     return null;
   };
-  
-  // Render options with LaTeX
-  const renderOptions = () => {
-    const question = currentQ.data;
-    const selectedValue = currentQ.selectedValue;
-    const onSelect = currentQ.selectSetter;
-    
-    return (
-      <div className="grid grid-cols-2 gap-3">
-        {question.options.map((option, i) => {
-          const isSelected = selectedValue === option.value;
-          const isCorrect = option.isCorrect;
-          
-          let buttonClass = 'p-4 rounded-lg border-2 text-center font-medium transition-all ';
-          
-          if (isSelected) {
-            // Show green or red immediately when selected
-            buttonClass += isCorrect 
-              ? 'bg-green-100 border-green-500 text-green-700'
-              : 'bg-red-100 border-red-500 text-red-700';
-          } else {
-            buttonClass += 'bg-gray-50 border-gray-200 hover:border-purple-300 hover:bg-purple-50';
-          }
-          
-          return (
-            <button
-              key={i}
-              onClick={() => onSelect(option.value)}
-              className={buttonClass}
-            >
-              <MathDisplay math={option.latex} />
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-6 mb-8">
       <div className="border-2 border-t-4 border-purple-500 rounded-xl bg-white shadow-md overflow-hidden">
-        {/* Header with title */}
-        <div className="bg-purple-500 text-white px-6 py-4">
-          <h2 className="text-xl font-bold">{currentQ.data.title}</h2>
-          <p className="text-purple-100 text-sm">Prerequisite Check</p>
-        </div>
         
+        {/* Header with 1,2,3 buttons */}
+        <div className="bg-purple-500 text-white px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold">Diagnostic: {QUESTION_TYPES[activeTypeIndex].title}</h2>
+              <p className="text-purple-100 text-sm">Check your prerequisite knowledge</p>
+            </div>
+            
+            {/* Question type selector - rounded-square buttons */}
+            <div className="flex items-center gap-2">
+              {QUESTION_TYPES.map((type, index) => (
+                <button
+                  key={type.id}
+                  onClick={() => handleTypeChange(index)}
+                  className={`w-10 h-10 rounded-lg font-bold text-lg transition-all ${
+                    activeTypeIndex === index
+                      ? 'bg-white text-purple-600 shadow-md'
+                      : 'bg-purple-400 text-white hover:bg-purple-300'
+                  }`}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="p-6">
-          
-          {/* Navigation Buttons */}
-          <div className="mb-6 flex justify-center gap-3">
-            {[1, 2, 3].map(num => {
-              const isActive = activeQuestion === num;
+          {/* Question */}
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-6">
+            {renderQuestionDisplay()}
+          </div>
+
+          {/* Visualization */}
+          <div className="flex justify-center mb-6" style={{ height: '200px' }}>
+            {renderVisualization()}
+          </div>
+
+          {/* Multiple Choice Options */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {currentQuestion?.options?.map((option, index) => {
+              const isSelected = selectedAnswer === option;
+              const isThisCorrect = option === currentQuestion.correctAnswer;
+              
+              let buttonClass = 'bg-gray-50 border-gray-200 hover:border-purple-400 hover:bg-purple-50';
+              
+              if (hasAnswered) {
+                if (isThisCorrect) {
+                  buttonClass = 'bg-green-100 border-green-500 text-green-800';
+                } else if (isSelected && !isThisCorrect) {
+                  buttonClass = 'bg-red-100 border-red-500 text-red-800';
+                } else {
+                  buttonClass = 'bg-gray-50 border-gray-200 opacity-50';
+                }
+              }
               
               return (
                 <button
-                  key={num}
-                  onClick={() => setActiveQuestion(num)}
-                  className={`w-12 h-12 rounded-full font-bold text-lg transition-all ${
-                    isActive 
-                      ? 'bg-purple-600 text-white ring-4 ring-purple-200' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-purple-100 hover:text-purple-600'
-                  }`}
+                  key={index}
+                  onClick={() => handleAnswerSelect(option)}
+                  disabled={hasAnswered}
+                  className={`p-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${buttonClass}`}
                 >
-                  {num}
+                  <MathDisplay math={option} displayMode={false} />
+                  {hasAnswered && isThisCorrect && <Check size={20} className="text-green-600" />}
+                  {hasAnswered && isSelected && !isThisCorrect && <X size={20} className="text-red-600" />}
                 </button>
               );
             })}
           </div>
-        
-          {/* Question Content */}
-          <div className="max-w-xl mx-auto">
-            <div className="bg-white rounded-xl border-2 border-purple-200 overflow-hidden">
-              {/* Regenerate button */}
-              <div className="px-4 py-2 flex justify-end items-center bg-gray-50 border-b">
-                <button
-                  onClick={handleRegenerate}
-                  className="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
-                  title="New question"
-                >
-                  <RefreshCw size={18} />
-                </button>
-              </div>
-              
-              {/* Question and visualization */}
-              <div className="p-6">
-                <p className="text-gray-700 mb-6 text-lg font-medium text-center">
-                  {currentQ.data.question}
-                </p>
-                
-                <div className="flex justify-center mb-6">
-                  {renderVisualization(currentQ.data.visualization)}
-                </div>
-                
-                {renderOptions()}
-                
-                {/* Show explanation when answer selected */}
-                {currentQ.selectedValue && (
-                  <div className="mt-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
-                    <MathDisplay math={currentQ.data.explanation} />
-                  </div>
+
+          {/* Feedback */}
+          {hasAnswered && (
+            <div className={`p-4 rounded-lg ${isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                {isCorrect ? (
+                  <><Check className="text-green-600" /><span className="font-semibold text-green-800">Correct!</span></>
+                ) : (
+                  <><X className="text-red-600" /><span className="font-semibold text-red-800">Not quite</span></>
                 )}
               </div>
+              <p className="text-sm text-gray-700">{currentQuestion.explanation}</p>
             </div>
+          )}
+
+          {/* Regenerate button */}
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={handleRegenerate}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+            >
+              <RefreshCw size={18} />
+              <span>New Question</span>
+            </button>
           </div>
-          
         </div>
       </div>
     </div>

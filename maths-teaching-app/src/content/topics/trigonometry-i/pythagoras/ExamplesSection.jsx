@@ -1,9 +1,9 @@
 // src/content/topics/trigonometry-i/pythagoras/ExamplesSection.jsx
-// Pythagoras Examples Section - V2.1
-// Fixed: Dynamic title per tab, no "working space" label, decimal support
+// Pythagoras Examples Section - V2.2
+// Updated: 1,2,3 buttons in header, refresh in viz box corner, larger shapes
 
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useUI } from '../../../../context/UIContext';
 import MathDisplay from '../../../../components/common/MathDisplay';
 import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
@@ -11,23 +11,22 @@ import IsoscelesTriangleSVG from '../../../../components/math/visualizations/Iso
 import pythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
 
 // ============================================================
-// TAB CONFIGURATION - with dynamic titles
+// TAB CONFIGURATION
 // ============================================================
 
 const TABS = [
-  { id: 1, label: 'Finding the Hypotenuse', shortLabel: 'Find Hypotenuse' },
-  { id: 2, label: 'Finding a Shorter Side', shortLabel: 'Find Short Side' },
-  { id: 3, label: 'Isosceles Triangle Area', shortLabel: 'Isosceles Area' }
+  { id: 1, label: '1', title: 'Finding the Hypotenuse' },
+  { id: 2, label: '2', title: 'Finding a Shorter Side' },
+  { id: 3, label: '3', title: 'Isosceles Triangle Area' }
 ];
 
 // ============================================================
 // EXAMPLE CARD COMPONENT
 // ============================================================
 
-const ExampleCard = ({ example, showAnswers, activeTab }) => {
+const ExampleCard = ({ example, showAnswers, activeTab, onRegenerate }) => {
   if (!example) return null;
   
-  // Determine visualization type based on tab
   const isIsosceles = activeTab === 3 || example.visualization?.type === 'isosceles-triangle';
   
   return (
@@ -40,25 +39,37 @@ const ExampleCard = ({ example, showAnswers, activeTab }) => {
 
       {/* Two column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Visualization */}
-        <div className="bg-gray-50 rounded-xl p-6 flex items-center justify-center" style={{ minHeight: '280px' }}>
-          {isIsosceles ? (
-            <IsoscelesTriangleSVG 
-              config={example.visualization} 
-              showAnswer={showAnswers} 
-            />
-          ) : (
-            <RightTriangleSVG 
-              config={example.visualization} 
-              showAnswer={showAnswers} 
-            />
-          )}
+        {/* Visualization with refresh button in corner */}
+        <div className="bg-gray-50 rounded-xl p-6 relative" style={{ minHeight: '340px' }}>
+          {/* Refresh button in top right corner */}
+          <button
+            onClick={onRegenerate}
+            className="absolute top-3 right-3 p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 transition-colors z-10"
+            title="New example"
+          >
+            <RefreshCw size={16} className="text-gray-600" />
+          </button>
+          
+          {/* Visualization - LARGER (scale up by 20%) */}
+          <div className="flex items-center justify-center h-full" style={{ transform: 'scale(1.2)', transformOrigin: 'center' }}>
+            {isIsosceles ? (
+              <IsoscelesTriangleSVG 
+                config={example.visualization} 
+                showAnswer={showAnswers} 
+              />
+            ) : (
+              <RightTriangleSVG 
+                config={example.visualization} 
+                showAnswer={showAnswers} 
+              />
+            )}
+          </div>
         </div>
 
-        {/* Blank working space - NO LABEL */}
+        {/* Blank working space */}
         <div 
           className="bg-white rounded-xl border-2 border-dashed border-gray-300" 
-          style={{ minHeight: '280px' }}
+          style={{ minHeight: '340px' }}
         />
       </div>
 
@@ -106,12 +117,8 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     setRegenerateKey(prev => prev + 1);
   };
 
-  const handlePrevTab = () => {
-    setActiveTab(prev => prev > 1 ? prev - 1 : TABS.length);
-  };
-
-  const handleNextTab = () => {
-    setActiveTab(prev => prev < TABS.length ? prev + 1 : 1);
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
   };
 
   // Get current tab info for dynamic title
@@ -121,62 +128,40 @@ const ExamplesSection = ({ currentTopic, currentLessonId }) => {
     <div className="space-y-6 mb-8">
       <div className="border-2 border-t-4 border-orange-500 rounded-xl bg-white shadow-md overflow-hidden">
         
-        {/* Header - DYNAMIC TITLE */}
+        {/* Header with 1,2,3 buttons */}
         <div className="bg-orange-500 text-white px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold">{currentTab?.label || 'Worked Examples'}</h2>
+              <h2 className="text-xl font-bold">{currentTab?.title || 'Worked Examples'}</h2>
               <p className="text-orange-100 text-sm">Step-by-step solutions to guide your working</p>
             </div>
-            <button
-              onClick={handleRegenerate}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
-            >
-              <RefreshCw size={18} />
-              <span>New Example</span>
-            </button>
+            
+            {/* Tab selector - rounded-square buttons */}
+            <div className="flex items-center gap-2">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`w-10 h-10 rounded-lg font-bold text-lg transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white text-orange-600 shadow-md'
+                      : 'bg-orange-400 text-white hover:bg-orange-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="p-6">
-          {/* Tab Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <button
-              onClick={handlePrevTab}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              <ChevronLeft size={24} />
-            </button>
-
-            <div className="flex gap-2">
-              {TABS.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-orange-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {tab.shortLabel}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={handleNextTab}
-              className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
-
           {/* Example Content */}
           <ExampleCard 
             example={example} 
             showAnswers={showAnswers} 
             activeTab={activeTab}
+            onRegenerate={handleRegenerate}
           />
 
           {/* Teaching Notes */}

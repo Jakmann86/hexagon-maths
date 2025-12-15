@@ -262,22 +262,52 @@ const identifyHypotenuse = (options = {}) => {
 };
 
 // ============================================================
-// GENERATORS: COORDINATE DISTANCE (Challenge) - BOUNDED TO GRID
+// GENERATORS: COORDINATE DISTANCE (Challenge) - WITH VARIETY
 // ============================================================
 
 const generateCoordinateChallenge = (options = {}) => {
-  // All points between -5 and 5 to fit in -6 to 6 grid
+  // Variety of point pairs with:
+  // - Negative gradients (B lower than A)
+  // - Different line lengths (short to long)
+  // - All points within -5 to 5 bounds
   const nicePairs = [
-    { p1: [1, 1], p2: [4, 5] },
-    { p1: [0, 0], p2: [3, 4] },
-    { p1: [-2, 1], p2: [1, 5] },
-    { p1: [-3, -2], p2: [0, 2] },
-    { p1: [-1, -1], p2: [2, 3] },
-    { p1: [1, -3], p2: [4, 1] },
-    { p1: [-2, 0], p2: [1, 4] },
-    { p1: [0, -2], p2: [4, 1] },
-    { p1: [-3, 1], p2: [0, 5] },
-    { p1: [-1, -2], p2: [2, 2] },
+    // SHORT distances (around 3-4 units) - positive gradient
+    { p1: [1, 1], p2: [4, 5] },           // d=5
+    { p1: [0, 0], p2: [3, 4] },           // d=5
+    { p1: [-1, 2], p2: [2, 6] },          // d=5
+    
+    // SHORT distances - negative gradient (B lower than A)
+    { p1: [1, 5], p2: [4, 1] },           // d=5, going DOWN
+    { p1: [-2, 4], p2: [1, 0] },          // d=5, going DOWN
+    { p1: [0, 3], p2: [4, 0] },           // d=5, going DOWN
+    
+    // MEDIUM distances (around 5-7 units) - positive gradient
+    { p1: [-3, -2], p2: [2, 3] },         // d≈7.07
+    { p1: [-2, -1], p2: [4, 4] },         // d≈7.81
+    { p1: [-4, 0], p2: [2, 5] },          // d≈7.81
+    
+    // MEDIUM distances - negative gradient
+    { p1: [-3, 4], p2: [3, -1] },         // d≈7.81, going DOWN
+    { p1: [-2, 5], p2: [4, 0] },          // d≈7.81, going DOWN
+    { p1: [0, 4], p2: [5, -1] },          // d≈7.07, going DOWN
+    
+    // LONGER distances (around 8-10 units) - positive gradient
+    { p1: [-4, -3], p2: [2, 5] },         // d=10
+    { p1: [-3, -4], p2: [5, 2] },         // d=10
+    { p1: [-5, 0], p2: [3, 6] },          // d=10, near edge
+    
+    // LONGER distances - negative gradient
+    { p1: [-4, 5], p2: [4, -1] },         // d=10, going DOWN
+    { p1: [-3, 4], p2: [5, -2] },         // d=10, going DOWN
+    { p1: [-5, 3], p2: [4, -3] },         // d≈10.8, going DOWN
+    
+    // HORIZONTAL and VERTICAL (edge cases)
+    { p1: [-4, 2], p2: [4, 2] },          // d=8, horizontal
+    { p1: [2, -4], p2: [2, 4] },          // d=8, vertical
+    
+    // VERY SHORT distances
+    { p1: [0, 0], p2: [2, 2] },           // d≈2.83
+    { p1: [-1, 3], p2: [1, 1] },          // d≈2.83, going DOWN
   ];
   
   const { p1: point1, p2: point2 } = _.sample(nicePairs);
@@ -286,6 +316,9 @@ const generateCoordinateChallenge = (options = {}) => {
   const dy = point2[1] - point1[1];
   const distanceSquared = dx * dx + dy * dy;
   const distance = roundTo(Math.sqrt(distanceSquared), 2);
+  
+  // Determine if line goes up or down for teaching notes
+  const gradient = dy >= 0 ? 'positive' : 'negative';
   
   return {
     title: 'Coordinate Geometry Challenge',
@@ -306,7 +339,7 @@ const generateCoordinateChallenge = (options = {}) => {
       showLine: true,
       distance, dx, dy
     },
-    point1, point2, dx, dy, distance
+    point1, point2, dx, dy, distance, gradient
   };
 };
 
