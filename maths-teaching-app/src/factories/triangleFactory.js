@@ -2,15 +2,26 @@
 // V2.1 - Added type field for VisualizationRenderer compatibility
 import _ from 'lodash';
 
-// Common Pythagorean triples for convenience
+// Common Pythagorean triples - SINGLE SOURCE OF TRUTH
+// Used by generators via import, not duplicated
 export const PYTHAGOREAN_TRIPLES = [
+  // Basic triples (good for easy/medium difficulty)
   [3, 4, 5],
   [5, 12, 13],
+  [6, 8, 10],    // 2× of 3,4,5
   [8, 15, 17],
   [7, 24, 25],
-  [9, 12, 15],
-  [6, 8, 10],
-  [15, 20, 25]
+  
+  // Scaled triples (good for medium/hard difficulty)
+  [9, 12, 15],   // 3× of 3,4,5
+  [12, 16, 20],  // 4× of 3,4,5
+  [15, 20, 25],  // 5× of 3,4,5
+  [10, 24, 26],  // 2× of 5,12,13
+  
+  // Larger triples (for challenge/extension)
+  [9, 40, 41],
+  [20, 21, 29],
+  [11, 60, 61],
 ];
 
 /**

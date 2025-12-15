@@ -1,9 +1,8 @@
 // src/components/sections/StarterSectionBase.jsx
-// UPGRADED VERSION v2.1
-// - Added 'square' case to VisualizationRenderer
-// - Colored headers with subtitles
-// - Expandable working out
-// - Works with standardised generator outputs
+// V3.0 - Gold Standard
+// - Individual regenerate buttons per question box
+// - Fixed separator line not bleeding onto shapes
+// - 300px min-height for boxes
 // - Pattern 2 compatible (visualization configs, not components)
 
 import React, { useState, useMemo, memo } from 'react';
@@ -75,23 +74,28 @@ const VisualizationRenderer = ({ visualization, visualizationType, showAnswers }
         />
       );
     
-    // NEW: Square visualization support
     case 'square':
       return (
         <SquareSVG
-          sideLength={visualization.sideLength}
-          showSide={visualization.showDimensions !== false}
-          showArea={visualization.showArea || false}
-          areaLabel={visualization.areaLabel}
-          units={visualization.units || 'cm'}
+          config={visualization}
           showAnswer={showAnswers}
         />
       );
     
     default:
-      // Fallback: try to render as content
-      console.warn(`Unknown visualization type: ${visualizationType || visualization.type}`);
-      return <ContentRenderer content={visualization} />;
+      // If no type but has rendering properties, try to render directly
+      if (visualization.grid) {
+        return (
+          <MagicSquareDisplay
+            grid={visualization.grid}
+            fullGrid={visualization.fullGrid}
+            size={visualization.size}
+            showAnswer={showAnswers}
+          />
+        );
+      }
+      console.warn('Unknown visualization type:', visualizationType || visualization.type);
+      return null;
   }
 };
 
@@ -105,43 +109,52 @@ const QuestionDisplay = memo(({
   subtitle,
   data,
   showAnswers,
-  renderQuestionContent // Legacy support for custom renderers
+  renderQuestionContent,
+  onRegenerate  // NEW: callback for individual regeneration
 }) => {
   const [showWorking, setShowWorking] = useState(false);
 
-  // Color configurations for each question type
+  // Color configuration by section type
   const colorConfig = {
     lastLesson: {
-      header: 'bg-blue-500',
+      header: 'bg-blue-600',
       headerText: 'text-white',
       body: 'bg-blue-50',
       border: 'border-blue-500',
       answerBorder: 'border-blue-300',
-      text: 'text-blue-700'
+      answerBg: 'bg-blue-100',
+      text: 'text-blue-700',
+      buttonHover: 'hover:bg-blue-500'
     },
     lastWeek: {
-      header: 'bg-green-500',
+      header: 'bg-green-600',
       headerText: 'text-white',
       body: 'bg-green-50',
       border: 'border-green-500',
       answerBorder: 'border-green-300',
-      text: 'text-green-700'
+      answerBg: 'bg-green-100',
+      text: 'text-green-700',
+      buttonHover: 'hover:bg-green-500'
     },
     lastTopic: {
-      header: 'bg-purple-500',
+      header: 'bg-purple-600',
       headerText: 'text-white',
       body: 'bg-purple-50',
       border: 'border-purple-500',
       answerBorder: 'border-purple-300',
-      text: 'text-purple-700'
+      answerBg: 'bg-purple-100',
+      text: 'text-purple-700',
+      buttonHover: 'hover:bg-purple-500'
     },
     lastYear: {
-      header: 'bg-amber-500',
+      header: 'bg-amber-600',
       headerText: 'text-white',
       body: 'bg-amber-50',
       border: 'border-amber-500',
       answerBorder: 'border-amber-300',
-      text: 'text-amber-700'
+      answerBg: 'bg-amber-100',
+      text: 'text-amber-700',
+      buttonHover: 'hover:bg-amber-500'
     }
   };
 
@@ -158,11 +171,22 @@ const QuestionDisplay = memo(({
   if (!data) {
     return (
       <div className={`border-2 ${colors.border} rounded-lg overflow-hidden shadow-sm`}>
-        <div className={`${colors.header} ${colors.headerText} px-4 py-2`}>
-          <h3 className="font-semibold">{title}</h3>
-          {subtitle && <p className="text-sm opacity-90">{subtitle}</p>}
+        <div className={`${colors.header} ${colors.headerText} px-4 py-2 flex justify-between items-center`}>
+          <div>
+            <h3 className="font-semibold">{title}</h3>
+            {subtitle && <p className="text-sm opacity-90">{subtitle}</p>}
+          </div>
+          {onRegenerate && (
+            <button
+              onClick={onRegenerate}
+              className={`p-1.5 rounded-md bg-white/20 ${colors.buttonHover} transition-colors`}
+              title="New question"
+            >
+              <RefreshCw size={14} />
+            </button>
+          )}
         </div>
-        <div className={`${colors.body} p-4 min-h-[180px] flex items-center justify-center`}>
+        <div className={`${colors.body} p-4 min-h-[220px] flex items-center justify-center`}>
           <p className="text-gray-500 italic">No question available</p>
         </div>
       </div>
@@ -228,14 +252,25 @@ const QuestionDisplay = memo(({
 
   return (
     <div className={`border-2 ${colors.border} rounded-lg overflow-hidden shadow-sm flex flex-col`}>
-      {/* Colored Header */}
-      <div className={`${colors.header} ${colors.headerText} px-4 py-2 flex-shrink-0`}>
-        <h3 className="font-semibold">{title}</h3>
-        {subtitle && <p className="text-sm opacity-90">{subtitle}</p>}
+      {/* Colored Header with individual regenerate button */}
+      <div className={`${colors.header} ${colors.headerText} px-4 py-2 flex-shrink-0 flex justify-between items-center`}>
+        <div>
+          <h3 className="font-semibold">{title}</h3>
+          {subtitle && <p className="text-sm opacity-90">{subtitle}</p>}
+        </div>
+        {onRegenerate && (
+          <button
+            onClick={onRegenerate}
+            className={`p-1.5 rounded-md bg-white/20 ${colors.buttonHover} transition-colors`}
+            title="New question"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
       </div>
 
-      {/* Question Body */}
-      <div className={`${colors.body} p-4 flex-grow flex flex-col`} style={{ minHeight: '250px' }}>
+      {/* Question Body - 220px min height (fits on IWB with title visible) */}
+      <div className={`${colors.body} p-4 flex-grow flex flex-col`} style={{ minHeight: '220px' }}>
         {/* Question Content - Centered */}
         <div className="flex-grow flex flex-col justify-center items-center text-center">
           {/* Question Text */}
@@ -247,7 +282,7 @@ const QuestionDisplay = memo(({
           {hasVisualization && (
             <div 
               className="w-full flex justify-center items-center mt-2" 
-              style={{ height: data.visualizationHeight || '100px' }}
+              style={{ height: data.visualizationHeight || '120px' }}
             >
               {renderQuestionContent ? (
                 // Legacy custom renderer
@@ -264,9 +299,9 @@ const QuestionDisplay = memo(({
           )}
         </div>
 
-        {/* Answer Section */}
+        {/* Answer Section - FIXED: separate background to prevent bleeding */}
         {showAnswers && data.answer && (
-          <div className={`mt-3 pt-3 border-t ${colors.answerBorder} flex-shrink-0`}>
+          <div className={`mt-4 p-3 rounded-lg ${colors.answerBg} border ${colors.answerBorder} flex-shrink-0`}>
             <div className="flex justify-between items-start">
               <div className="flex-grow">
                 <p className={`text-sm font-medium ${colors.text}`}>Answer:</p>
@@ -374,6 +409,19 @@ const StarterSectionBase = ({
     return initialQuestions;
   });
 
+  // Regenerate a single question
+  const regenerateSingleQuestion = (sectionType, index) => {
+    try {
+      const newQuestion = normalizedGenerators[index]();
+      setQuestions(prev => ({
+        ...prev,
+        [sectionType]: newQuestion
+      }));
+    } catch (e) {
+      console.error(`Error regenerating question for ${sectionType}:`, e);
+    }
+  };
+
   // Regenerate all questions
   const regenerateAllQuestions = () => {
     const newQuestions = {};
@@ -405,11 +453,12 @@ const StarterSectionBase = ({
             data={questions[sectionType]}
             showAnswers={showAnswers}
             renderQuestionContent={renderQuestionContent}
+            onRegenerate={() => regenerateSingleQuestion(sectionType, index)}
           />
         ))}
       </div>
 
-      {/* New Questions Button */}
+      {/* New Questions Button - regenerate all */}
       <div className="flex justify-center">
         <button
           onClick={regenerateAllQuestions}

@@ -1,18 +1,35 @@
 // src/components/math/visualizations/SquareSVG.jsx
-// Simple SVG square for starters and diagnostics - V2.1
+// Simple SVG square for starters and diagnostics - V3.0
+// Accepts either individual props OR config object (Pattern 2 compatible)
 // NO right angle markers (it's a square - all angles are 90°)
 
 import React from 'react';
 
 const SquareSVG = ({ 
-  sideLength, 
-  showSide = true, 
-  showArea = false, 
-  areaLabel = null,
-  units = 'cm',
+  // Can receive props individually OR via config object
+  config = {},
+  sideLength: sideLengthProp, 
+  showSide: showSideProp = true, 
+  showArea: showAreaProp = false, 
+  areaLabel: areaLabelProp = null,
+  units: unitsProp = 'cm',
   showAnswer = false,
-  size = 'normal'
+  size: sizeProp = 'normal'
 }) => {
+  // Extract from config or use direct props (direct props take precedence)
+  const sideLength = sideLengthProp ?? config.sideLength;
+  const showSide = showSideProp !== undefined ? showSideProp : (config.showDimensions !== false && !config.showArea);
+  const showArea = showAreaProp ?? config.showArea ?? false;
+  const areaLabel = areaLabelProp ?? config.areaLabel;
+  const units = unitsProp ?? config.units ?? 'cm';
+  const size = sizeProp ?? config.size ?? 'normal';
+
+  // Guard against missing sideLength
+  if (sideLength === undefined || sideLength === null) {
+    console.warn('SquareSVG: sideLength is required');
+    return null;
+  }
+
   const svgWidth = size === 'small' ? 100 : 140;
   const svgHeight = size === 'small' ? 100 : 140;
   const padding = size === 'small' ? 15 : 20;

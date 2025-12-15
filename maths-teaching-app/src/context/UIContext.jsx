@@ -1,3 +1,6 @@
+// src/context/UIContext.jsx
+// V3.0 - Added resetShowAnswers for section change behaviour
+
 import React, { createContext, useState, useContext, useCallback, useRef, useMemo } from 'react';
 
 // Extended UI Context
@@ -12,7 +15,7 @@ export const UIProvider = ({ children }) => {
     const showAnswersRef = useRef(showAnswersState);
     
     // Current section tracking
-    const [currentSection, setCurrentSection] = useState('starter');
+    const [currentSection, setCurrentSectionState] = useState('starter');
     
     // Timer functionality
     const [timerSeconds, setTimerSeconds] = useState(300); // Default 5 minutes
@@ -34,6 +37,21 @@ export const UIProvider = ({ children }) => {
         showAnswersRef.current = value;
         setShowAnswersState(value);
     }, []);
+    
+    // Reset showAnswers to false (for section changes)
+    const resetShowAnswers = useCallback(() => {
+        showAnswersRef.current = false;
+        setShowAnswersState(false);
+    }, []);
+    
+    // Set current section AND reset showAnswers
+    const setCurrentSection = useCallback((section) => {
+        // Only reset if actually changing to a different section
+        if (section !== currentSection) {
+            resetShowAnswers();
+        }
+        setCurrentSectionState(section);
+    }, [currentSection, resetShowAnswers]);
     
     // Timer functions
     const formatTime = useCallback(() => {
@@ -93,6 +111,7 @@ export const UIProvider = ({ children }) => {
         showAnswers,
         setShowAnswers,
         toggleAnswers,
+        resetShowAnswers,
         
         // Current section
         currentSection,
@@ -118,7 +137,9 @@ export const UIProvider = ({ children }) => {
         resetTimer, 
         adjustTimer,
         setShowAnswers,
-        toggleAnswers
+        toggleAnswers,
+        resetShowAnswers,
+        setCurrentSection
     ]);
 
     return (

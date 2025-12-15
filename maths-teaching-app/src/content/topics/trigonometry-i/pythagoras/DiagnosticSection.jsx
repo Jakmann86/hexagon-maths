@@ -1,6 +1,6 @@
 // src/content/topics/trigonometry-i/pythagoras/DiagnosticSection.jsx
-// Pythagoras Diagnostic Section - V2.2
-// Updated: 1,2,3 buttons in header (rounded-square style)
+// Pythagoras Diagnostic Section - V3.0 (Gold Standard)
+// Uses generators from centralised files - no duplicate code
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { RefreshCw, Check, X } from 'lucide-react';
@@ -11,123 +11,6 @@ import RightTriangleSVG from '../../../../components/math/visualizations/RightTr
 import { squareGenerators } from '../../../../generators/geometry/squareGenerators';
 import pythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
 import _ from 'lodash';
-
-// ============================================================
-// CUSTOM SQUARE ROOT GENERATOR (with non-perfect squares)
-// Ensures all 4 options are unique
-// ============================================================
-
-const generateUniqueOptions = (correctValue, possibleDistractors, formatFn) => {
-  const optionSet = new Set();
-  optionSet.add(correctValue);
-  
-  for (const d of possibleDistractors) {
-    if (d > 0 && d !== correctValue && !optionSet.has(d)) {
-      optionSet.add(d);
-      if (optionSet.size >= 4) break;
-    }
-  }
-  
-  // If we still don't have 4, add some random variations
-  let offset = 1;
-  while (optionSet.size < 4) {
-    const candidate = correctValue + offset;
-    if (!optionSet.has(candidate) && candidate > 0) {
-      optionSet.add(candidate);
-    }
-    offset = offset > 0 ? -offset : -offset + 1;
-  }
-  
-  return _.shuffle(Array.from(optionSet).map(formatFn));
-};
-
-const generateSquareRootQuestion = () => {
-  const useCalculator = Math.random() > 0.5;
-  
-  if (useCalculator) {
-    // Non-perfect squares - calculator needed
-    const nonPerfectAreas = [20, 30, 45, 50, 72, 75, 80, 90, 125, 150];
-    const area = _.sample(nonPerfectAreas);
-    const side = Math.round(Math.sqrt(area) * 100) / 100;
-    
-    // Generate unique distractors
-    const possibleDistractors = [
-      Math.round((side + 0.5) * 100) / 100,
-      Math.round((side - 0.5) * 100) / 100,
-      Math.round((side + 1) * 100) / 100,
-      Math.round((side - 1) * 100) / 100,
-      Math.round(area / 4 * 100) / 100,
-      Math.round(area / 2 * 100) / 100,
-      Math.round(area / 3 * 100) / 100,
-    ];
-    
-    const options = generateUniqueOptions(
-      side, 
-      possibleDistractors, 
-      v => `${v}\\text{ cm}`
-    );
-    
-    return {
-      questionDisplay: {
-        text: 'Find the side length of a square with area',
-        math: `${area}\\text{ cm}^2`
-      },
-      correctAnswer: `${side}\\text{ cm}`,
-      options,
-      explanation: `Side length = √${area} ≈ ${side} cm (calculator needed)`,
-      visualization: {
-        type: 'square',
-        sideLength: side,
-        showDimensions: false,
-        showArea: true,
-        areaLabel: `${area} cm²`,
-        units: 'cm'
-      },
-      needsCalculator: true
-    };
-  } else {
-    // Perfect squares - no calculator
-    const perfectSquares = [16, 25, 36, 49, 64, 81, 100, 121, 144];
-    const area = _.sample(perfectSquares);
-    const side = Math.sqrt(area);
-    
-    // Generate unique distractors
-    const possibleDistractors = [
-      area / 4,
-      area / 2,
-      side + 1,
-      side - 1,
-      side + 2,
-      side * 2,
-      area / 3,
-    ];
-    
-    const options = generateUniqueOptions(
-      side, 
-      possibleDistractors, 
-      v => `${v}\\text{ cm}`
-    );
-    
-    return {
-      questionDisplay: {
-        text: 'Find the side length of a square with area',
-        math: `${area}\\text{ cm}^2`
-      },
-      correctAnswer: `${side}\\text{ cm}`,
-      options,
-      explanation: `Side length = √${area} = ${side} cm`,
-      visualization: {
-        type: 'square',
-        sideLength: side,
-        showDimensions: false,
-        showArea: true,
-        areaLabel: `${area} cm²`,
-        units: 'cm'
-      },
-      needsCalculator: false
-    };
-  }
-};
 
 // ============================================================
 // QUESTION TYPES
@@ -158,7 +41,8 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
       case 'squareArea':
         return squareGenerators.generateSquareArea({ sectionType: 'diagnostic', units: 'cm' });
       case 'squareRoot':
-        return generateSquareRootQuestion();
+        // Now uses the generator from squareGenerators - no duplicate code!
+        return squareGenerators.generateSquareSideLength({ sectionType: 'diagnostic', units: 'cm' });
       case 'identifyHypotenuse':
         return pythagorasGenerators.identifyHypotenuse();
       default:
@@ -194,10 +78,12 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     if (typeof qd === 'string') {
       return <p className="text-lg text-gray-800">{qd}</p>;
     }
-    if (qd.text && qd.math) {
+    // Handle text with optional math (math can be empty string)
+    if (qd.text) {
       return (
         <p className="text-lg text-gray-800">
-          {qd.text} <MathDisplay math={qd.math} displayMode={false} />
+          {qd.text}
+          {qd.math && <> <MathDisplay math={qd.math} displayMode={false} /></>}
         </p>
       );
     }
@@ -274,8 +160,16 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
             {renderQuestionDisplay()}
           </div>
 
-          {/* Visualization */}
-          <div className="flex justify-center mb-6" style={{ height: '200px' }}>
+          {/* Visualization with refresh button in corner */}
+          <div className="flex justify-center mb-6 relative" style={{ height: '200px' }}>
+            {/* Small refresh button in top right corner */}
+            <button
+              onClick={handleRegenerate}
+              className="absolute top-0 right-0 p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 transition-colors z-10"
+              title="New question"
+            >
+              <RefreshCw size={16} className="text-gray-600" />
+            </button>
             {renderVisualization()}
           </div>
 
