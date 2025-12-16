@@ -1,8 +1,9 @@
 // src/content/topics/trigonometry-i/pythagoras/DiagnosticSection.jsx
-// Pythagoras Diagnostic Section - V3.0 (Gold Standard)
+// Pythagoras Diagnostic Section - V3.1 (Gold Standard)
 // Uses generators from centralised files - no duplicate code
+// Single small refresh button in visualization corner
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { RefreshCw, Check, X } from 'lucide-react';
 import { useUI } from '../../../../context/UIContext';
 import MathDisplay from '../../../../components/common/MathDisplay';
@@ -10,7 +11,6 @@ import SquareSVG from '../../../../components/math/visualizations/SquareSVG';
 import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
 import { squareGenerators } from '../../../../generators/geometry/squareGenerators';
 import pythagorasGenerators from '../../../../generators/geometry/pythagorasGenerators';
-import _ from 'lodash';
 
 // ============================================================
 // QUESTION TYPES
@@ -41,7 +41,6 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
       case 'squareArea':
         return squareGenerators.generateSquareArea({ sectionType: 'diagnostic', units: 'cm' });
       case 'squareRoot':
-        // Now uses the generator from squareGenerators - no duplicate code!
         return squareGenerators.generateSquareSideLength({ sectionType: 'diagnostic', units: 'cm' });
       case 'identifyHypotenuse':
         return pythagorasGenerators.identifyHypotenuse();
@@ -78,7 +77,6 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     if (typeof qd === 'string') {
       return <p className="text-lg text-gray-800">{qd}</p>;
     }
-    // Handle text with optional math (math can be empty string)
     if (qd.text) {
       return (
         <p className="text-lg text-gray-800">
@@ -96,7 +94,6 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     
     const viz = currentQuestion.visualization;
     
-    // Square visualization
     if (viz.type === 'square' || viz.sideLength !== undefined) {
       return (
         <SquareSVG
@@ -110,7 +107,6 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
       );
     }
     
-    // Right triangle visualization
     if (viz.type === 'right-triangle' || viz.base !== undefined) {
       return (
         <RightTriangleSVG
@@ -127,15 +123,13 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
     <div className="space-y-6 mb-8">
       <div className="border-2 border-t-4 border-purple-500 rounded-xl bg-white shadow-md overflow-hidden">
         
-        {/* Header with 1,2,3 buttons */}
+        {/* Header with 1,2,3 buttons only */}
         <div className="bg-purple-500 text-white px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold">Diagnostic: {QUESTION_TYPES[activeTypeIndex].title}</h2>
               <p className="text-purple-100 text-sm">Check your prerequisite knowledge</p>
             </div>
-            
-            {/* Question type selector - rounded-square buttons */}
             <div className="flex items-center gap-2">
               {QUESTION_TYPES.map((type, index) => (
                 <button
@@ -156,13 +150,12 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
 
         <div className="p-6">
           {/* Question */}
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-6">
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
             {renderQuestionDisplay()}
           </div>
 
-          {/* Visualization with refresh button in corner */}
-          <div className="flex justify-center mb-6 relative" style={{ height: '200px' }}>
-            {/* Small refresh button in top right corner */}
+          {/* Visualization with small refresh button in corner */}
+          <div className="flex justify-center mb-4 relative" style={{ height: '180px' }}>
             <button
               onClick={handleRegenerate}
               className="absolute top-0 right-0 p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 transition-colors z-10"
@@ -174,7 +167,7 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
           </div>
 
           {/* Multiple Choice Options */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             {currentQuestion?.options?.map((option, index) => {
               const isSelected = selectedAnswer === option;
               const isThisCorrect = option === currentQuestion.correctAnswer;
@@ -219,17 +212,6 @@ const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
               <p className="text-sm text-gray-700">{currentQuestion.explanation}</p>
             </div>
           )}
-
-          {/* Regenerate button */}
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={handleRegenerate}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
-            >
-              <RefreshCw size={18} />
-              <span>New Question</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -305,7 +305,7 @@ const QuestionDisplay = memo(({
             <div className="flex justify-between items-start">
               <div className="flex-grow">
                 <p className={`text-sm font-medium ${colors.text}`}>Answer:</p>
-                <div className="mt-1 font-semibold">
+                <div className="mt-1 font-medium">
                   {renderAnswer()}
                 </div>
               </div>

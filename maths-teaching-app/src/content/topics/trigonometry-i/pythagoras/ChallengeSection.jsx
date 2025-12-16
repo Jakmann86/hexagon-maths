@@ -1,6 +1,6 @@
 // src/content/topics/trigonometry-i/pythagoras/ChallengeSection.jsx
-// Pythagoras Challenge Section - V2.1
-// Fixed: Trophy icon, no hints, bounded coordinates
+// Pythagoras Challenge Section - V3.0
+// Small refresh button in visualization corner (like Examples/Diagnostic)
 
 import React, { useState, useMemo } from 'react';
 import { RefreshCw, Trophy } from 'lucide-react';
@@ -43,13 +43,6 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
                 <p className="text-red-100 text-sm">Apply Pythagoras' Theorem to coordinate geometry</p>
               </div>
             </div>
-            <button
-              onClick={handleRegenerate}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-            >
-              <RefreshCw size={18} />
-              <span>New Challenge</span>
-            </button>
           </div>
         </div>
 
@@ -62,8 +55,16 @@ const ChallengeSection = ({ currentTopic, currentLessonId }) => {
 
           {/* Two column layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Coordinate Grid */}
-            <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-center" style={{ minHeight: '400px' }}>
+            {/* Coordinate Grid with refresh button in corner */}
+            <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-center relative" style={{ minHeight: '400px' }}>
+              {/* Small refresh button in top right corner */}
+              <button
+                onClick={handleRegenerate}
+                className="absolute top-3 right-3 p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 transition-colors z-10"
+                title="New challenge"
+              >
+                <RefreshCw size={16} className="text-gray-600" />
+              </button>
               <CoordinateGridSVG 
                 config={{
                   ...challenge.visualization,

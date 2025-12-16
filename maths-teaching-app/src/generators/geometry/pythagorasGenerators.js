@@ -277,6 +277,7 @@ const identifyHypotenuse = (options = {}) => {
 // ============================================================
 
 // Variety of point pairs with different gradients and distances
+// NO horizontal or vertical lines - those don't require Pythagoras!
 const COORDINATE_PAIRS = [
   // SHORT distances - positive gradient
   { p1: [1, 1], p2: [4, 5] },           // d=5
@@ -308,13 +309,11 @@ const COORDINATE_PAIRS = [
   { p1: [-3, 4], p2: [5, -2] },         // d=10, going DOWN
   { p1: [-5, 3], p2: [4, -3] },         // d≈10.8, going DOWN
   
-  // HORIZONTAL and VERTICAL (edge cases)
-  { p1: [-4, 2], p2: [4, 2] },          // d=8, horizontal
-  { p1: [2, -4], p2: [2, 4] },          // d=8, vertical
-  
-  // VERY SHORT distances
+  // VERY SHORT distances (still diagonal - need Pythagoras)
   { p1: [0, 0], p2: [2, 2] },           // d≈2.83
   { p1: [-1, 3], p2: [1, 1] },          // d≈2.83, going DOWN
+  { p1: [1, 0], p2: [4, 3] },           // d≈4.24
+  { p1: [-2, -2], p2: [1, 2] },         // d=5
 ];
 
 const generateCoordinateChallenge = (options = {}) => {
