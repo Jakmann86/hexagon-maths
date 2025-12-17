@@ -1,86 +1,122 @@
 // src/content/topics/trigonometry-i/sohcahtoa1/DiagnosticSection.jsx
-import React, { useState } from 'react';
+// SOHCAHTOA Diagnostic Section - V2.0
+// Uses DiagnosticSectionBase with RightTriangleSVG (not JSXGraph)
+// Tests: equation solving, calculator skills, triangle labeling (O/A/H)
+
+import React from 'react';
 import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSectionBase';
-import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
-import { useSectionTheme } from '../../../../hooks/useSectionTheme';
+import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
 import { equationGenerators } from '../../../../generators/algebra/equationGenerators';
-import SohcahtoaGenerators from '../../../../generators/geometry/sohcahtoaGenerators';
+import sohcahtoaGenerators from '../../../../generators/geometry/sohcahtoaGenerators';
+
+// ============================================================
+// QUESTION TYPES CONFIGURATION
+// ============================================================
+
+const QUESTION_TYPES = [
+  { 
+    id: 'equations', 
+    label: '1', 
+    title: 'Solving Equations',
+    generator: () => equationGenerators.generateDivisionEquation({ 
+      sectionType: 'diagnostic' 
+    })
+  },
+  { 
+    id: 'calculator', 
+    label: '2', 
+    title: 'Calculator Skills',
+    generator: () => sohcahtoaGenerators.generateTrigCalculatorQuestion({ 
+      sectionType: 'diagnostic' 
+    })
+  },
+  { 
+    id: 'labeling', 
+    label: '3', 
+    title: 'Triangle Labeling',
+    generator: () => sohcahtoaGenerators.generateTriangleLabelingQuestion({ 
+      sectionType: 'diagnostic' 
+    })
+  }
+];
+
+// ============================================================
+// TEACHING NOTES
+// ============================================================
+
+const TEACHING_NOTES = {
+  keyPoints: [
+    'Students need confident equation solving before SOHCAHTOA',
+    'Calculator must be in DEGREE mode (not radians)',
+    'O/A/H are RELATIVE to the angle you\'re looking at'
+  ],
+  discussionQuestions: [
+    'What mode should your calculator be in for trigonometry?',
+    'If I move to a different angle, which side becomes the opposite?',
+    'Why is the hypotenuse always the same regardless of which angle?'
+  ],
+  commonMisconceptions: [
+    'Thinking the "opposite" is always the vertical side',
+    'Calculator in radian mode giving wrong answers',
+    'Confusing adjacent with hypotenuse'
+  ],
+  extensionIdeas: [
+    'What happens to sin(θ) as θ gets bigger?',
+    'Can sin or cos ever be greater than 1?',
+    'Why does tan(90°) cause an error?'
+  ]
+};
+
+// ============================================================
+// VISUALIZATION RENDERER
+// ============================================================
+
+const renderVisualization = (question) => {
+  if (!question?.visualization) return null;
+  
+  const viz = question.visualization;
+  
+  // Right triangle visualization using SVG component
+  if (viz.type === 'right-triangle') {
+    return (
+      <div className="flex justify-center items-center w-full" style={{ height: '200px' }}>
+        <RightTriangleSVG
+          config={{
+            base: viz.base,
+            height: viz.height,
+            hypotenuse: viz.hypotenuse,
+            angle: viz.angle,
+            showAngle: viz.showAngle,
+            anglePosition: viz.anglePosition || 'bottom-right',
+            unknownAngle: viz.unknownAngle,
+            labels: viz.labels,
+            showRightAngle: viz.showRightAngle !== false,
+            orientation: viz.orientation || 'default',
+            units: viz.units || 'cm'
+          }}
+          showAnswer={false}
+        />
+      </div>
+    );
+  }
+  
+  return null;
+};
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 
 const DiagnosticSection = ({ currentTopic, currentLessonId }) => {
-    // Add state to track question changes for triangle cycling
-    const [questionCounter, setQuestionCounter] = useState(0);
-
-    // Get theme colors for diagnostic section
-    const theme = useSectionTheme('diagnostic');
-
-    const questionTypes = {
-        equations: {
-            title: 'Solving Equations',
-            generator: () => {
-                setQuestionCounter(prev => prev + 1);
-                return equationGenerators.generateDivisionEquation({ sectionType: 'diagnostic' });
-            }
-        },
-        trigValues: {
-            title: 'Calculator Skills',
-            generator: () => {
-                setQuestionCounter(prev => prev + 1);
-                return SohcahtoaGenerators.generateTrigCalculatorQuestion({ sectionType: 'diagnostic' });
-            }
-        },
-        sideLabeling: {
-            title: 'Triangle Labeling',
-            generator: () => {
-                setQuestionCounter(prev => prev + 1);
-                return SohcahtoaGenerators.generateTriangleLabelingQuestion({ sectionType: 'diagnostic' });
-            }
-        }
-    };
-
-    // Custom visualization renderer for Pattern 2 conversion
-    const renderVisualization = (currentQuestion) => {
-        if (!currentQuestion.visualization) return null;
-        
-        // If it's already a React element, just return it
-        if (React.isValidElement(currentQuestion.visualization)) {
-            return (
-                <div className="flex justify-center items-center w-full my-4" style={{ height: '200px' }}>
-                    {currentQuestion.visualization}
-                </div>
-            );
-        }
-        
-        // Convert triangle config to component (Pattern 2)
-        if (currentQuestion.visualization.base && currentQuestion.visualization.height) {
-            return (
-                <div className="flex justify-center items-center w-full my-4" style={{ height: '200px' }}>
-                    <RightTriangle 
-                        {...currentQuestion.visualization} 
-                        containerHeight={180}
-                        sectionType="diagnostic"
-                        questionId={questionCounter} // Pass counter for orientation cycling
-                    />
-                </div>
-            );
-        }
-        
-        return null;
-    };
-
-    return (
-        <div className="space-y-6 mb-8">
-            {/* Use DiagnosticSectionBase with themed wrapper */}
-            <div className="border-2 border-t-4 border-purple-500 rounded-lg shadow-md bg-white overflow-hidden">
-                <DiagnosticSectionBase
-                    questionTypes={questionTypes}
-                    currentTopic={currentTopic}
-                    currentLessonId={currentLessonId}
-                    themeKey="diagnostic"
-                    renderVisualization={renderVisualization}
-                />
-            </div>
-        </div>
-    );
+  return (
+    <DiagnosticSectionBase
+      questionTypes={QUESTION_TYPES}
+      renderVisualization={renderVisualization}
+      teachingNotes={TEACHING_NOTES}
+      currentTopic={currentTopic}
+      currentLessonId={currentLessonId}
+    />
+  );
 };
 
 export default DiagnosticSection;

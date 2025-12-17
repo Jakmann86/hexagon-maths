@@ -1,323 +1,297 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+// src/components/sections/DiagnosticSectionBase.jsx
+// V1.0 - Gold Standard Base Component
+// Purple theme with darker header (bg-purple-600)
+// 1, 2, 3 tab buttons in header to switch question types
+// Small refresh button in visualization corner (not header)
+// MCQ format with immediate feedback (green/red)
+
+import React, { useState, useMemo, useCallback } from 'react';
 import { RefreshCw, Check, X } from 'lucide-react';
 import { Card, CardContent } from '../common/Card';
 import { useUI } from '../../context/UIContext';
-import { useSectionTheme } from '../../hooks/useSectionTheme';
 import ContentRenderer from '../common/ContentRenderer';
+import TeachingNotesPanel from './TeachingNotesPanel';
 
 /**
- * VisualizationRenderer - Generic renderer for visualization content
- * PATTERN 2 ENFORCED: Only accepts config objects, no React elements
- */
-const VisualizationRenderer = React.memo(({ visualization }) => {
-  if (!visualization) return null;
-
-  // Only support component+props pattern (config-based)
-  if (visualization.component && typeof visualization.component === 'function') {
-    const { component: Component, props = {} } = visualization;
-    return (
-      <div className="flex justify-center items-center w-full my-4" style={{ height: '240px' }}>
-        <Component {...props} />
-      </div>
-    );
-  }
-
-  // If we get here, it's likely a config object that needs custom rendering
-  console.warn('DiagnosticSectionBase: Visualization config received but no custom renderVisualization provided. Use the renderVisualization prop to convert configs to components.');
-  return (
-    <div className="flex justify-center items-center w-full my-4 text-gray-500 italic">
-      <p>Visualization requires custom renderer</p>
-    </div>
-  );
-});
-
-VisualizationRenderer.displayName = 'VisualizationRenderer';
-
-/**
- * DiagnosticSectionBase - Reusable template for diagnostic assessments
- * PATTERN 2 ARCHITECTURE: Generators return config objects, sections convert to components
+ * DiagnosticSectionBase - Reusable diagnostic assessment component
  * 
  * @param {Object} props
- * @param {Object} props.questionTypes - Question types with generators (must return config objects)
+ * @param {Array} props.questionTypes - Array of question type configs
+ *   Each config: { id: string, label: string, title: string, generator: Function }
+ * @param {Function} props.renderVisualization - Custom visualization renderer (config) => JSX
+ * @param {Object} props.teachingNotes - Standardized teaching notes object
+ * @param {Function} props.onQuestionComplete - Callback when question answered
+ * @param {string} props.className - Additional CSS classes
  * @param {string} props.currentTopic - Current topic ID
  * @param {number} props.currentLessonId - Current lesson ID
- * @param {Function} props.onQuestionComplete - Callback when question is answered
- * @param {string} props.themeKey - Theme key for styling
- * @param {React.ReactNode} props.loadingIndicator - Custom loading indicator
- * @param {Function} props.renderVisualization - REQUIRED for visualizations: converts config objects to React components
- * @param {boolean} props.autoSelectNextType - Auto select next question type after answering
  */
 const DiagnosticSectionBase = ({
-  questionTypes = {},
+  questionTypes = [],
+  renderVisualization = null,
+  teachingNotes = null,
+  onQuestionComplete = () => {},
+  className = '',
   currentTopic,
-  currentLessonId,
-  onQuestionComplete = () => { },
-  themeKey = 'diagnostic',
-  loadingIndicator,
-  renderVisualization,
-  autoSelectNextType = false,
-  className = ''
+  currentLessonId
 }) => {
-  // Get theme colors for the section
-  const theme = useSectionTheme(themeKey);
-
-  // Memoize the type keys to prevent recreating array on each render
-  const typeKeys = useMemo(() => Object.keys(questionTypes), [questionTypes]);
-
-  // State management for the current question and navigation
-  const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [showAnswer, setShowAnswer] = useState(false);
+  const { showAnswers } = useUI();
+  
+  // State
+  const [activeTypeIndex, setActiveTypeIndex] = useState(0);
+  const [regenerateKey, setRegenerateKey] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [answered, setAnswered] = useState(false);
-  const { setCurrentSection } = useUI();
+  const [hasAnswered, setHasAnswered] = useState(false);
 
-  // Set current section on mount
-  useEffect(() => {
-    setCurrentSection('diagnostic');
-  }, [setCurrentSection]);
-
-  // Generate new question when the component mounts or when type index changes
-  useEffect(() => {
-    if (typeKeys.length > 0) {
-      generateNewQuestion();
+  // Generate current question
+  const currentQuestion = useMemo(() => {
+    if (questionTypes.length === 0) return null;
+    
+    const currentType = questionTypes[activeTypeIndex];
+    if (!currentType?.generator) return null;
+    
+    try {
+      return currentType.generator();
+    } catch (error) {
+      console.error('Error generating diagnostic question:', error);
+      return {
+        questionDisplay: 'Error generating question',
+        options: ['Try another question'],
+        correctAnswer: 'Try another question'
+      };
     }
-  }, [currentTypeIndex, typeKeys.length]);
+  }, [activeTypeIndex, regenerateKey, questionTypes]);
 
-  // Question generation and management
-  const generateNewQuestion = useCallback(() => {
-    if (typeKeys.length === 0) return;
+  // Handlers
+  const handleTypeChange = useCallback((index) => {
+    setActiveTypeIndex(index);
+    setSelectedAnswer(null);
+    setHasAnswered(false);
+  }, []);
 
-    const currentTypeId = typeKeys[currentTypeIndex];
-    if (!questionTypes[currentTypeId]) return;
+  const handleRegenerate = useCallback(() => {
+    setRegenerateKey(prev => prev + 1);
+    setSelectedAnswer(null);
+    setHasAnswered(false);
+  }, []);
 
-    const generator = questionTypes[currentTypeId].generator;
-
-    if (typeof generator === 'function') {
-      try {
-        const question = generator();
-
-        // PATTERN 2 VALIDATION: Warn if generator returns React elements
-        if (question.visualization && React.isValidElement(question.visualization)) {
-          console.error('PATTERN 2 VIOLATION: Generator returned React element in visualization. Generators should return config objects only.');
-        }
-        if (question.questionDisplay && React.isValidElement(question.questionDisplay)) {
-          console.error('PATTERN 2 VIOLATION: Generator returned React element in questionDisplay. Generators should return config objects only.');
-        }
-
-        setCurrentQuestion(question);
-        setShowAnswer(false);
-        setSelectedAnswer(null);
-        setAnswered(false);
-      } catch (error) {
-        console.error("Error generating question:", error);
-        setCurrentQuestion({
-          questionDisplay: "Error generating question",
-          options: ["Try another question type"],
-          correctAnswer: "Try another question type"
-        });
-      }
-    }
-  }, [typeKeys, currentTypeIndex, questionTypes]);
-
-  // Handle answer selection
-  const checkAnswer = useCallback((option) => {
-    if (!currentQuestion || answered) return;
-
+  const handleAnswerSelect = useCallback((option) => {
+    if (hasAnswered) return;
+    
     setSelectedAnswer(option);
-    setShowAnswer(true);
-    setAnswered(true);
-
-    const isCorrect = option === currentQuestion.correctAnswer;
+    setHasAnswered(true);
+    
+    const isCorrect = option === currentQuestion?.correctAnswer;
     onQuestionComplete(isCorrect);
+  }, [hasAnswered, currentQuestion, onQuestionComplete]);
 
-    // Auto-select next question type if enabled
-    if (autoSelectNextType && isCorrect) {
-      const timer = setTimeout(() => {
-        setCurrentTypeIndex(prev => (prev + 1) % typeKeys.length);
-      }, 1500);
+  // Derived state
+  const isCorrect = selectedAnswer === currentQuestion?.correctAnswer;
+  const currentTypeTitle = questionTypes[activeTypeIndex]?.title || 'Diagnostic Question';
 
-      return () => clearTimeout(timer);
+  // Render question display
+  const renderQuestionDisplay = () => {
+    if (!currentQuestion?.questionDisplay) return null;
+    
+    const qd = currentQuestion.questionDisplay;
+    
+    // Object format with text and math
+    if (typeof qd === 'object' && qd.text) {
+      return (
+        <div className="space-y-2">
+          <p className="text-lg text-gray-800">{qd.text}</p>
+          {qd.math && (
+            <ContentRenderer
+              content={qd.math}
+              sectionType="diagnostic"
+              size="large"
+              center={true}
+            />
+          )}
+        </div>
+      );
     }
-  }, [currentQuestion, answered, onQuestionComplete, autoSelectNextType, typeKeys.length]);
+    
+    // String format
+    if (typeof qd === 'string') {
+      return (
+        <ContentRenderer
+          content={qd}
+          sectionType="diagnostic"
+          size="large"
+          center={true}
+        />
+      );
+    }
+    
+    return null;
+  };
 
-  // Render visualization with Pattern 2 enforcement
-  const renderQuestionVisualization = useCallback(() => {
+  // Render visualization - memoize result for conditional rendering
+  const visualizationContent = useMemo(() => {
     if (!currentQuestion) return null;
-
-    // PATTERN 2: Use custom renderer if provided (preferred approach)
-    if (renderVisualization && typeof renderVisualization === 'function') {
+    
+    // Use custom renderer if provided
+    if (renderVisualization) {
       return renderVisualization(currentQuestion);
     }
+    
+    // Check for visualization in question
+    const viz = currentQuestion.visualization || currentQuestion.shape;
+    if (!viz) return null;
+    
+    // If it's a component config with component and props
+    if (viz.component && typeof viz.component === 'function') {
+      const { component: Component, props = {} } = viz;
+      return <Component {...props} showAnswer={showAnswers} />;
+    }
+    
+    return null;
+  }, [currentQuestion, renderVisualization, showAnswers]);
 
-    // Fallback to generic renderer (limited functionality)
-    const visualization = currentQuestion.visualization || currentQuestion.shape;
-
-    if (!visualization) return null;
-
-    return <VisualizationRenderer visualization={visualization} />;
-  }, [currentQuestion, renderVisualization]);
-
-  // Get title based on current question type
-  const getCurrentTitle = useCallback(() => {
-    if (typeKeys.length === 0) return "Diagnostic Question";
-    const currentTypeId = typeKeys[currentTypeIndex];
-    return questionTypes[currentTypeId]?.title || "Diagnostic Question";
-  }, [typeKeys, currentTypeIndex, questionTypes]);
-
-  // Custom loading indicator or default
-  const renderLoadingState = () => {
-    if (loadingIndicator) return loadingIndicator;
-
+  // Loading state
+  if (questionTypes.length === 0 || !currentQuestion) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-pulse flex flex-col items-center">
-          <div className={`w-12 h-12 rounded-full bg-${theme.secondary} flex justify-center items-center mb-4`}>
-            <RefreshCw className={`w-6 h-6 text-${theme.secondaryText} animate-spin`} />
+          <div className="w-12 h-12 rounded-full bg-purple-100 flex justify-center items-center mb-4">
+            <RefreshCw className="w-6 h-6 text-purple-500 animate-spin" />
           </div>
           <div className="text-gray-600">Loading diagnostic questions...</div>
         </div>
       </div>
     );
-  };
-
-  // Loading state
-  if (typeKeys.length === 0 || !currentQuestion) {
-    return renderLoadingState();
   }
 
-  // Main render
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Header with title, new question button and navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 px-6 pt-6">
-        {/* Title - from question type */}
-        <h3 className="text-xl font-semibold text-gray-800">
-          {getCurrentTitle()}
-        </h3>
-
-        {/* New Question Button */}
-        <button
-          onClick={generateNewQuestion}
-          className={`flex items-center gap-2 px-4 py-2 bg-${theme.secondary} text-${theme.secondaryText} rounded-lg hover:bg-${theme.primary} hover:text-white transition-all`}
-        >
-          <RefreshCw size={18} />
-          <span>New Question</span>
-        </button>
-
-        {/* Navigation Buttons - Optimized for up to 5 tabs */}
-        <div className="flex gap-2">
-          {typeKeys.map((typeKey, index) => (
-            <button
-              key={typeKey}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${index === currentTypeIndex
-                ? `bg-${theme.primary} text-white`
-                : `bg-${theme.secondary} text-${theme.secondaryText} hover:bg-${theme.primaryHover} hover:text-white`
-                }`}
-              onClick={() => setCurrentTypeIndex(index)}
-              aria-label={questionTypes[typeKey]?.title || `Question Type ${index + 1}`}
-            >
-              {index + 1}
-            </button>
-          ))}
+    <div className={`space-y-6 mb-8 ${className}`}>
+      <div className="border-2 border-t-4 border-purple-500 rounded-xl bg-white shadow-md overflow-hidden">
+        
+        {/* Header - DARKER purple (bg-purple-600) with 1,2,3 tabs */}
+        <div className="bg-purple-600 text-white px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold">Diagnostic: {currentTypeTitle}</h2>
+              <p className="text-purple-100 text-sm">Check your prerequisite knowledge</p>
+            </div>
+            
+            {/* Tab buttons - 1, 2, 3 style */}
+            <div className="flex items-center gap-2">
+              {questionTypes.map((type, index) => (
+                <button
+                  key={type.id || index}
+                  onClick={() => handleTypeChange(index)}
+                  className={`w-10 h-10 rounded-lg font-bold text-lg transition-all ${
+                    activeTypeIndex === index
+                      ? 'bg-white text-purple-600 shadow-md'
+                      : 'bg-purple-500 text-white hover:bg-purple-400'
+                  }`}
+                >
+                  {type.label || index + 1}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Question Card */}
-      <Card>
-        <CardContent className="p-6">
-          {currentQuestion && (
-            <div className="space-y-6 w-full max-w-2xl mx-auto">
-              {/* Question Display */}
-              <div className="text-lg font-medium text-center text-gray-800 pb-4">
-                {/* Handle object format with separate text and math */}
-                {currentQuestion.questionDisplay && typeof currentQuestion.questionDisplay === 'object' && currentQuestion.questionDisplay.text ? (
-                  <div className="space-y-3">
-                    {/* Descriptive text above */}
-                    <div className="text-gray-700">
-                      {currentQuestion.questionDisplay.text}
-                    </div>
-                    {/* Math expression below */}
-                    <ContentRenderer
-                      content={currentQuestion.questionDisplay.math}
-                      sectionType={themeKey}
-                      size="large"
-                      center={true}
-                    />
-                  </div>
-                ) : (
-                  /* Fallback for simple string format */
+        <div className="p-6">
+          {/* Question Text */}
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
+            {renderQuestionDisplay()}
+          </div>
+
+          {/* Visualization with small refresh button in corner - only show if has visualization */}
+          {visualizationContent ? (
+            <div className="flex justify-center mb-4 relative" style={{ minHeight: '180px' }}>
+              {/* Small refresh button in top right corner */}
+              <button
+                onClick={handleRegenerate}
+                className="absolute top-0 right-0 p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 transition-colors z-10"
+                title="New question"
+              >
+                <RefreshCw size={16} className="text-gray-600" />
+              </button>
+              
+              {visualizationContent}
+            </div>
+          ) : (
+            /* Just show refresh button inline when no visualization */
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handleRegenerate}
+                className="p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 transition-colors"
+                title="New question"
+              >
+                <RefreshCw size={16} className="text-gray-600" />
+              </button>
+            </div>
+          )}
+
+          {/* Multiple Choice Options */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {currentQuestion?.options?.map((option, index) => {
+              const isSelected = selectedAnswer === option;
+              const isThisCorrect = option === currentQuestion.correctAnswer;
+              
+              let buttonClass = 'bg-gray-50 border-gray-200 hover:border-purple-400 hover:bg-purple-50';
+              
+              if (hasAnswered) {
+                if (isThisCorrect) {
+                  buttonClass = 'bg-green-100 border-green-500 text-green-800';
+                } else if (isSelected && !isThisCorrect) {
+                  buttonClass = 'bg-red-100 border-red-500 text-red-800';
+                } else {
+                  buttonClass = 'bg-gray-50 border-gray-200 opacity-50';
+                }
+              }
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAnswerSelect(option)}
+                  disabled={hasAnswered}
+                  className={`p-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${buttonClass}`}
+                >
                   <ContentRenderer
-                    content={currentQuestion.questionDisplay}
-                    sectionType={themeKey}
-                    size="large"
+                    content={option}
+                    sectionType="diagnostic"
+                    size="normal"
                     center={true}
                   />
+                  {hasAnswered && isThisCorrect && <Check size={20} className="text-green-600" />}
+                  {hasAnswered && isSelected && !isThisCorrect && <X size={20} className="text-red-600" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Feedback */}
+          {hasAnswered && (
+            <div className={`p-4 rounded-lg ${isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                {isCorrect ? (
+                  <>
+                    <Check className="text-green-600" />
+                    <span className="font-semibold text-green-800">Correct!</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="text-red-600" />
+                    <span className="font-semibold text-red-800">Not quite</span>
+                  </>
                 )}
               </div>
-
-              {/* Visualization */}
-              {renderQuestionVisualization()}
-
-              {/* Multiple Choice Options */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {currentQuestion.options.map((option, index) => (
-                  <button
-                    key={`option-${index}-${option}`}
-                    onClick={() => checkAnswer(option)}
-                    disabled={showAnswer}
-                    className={`
-                      relative p-3 rounded-lg border-2 transition-all 
-                      ${showAnswer
-                        ? option === currentQuestion.correctAnswer
-                          ? 'bg-green-50 border-green-500 text-green-700'
-                          : option === selectedAnswer
-                            ? 'bg-red-50 border-red-500 text-red-700'
-                            : 'bg-gray-50 border-gray-200 opacity-70'
-                        : `hover:bg-${theme.pastelBg} border-gray-200 hover:border-${theme.borderColor} hover:shadow-md`
-                      }
-                    `}
-                  >
-                    {/* Option Display - Force KaTeX for numeric answers */}
-                    <ContentRenderer
-                      content={option}
-                      sectionType={themeKey}
-                      size="normal"
-                      center={true}
-                    />
-
-                    {/* Correct Answer Indicator */}
-                    {showAnswer && option === currentQuestion.correctAnswer && (
-                      <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1 shadow-md">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-
-                    {/* Incorrect Answer Indicator */}
-                    {showAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
-                      <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1 shadow-md">
-                        <X className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Feedback Area (optional) */}
-              {showAnswer && currentQuestion.explanation && (
-                <div className={`mt-4 p-4 rounded-lg bg-${theme.pastelBg} border border-${theme.borderColor}`}>
-                  <h4 className={`font-medium text-${theme.pastelText} mb-2`}>Explanation:</h4>
-                  <ContentRenderer
-                    content={currentQuestion.explanation}
-                    sectionType={themeKey}
-                    size="normal"
-                  />
-                </div>
+              {currentQuestion.explanation && (
+                <p className="text-sm text-gray-700">{currentQuestion.explanation}</p>
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
+
+          {/* Teaching Notes */}
+          {showAnswers && teachingNotes && (
+            <TeachingNotesPanel teachingNotes={teachingNotes} />
+          )}
+        </div>
+      </div>
     </div>
   );
 };

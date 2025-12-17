@@ -1,192 +1,239 @@
 // src/components/sections/ChallengeSectionBase.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Lightbulb, RefreshCw } from 'lucide-react';
-import { Card, CardContent } from '../common/Card';
-import ContentRenderer from '../common/ContentRenderer';
+// V1.0 - Gold Standard Base Component
+// Red theme with darker header (bg-red-600)
+// Trophy icon in header
+// Two-column: visualization + blank working space
+// Small refresh button in corner
+// Solution steps when showAnswers=true
+
+import React, { useState, useMemo, useCallback } from 'react';
+import { RefreshCw, Trophy } from 'lucide-react';
 import { useUI } from '../../context/UIContext';
-import { useSectionTheme } from '../../hooks/useSectionTheme';
+import MathDisplay from '../common/MathDisplay';
+import ContentRenderer from '../common/ContentRenderer';
+import TeachingNotesPanel from './TeachingNotesPanel';
 
 /**
- * ChallengeSectionBase template provides a standardized way to display 
- * challenge problems with step-by-step solutions across different topics
+ * ChallengeSectionBase - Reusable challenge problem component
+ * 
+ * @param {Object} props
+ * @param {Array} props.challengeTypes - Array of challenge type configs (optional for tabs)
+ *   Each config: { id: string, title: string, generator: Function }
+ * @param {Function} props.generator - Single generator function (if not using tabs)
+ * @param {Function} props.renderVisualization - Custom visualization renderer (challenge, showAnswer) => JSX
+ * @param {Object} props.teachingNotes - Standardized teaching notes object
+ * @param {string} props.title - Default section title
+ * @param {string} props.subtitle - Section subtitle
+ * @param {string} props.className - Additional CSS classes
+ * @param {string} props.currentTopic - Current topic ID
+ * @param {number} props.currentLessonId - Current lesson ID
  */
 const ChallengeSectionBase = ({
-  challengeTypes = {},
+  challengeTypes = [],
+  generator = null,
+  renderVisualization = null,
+  teachingNotes = null,
+  title = 'Challenge Problem',
+  subtitle = 'Apply your knowledge to a harder problem',
+  className = '',
   currentTopic,
-  currentLessonId,
-  themeKey = 'challenge' // Default to challenge theme
+  currentLessonId
 }) => {
-  // Get theme colors for the section
-  const theme = useSectionTheme(themeKey);
+  const { showAnswers } = useUI();
+  
+  // State
+  const [activeTypeIndex, setActiveTypeIndex] = useState(0);
+  const [regenerateKey, setRegenerateKey] = useState(0);
 
-  // Memoize the type keys to prevent recreating array on each render
-  const typeKeys = useMemo(() => Object.keys(challengeTypes), [challengeTypes]);
+  // Determine if using tabs or single generator
+  const useTabs = challengeTypes.length > 0;
 
-  // State management
-  const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
-  const [currentChallenge, setCurrentChallenge] = useState(null);
-  const { setCurrentSection, showAnswers } = useUI();
-
-  // Set current section on mount
-  useEffect(() => {
-    setCurrentSection('challenge');
-  }, [setCurrentSection]);
-
-  // Generate new question when the component mounts or when type index changes
-  useEffect(() => {
-    if (typeKeys.length > 0) {
-      generateNewChallenge();
+  // Generate challenge - only regenerate on key change or tab change
+  const challenge = useMemo(() => {
+    try {
+      if (useTabs) {
+        const currentType = challengeTypes[activeTypeIndex];
+        if (!currentType?.generator) return null;
+        return currentType.generator();
+      } else if (generator) {
+        return generator();
+      }
+      return null;
+    } catch (error) {
+      console.error('Error generating challenge:', error);
+      return {
+        questionText: 'Error generating challenge',
+        answer: 'N/A',
+        solution: []
+      };
     }
-  }, [currentTypeIndex, typeKeys.length]); // Only depend on the length, not the array itself
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTypeIndex, regenerateKey]);  // Intentionally minimal deps - only regen on tab/key change
 
-  // Question generation and management
-  const generateNewChallenge = () => {
-    if (typeKeys.length === 0) return;
+  // Handlers
+  const handleRegenerate = useCallback(() => {
+    setRegenerateKey(prev => prev + 1);
+  }, []);
 
-    const currentTypeId = typeKeys[currentTypeIndex];
-    if (!challengeTypes[currentTypeId]) return;
+  const handleTypeChange = useCallback((index) => {
+    setActiveTypeIndex(index);
+  }, []);
 
-    const challenge = challengeTypes[currentTypeId].generator();
-    setCurrentChallenge(challenge);
-  };
-
-  // Shape rendering logic
-  const renderShape = () => {
-    if (!currentChallenge?.shapeConfig) return null;
-
-    const { component: ShapeComponent, props } = currentChallenge.shapeConfig;
-
-    if (ShapeComponent && props) {
-      return (
-        <div className="w-full my-10" style={{ height: '380px' }}>
-          <ShapeComponent {...props} />
-        </div>
-      );
+  // Get current title
+  const currentTitle = useMemo(() => {
+    if (useTabs && challengeTypes[activeTypeIndex]?.title) {
+      return challengeTypes[activeTypeIndex].title;
     }
+    return challenge?.title || title;
+  }, [useTabs, challengeTypes, activeTypeIndex, challenge, title]);
 
+  // Render visualization
+  const renderChallengeVisualization = () => {
+    if (!challenge) return null;
+    
+    // Use custom renderer if provided
+    if (renderVisualization) {
+      return renderVisualization(challenge, showAnswers);
+    }
+    
+    // Check for shapeConfig pattern
+    if (challenge.shapeConfig?.component) {
+      const { component: Component, props = {} } = challenge.shapeConfig;
+      return <Component {...props} showAnswer={showAnswers} />;
+    }
+    
+    // Check for visualization config
+    if (challenge.visualization?.component) {
+      const { component: Component, props = {} } = challenge.visualization;
+      return <Component {...props} showAnswer={showAnswers} />;
+    }
+    
     return null;
   };
 
-  // Get title based on current question type
-  const getCurrentTitle = () => {
-    if (typeKeys.length === 0) return "Challenge Problem";
-    const currentTypeId = typeKeys[currentTypeIndex];
-    return challengeTypes[currentTypeId]?.title || "Challenge Problem";
-  };
-
   // Loading state
-  if (typeKeys.length === 0 || !currentChallenge) {
+  if (!challenge) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-12 h-12 rounded-full bg-red-100 flex justify-center items-center mb-4">
             <RefreshCw className="w-6 h-6 text-red-500 animate-spin" />
           </div>
-          <div className="text-gray-600">Loading challenge problems...</div>
+          <div className="text-gray-600">Loading challenge problem...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with title, new question button and navigation - matches other sections */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 px-6 pt-6">
-        {/* Title - from question type */}
-        <h3 className="text-xl font-semibold text-gray-800">
-          {getCurrentTitle()}
-        </h3>
-
-        {/* New Question Button - In the middle */}
-        <button
-          onClick={generateNewChallenge}
-          className={`flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all`}
-        >
-          <RefreshCw size={18} />
-          <span>New Challenge</span>
-        </button>
-
-        {/* Navigation Buttons (1,2,3) - Matching Examples style */}
-        <div className="flex gap-2">
-          {typeKeys.map((_, index) => (
-            <button
-              key={index}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${index === currentTypeIndex
-                ? 'bg-red-500 text-white'
-                : 'bg-red-100 text-red-700 hover:bg-red-200'
-                }`}
-              onClick={() => {
-                setCurrentTypeIndex(index);
-              }}
-            >
-              {index + 1}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Challenge Card */}
-      <Card className="shadow-lg overflow-hidden">
-        <CardContent className="p-6">
-          <div className="space-y-8 max-w-4xl mx-auto">
-            {/* Problem Statement - Made wider */}
-            <div className="bg-red-50 p-5 rounded-lg mb-6">
-              <ContentRenderer
-                content={currentChallenge.problemText}
-                sectionType="challenge"
-                size="large"
-                color="default"
-                fontWeight="normal"
-                className="text-gray-800"
-              />
+    <div className={`space-y-6 mb-8 ${className}`}>
+      <div className="border-2 border-t-4 border-red-500 rounded-xl bg-white shadow-md overflow-hidden">
+        
+        {/* Header - DARKER red (bg-red-600) with Trophy icon */}
+        <div className="bg-red-600 text-white px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              {/* Trophy Icon */}
+              <div className="bg-yellow-400 p-2 rounded-lg">
+                <Trophy size={24} className="text-yellow-800" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">{currentTitle}</h2>
+                <p className="text-red-100 text-sm">{subtitle}</p>
+              </div>
             </div>
-
-            {/* Shape Visualization - with increased gap */}
-            <div className="mb-6">
-              {renderShape()}
-            </div>
-
-            {/* Solution Steps - Enhanced with ContentRenderer */}
-            {showAnswers && currentChallenge.solution && (
-              <div className="p-5 bg-green-50 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-800 mb-4">Solution:</h4>
-                <div className="space-y-3">
-                  {currentChallenge.solution.map((step, index) => (
-                    <div key={index} className="mb-3">
-                      {/* Step explanation using ContentRenderer */}
-                      <div className="mb-2">
-                        <ContentRenderer
-                          content={step.explanation}
-                          sectionType="challenge"
-                          size="normal"
-                          color="default"
-                          fontWeight="normal"
-                          className="text-gray-700"
-                        />
-                      </div>
-
-                      {/* Step formula using ContentRenderer */}
-                      {step.formula && (
-                        <div className="mt-2 text-center">
-                          <ContentRenderer
-                            content={step.formula}
-                            sectionType="challenge"
-                            size="normal"
-                            center={true}
-                            mathOptions={{ displayMode: true }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+            
+            {/* Tab buttons (if using tabs) */}
+            {useTabs && (
+              <div className="flex items-center gap-2">
+                {challengeTypes.map((type, index) => (
+                  <button
+                    key={type.id || index}
+                    onClick={() => handleTypeChange(index)}
+                    className={`w-10 h-10 rounded-lg font-bold text-lg transition-all ${
+                      activeTypeIndex === index
+                        ? 'bg-white text-red-600 shadow-md'
+                        : 'bg-red-500 text-white hover:bg-red-400'
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
               </div>
             )}
-
-            {/* Action Buttons removed - using global buttons instead */}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="p-6">
+          {/* Question/Problem */}
+          <div className="bg-red-50 p-4 rounded-lg border border-red-200 mb-6">
+            <h4 className="text-red-800 font-semibold mb-2">Problem</h4>
+            <ContentRenderer
+              content={challenge.questionText || challenge.problemText}
+              sectionType="challenge"
+              size="large"
+              color="default"
+              fontWeight="normal"
+              className="text-gray-800"
+            />
+          </div>
+
+          {/* Two column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Visualization with refresh button in corner */}
+            <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-center relative" style={{ minHeight: '400px' }}>
+              {/* Small refresh button in top right corner */}
+              <button
+                onClick={handleRegenerate}
+                className="absolute top-3 right-3 p-2 bg-white hover:bg-gray-100 rounded-lg shadow-sm border border-gray-200 transition-colors z-10"
+                title="New challenge"
+              >
+                <RefreshCw size={16} className="text-gray-600" />
+              </button>
+              
+              {renderChallengeVisualization()}
+            </div>
+
+            {/* Blank working space */}
+            <div 
+              className="bg-white rounded-xl border-2 border-dashed border-gray-300" 
+              style={{ minHeight: '400px' }}
+            />
+          </div>
+
+          {/* Solution Steps */}
+          {showAnswers && challenge.solution && challenge.solution.length > 0 && (
+            <div className="mt-6 space-y-3">
+              <h4 className="font-semibold text-gray-700">Solution</h4>
+              <div className="space-y-2">
+                {challenge.solution.map((step, i) => (
+                  <div key={i} className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                    <p className="text-sm text-gray-600 mb-1">{step.explanation}</p>
+                    {step.formula && (
+                      <MathDisplay math={step.formula} displayMode={true} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Final Answer */}
+              {challenge.answer && (
+                <div className="p-4 bg-green-50 rounded-lg border-2 border-green-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-800 font-semibold">Answer:</span>
+                    <MathDisplay math={challenge.answer} displayMode={false} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Teaching Notes */}
+          {showAnswers && teachingNotes && (
+            <TeachingNotesPanel teachingNotes={teachingNotes} />
+          )}
+        </div>
+      </div>
     </div>
   );
 };

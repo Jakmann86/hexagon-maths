@@ -1,5 +1,5 @@
 // src/generators/geometry/pythagorasGenerators.js
-// Pythagoras' Theorem Question Generator - V3.0 (Gold Standard)
+// Pythagoras' Theorem Question Generator - V3.1 (Gold Standard)
 // 
 // ARCHITECTURE:
 // - Generators create question data (text, answer, solution steps)
@@ -14,6 +14,20 @@ import {
   createIsoscelesTriangle,
   PYTHAGOREAN_TRIPLES 
 } from '../../factories/triangleFactory';
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+// Orientations for Examples - includes "tricky" ones that challenge students
+const EXAMPLE_ORIENTATIONS = [
+  'default',           // Right angle bottom-left
+  'flip',              // Right angle bottom-right
+  'flip-vertical',     // Right angle top-left
+  'rotate90',          // Right angle rotated
+  'rotate270',         // Right angle rotated other way
+  'right-angle-apex',  // "Tent" shape - right angle at TOP, hypotenuse horizontal at bottom
+];
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -33,6 +47,8 @@ const formatAnswer = (value, units, places = 2) => {
   const rounded = typeof value === 'number' ? roundTo(value, places) : value;
   return units ? `${rounded}\\text{ ${units}}` : `${rounded}`;
 };
+
+const getRandomOrientation = () => _.sample(EXAMPLE_ORIENTATIONS);
 
 const getScaledTriple = (triple, scale) => triple.map(x => x * scale);
 
@@ -87,13 +103,14 @@ const generateFindHypotenuse = (options = {}) => {
       { explanation: 'Add', formula: `${cSquared} = c^2` },
       { explanation: 'Take the square root', formula: `c = \\sqrt{${cSquared}} = ${c}\\text{ ${units}}` }
     ],
-    // USE FACTORY for visualization config
+    // USE FACTORY for visualization config - with random orientation
     visualization: createPythagoreanTriangle({
       base: a,
       height: b,
       unknownSide: 'hypotenuse',
       units,
-      sectionType: 'examples'
+      sectionType: 'examples',
+      orientation: getRandomOrientation()
     }),
     title: 'Finding the Hypotenuse',
     metadata: { isExact, values: { a, b, c } }
@@ -154,13 +171,14 @@ const generateFindMissingSide = (options = {}) => {
       { explanation: 'Calculate', formula: `${unknownSide}^2 = ${cSquared} - ${knownLegSquared} = ${unknownSquared}` },
       { explanation: 'Take the square root', formula: `${unknownSide} = \\sqrt{${unknownSquared}} = ${unknownValue}\\text{ ${units}}` }
     ],
-    // USE FACTORY for visualization config
+    // USE FACTORY for visualization config - with random orientation
     visualization: createPythagoreanTriangle({
       base: a,
       height: b,
       unknownSide,
       units,
-      sectionType: 'examples'
+      sectionType: 'examples',
+      orientation: getRandomOrientation()
     }),
     title: 'Finding a Shorter Side',
     metadata: { values: { a, b, c, unknownSide } }
@@ -396,7 +414,8 @@ export const pythagorasGenerators = {
   NICE_ISOSCELES_TRIANGLES,
   COORDINATE_PAIRS,
   LETTER_SETS,
-  ORIENTATIONS
+  ORIENTATIONS,
+  EXAMPLE_ORIENTATIONS
 };
 
 export default pythagorasGenerators;

@@ -1,11 +1,51 @@
 // src/content/topics/trigonometry-i/pythagoras/LearnSection.jsx
-// Pythagoras Learn Section - V2.3
-// Fixed: No ABC labels (explicit name:''), individual toggles for all labels, comprehensive teacher notes
+// Pythagoras Learn Section - V3.0 (Using LearnSectionBase shell)
+// All visualization and control logic stays here - base just provides header + teaching notes
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import LearnSectionBase from '../../../../components/sections/LearnSectionBase';
 import MathDisplay from '../../../../components/common/MathDisplay';
-import { useUI } from '../../../../context/UIContext';
-import { RotateCcw, Eye, EyeOff, Square, AlertTriangle, BookOpen } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+
+// ============================================================
+// TEACHING NOTES - All 6 categories
+// ============================================================
+
+const TEACHING_NOTES = {
+  howToUse: [
+    'Use the Base and Height sliders to change the triangle dimensions',
+    'Toggle "Squares" to show/hide the squares on each side',
+    'Toggle individual area labels (a², b², c²) to create "predict and check" moments',
+    'Hide one label and ask students to calculate the missing area',
+    'Use "Formula" toggle to reveal the algebraic relationship'
+  ],
+  keyPoints: [
+    'The square on the hypotenuse equals the sum of squares on the other two sides',
+    'This ONLY works for right-angled triangles',
+    'The hypotenuse is always the longest side, opposite the right angle',
+    'We use AREA of squares, not perimeter'
+  ],
+  discussionQuestions: [
+    'Why are we using AREA not perimeter?',
+    'What happens if it\'s not a right angle?',
+    'Why is c always the longest side?',
+    'Can you predict the hypotenuse from a² + b²?',
+    'What real-world shapes use right angles?'
+  ],
+  commonMisconceptions: [
+    '"Just add the two sides to get the third" — No! We add SQUARES of sides',
+    '"The hypotenuse is any side" — It\'s always opposite the right angle',
+    '"Works for all triangles" — Only RIGHT-angled triangles',
+    'Forgetting to square root at the end when finding a side length'
+  ],
+  extensionIdeas: [
+    'Find Pythagorean triples: (3,4,5), (5,12,13), (8,15,17)...',
+    '3D distance: add z² to the formula',
+    'Prove using similar triangles',
+    'Link to coordinate geometry (distance formula)'
+  ],
+  funFact: 'Pythagoras (c. 570–495 BC) was an ancient Greek philosopher who founded a religious movement called Pythagoreanism. His followers believed "all is number" and that mathematics was the key to understanding the universe. Interestingly, the Babylonians knew this theorem 1000+ years before Pythagoras, and ancient Egyptians used 3-4-5 rope triangles to build the pyramids!'
+};
 
 // ============================================================
 // GEOMETRY UTILITIES
@@ -137,12 +177,12 @@ const PythagorasJSXGraph = ({
       
       boardRef.current = board;
       
-      // Triangle points - EXPLICITLY NO LABELS with name:''
+      // Triangle points
       const p1 = board.create('point', [0, 0], { visible: false, fixed: true, name: '', withLabel: false });
       const p2 = board.create('point', [base, 0], { visible: false, fixed: true, name: '', withLabel: false });
       const p3 = board.create('point', [0, height], { visible: false, fixed: true, name: '', withLabel: false });
       
-      // Triangle - explicitly no labels on vertices
+      // Triangle
       board.create('polygon', [p1, p2, p3], {
         fillColor: '#9333ea', fillOpacity: 0.3, strokeWidth: 3, strokeColor: '#7c3aed',
         vertices: { visible: false, withLabel: false, name: '' }, 
@@ -156,35 +196,30 @@ const PythagorasJSXGraph = ({
         strokeWidth: 1.5, strokeColor: '#7c3aed', withLabel: false, name: ''
       });
       
-      // Squares - always show when toggle on
+      // Squares
       if (showSquares) {
-        // Base square (red) - a²
-        const sq1 = board.create('polygon', [[0, 0], [base, 0], [base, -base], [0, -base]], {
+        board.create('polygon', [[0, 0], [base, 0], [base, -base], [0, -base]], {
           fillColor: '#ef4444', fillOpacity: 0.25, strokeWidth: 2, strokeColor: '#dc2626',
           vertices: { visible: false, withLabel: false, name: '' }, withLabel: false
         });
         
-        // Height square (blue) - b²
-        const sq2 = board.create('polygon', [[0, 0], [0, height], [-height, height], [-height, 0]], {
+        board.create('polygon', [[0, 0], [0, height], [-height, height], [-height, 0]], {
           fillColor: '#3b82f6', fillOpacity: 0.25, strokeWidth: 2, strokeColor: '#2563eb',
           vertices: { visible: false, withLabel: false, name: '' }, withLabel: false
         });
         
-        // Hypotenuse square (green) - c²
         const hypPoints = GeometryUtils.calculateHypotenuseSquarePoints(base, height);
-        const sq3 = board.create('polygon', hypPoints, {
+        board.create('polygon', hypPoints, {
           fillColor: '#22c55e', fillOpacity: 0.25, strokeWidth: 2, strokeColor: '#16a34a',
           vertices: { visible: false, withLabel: false, name: '' }, withLabel: false
         });
         
-        // Area labels - individual toggles
         if (showALabel) {
           board.create('text', [base / 2, -base / 2, `${areas.base} cm²`], { 
             fontSize: 14, color: '#dc2626', anchorX: 'middle', anchorY: 'middle', fontWeight: 'bold' 
           });
         }
         if (showBLabel) {
-          // Move b² label UP a bit so it doesn't clash with side length
           board.create('text', [-height / 2, height / 2 + 0.4, `${areas.height} cm²`], { 
             fontSize: 14, color: '#2563eb', anchorX: 'middle', anchorY: 'middle', fontWeight: 'bold' 
           });
@@ -197,7 +232,6 @@ const PythagorasJSXGraph = ({
         }
       }
       
-      // Side length labels - individual toggles
       if (showSideA) {
         board.create('text', [base / 2, showSquares ? -0.7 : -0.5, `${base} cm`], { 
           fontSize: 13, color: '#374151', anchorX: 'middle', anchorY: 'middle' 
@@ -255,7 +289,7 @@ const PythagorasJSXGraph = ({
 };
 
 // ============================================================
-// COMPONENTS
+// LOCAL COMPONENTS (Slider, ToggleChip)
 // ============================================================
 
 const Slider = ({ value, onChange, min, max, label }) => (
@@ -292,22 +326,21 @@ const ToggleChip = ({ active, onClick, label, color = 'gray' }) => {
 // ============================================================
 
 const LearnSection = ({ currentTopic, currentLessonId }) => {
-  const { showAnswers } = useUI();
-  
+  // State for controls
   const [base, setBase] = useState(3);
   const [height, setHeight] = useState(4);
   const [showSquares, setShowSquares] = useState(true);
   const [showFormula, setShowFormula] = useState(false);
   
   // Individual toggles for area labels
-  const [showALabel, setShowALabel] = useState(true);  // a² (red)
-  const [showBLabel, setShowBLabel] = useState(true);  // b² (blue)
-  const [showCLabel, setShowCLabel] = useState(true);  // c² (green)
+  const [showALabel, setShowALabel] = useState(true);
+  const [showBLabel, setShowBLabel] = useState(true);
+  const [showCLabel, setShowCLabel] = useState(true);
   
   // Individual toggles for side lengths
-  const [showSideA, setShowSideA] = useState(true);  // base
-  const [showSideB, setShowSideB] = useState(true);  // height
-  const [showSideC, setShowSideC] = useState(true);  // hypotenuse
+  const [showSideA, setShowSideA] = useState(true);
+  const [showSideB, setShowSideB] = useState(true);
+  const [showSideC, setShowSideC] = useState(true);
   
   const areas = useMemo(() => GeometryUtils.calculateSquareAreas(base, height), [base, height]);
   const hypotenuse = useMemo(() => Math.round(GeometryUtils.calculateHypotenuse(base, height) * 10) / 10, [base, height]);
@@ -324,182 +357,93 @@ const LearnSection = ({ currentTopic, currentLessonId }) => {
     setShowSideB(true);
     setShowSideC(true);
   };
-  
+
   return (
-    <div className="space-y-6 mb-8">
-      <div className="border-2 border-t-4 border-green-500 rounded-xl bg-white shadow-md overflow-hidden">
-        <div className="bg-green-500 text-white px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold">Learn: Pythagoras' Visual Proof</h2>
-              <p className="text-green-100 text-sm">Explore how the squares on each side are related</p>
-            </div>
-            <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
-              <RotateCcw size={18} /><span>Reset</span>
-            </button>
-          </div>
-        </div>
-        
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Panel - Controls */}
+    <LearnSectionBase
+      title="Learn: Pythagoras' Visual Proof"
+      subtitle="Explore how the squares on each side are related"
+      teachingNotes={TEACHING_NOTES}
+      onReset={handleReset}
+    >
+      {/* Main content grid - Controls (left) + Visualization (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel - Controls */}
+        <div className="space-y-4">
+          {/* Sliders */}
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h3 className="font-semibold text-green-800 mb-4">Triangle Dimensions</h3>
             <div className="space-y-4">
-              {/* Sliders */}
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <h3 className="font-semibold text-green-800 mb-4">Triangle Dimensions</h3>
-                <div className="space-y-4">
-                  <Slider value={base} onChange={setBase} min={2} max={8} label="Base (a)" />
-                  <Slider value={height} onChange={setHeight} min={2} max={8} label="Height (b)" />
-                </div>
-              </div>
-              
-              {/* Main toggles */}
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h3 className="font-semibold text-gray-700 mb-3">Display</h3>
-                <div className="flex flex-wrap gap-2">
-                  <ToggleChip active={showSquares} onClick={() => setShowSquares(!showSquares)} label="Squares" color="purple" />
-                  <ToggleChip active={showFormula} onClick={() => setShowFormula(!showFormula)} label="Formula" color="gray" />
-                </div>
-              </div>
-              
-              {/* Area label toggles */}
-              {showSquares && (
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <h3 className="font-semibold text-gray-700 mb-3">Area Labels</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <ToggleChip active={showALabel} onClick={() => setShowALabel(!showALabel)} label="a²" color="red" />
-                    <ToggleChip active={showBLabel} onClick={() => setShowBLabel(!showBLabel)} label="b²" color="blue" />
-                    <ToggleChip active={showCLabel} onClick={() => setShowCLabel(!showCLabel)} label="c²" color="green" />
-                  </div>
-                </div>
-              )}
-              
-              {/* Side length toggles */}
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h3 className="font-semibold text-gray-700 mb-3">Side Lengths</h3>
-                <div className="flex flex-wrap gap-2">
-                  <ToggleChip active={showSideA} onClick={() => setShowSideA(!showSideA)} label="a" color="gray" />
-                  <ToggleChip active={showSideB} onClick={() => setShowSideB(!showSideB)} label="b" color="gray" />
-                  <ToggleChip active={showSideC} onClick={() => setShowSideC(!showSideC)} label="c" color="gray" />
-                </div>
-              </div>
-            </div>
-            
-            {/* Center/Right Panel - Visualization */}
-            <div className="lg:col-span-2">
-              <div className="bg-amber-50 rounded-xl p-4 border border-amber-200" style={{ minHeight: '400px' }}>
-                <PythagorasJSXGraph 
-                  base={base} 
-                  height={height}
-                  showSquares={showSquares}
-                  showALabel={showALabel}
-                  showBLabel={showBLabel}
-                  showCLabel={showCLabel}
-                  showSideA={showSideA}
-                  showSideB={showSideB}
-                  showSideC={showSideC}
-                  showFormula={showFormula}
-                />
-              </div>
-              
-              {/* Relationship Box */}
-              <div className="mt-4 bg-gradient-to-r from-purple-50 to-green-50 p-4 rounded-lg border border-purple-200">
-                <h4 className="font-semibold text-gray-700 mb-2">The Relationship</h4>
-                <div className="flex items-center justify-center gap-4 text-lg">
-                  <span className="text-red-600 font-bold">{showALabel ? areas.base : '?'}</span>
-                  <span className="text-gray-500">+</span>
-                  <span className="text-blue-600 font-bold">{showBLabel ? areas.height : '?'}</span>
-                  <span className="text-gray-500">=</span>
-                  <span className="text-green-600 font-bold">{showCLabel ? areas.hypotenuse : '?'}</span>
-                </div>
-                <div className="text-center mt-2 text-sm text-gray-600">
-                  <MathDisplay math={`a^2 + b^2 = c^2 \\quad \\Rightarrow \\quad ${base}^2 + ${height}^2 = ${hypotenuse}^2`} displayMode={false} />
-                </div>
-              </div>
+              <Slider value={base} onChange={setBase} min={2} max={8} label="Base (a)" />
+              <Slider value={height} onChange={setHeight} min={2} max={8} label="Height (b)" />
             </div>
           </div>
           
-          {/* Teaching Notes - COMPREHENSIVE */}
-          {showAnswers && (
-            <div className="mt-6 border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Teaching Notes</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Fun Fact */}
-                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <BookOpen size={18} className="text-amber-700" />
-                    <h4 className="font-medium text-amber-800">Fun Fact</h4>
-                  </div>
-                  <p className="text-sm text-amber-700">
-                    Pythagoras (c. 570–495 BC) was an ancient Greek philosopher and mathematician who 
-                    founded a religious movement called Pythagoreanism. His followers believed that 
-                    "all is number" and that mathematics was the key to understanding the universe. 
-                    He was also a musician who discovered that musical harmony is based on mathematical ratios!
-                  </p>
-                </div>
-                
-                {/* Delivery Tips */}
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h4 className="font-medium text-green-800 mb-2">Delivery Tips</h4>
-                  <ul className="text-sm text-green-700 space-y-1">
-                    <li>• Start with 3-4-5 triangle (classic Pythagorean triple)</li>
-                    <li>• Toggle area labels to create "predict and check" moments</li>
-                    <li>• Have students calculate c² before revealing</li>
-                    <li>• Use slider to show relationship holds for ANY right triangle</li>
-                    <li>• Hide one square's label and ask students to calculate it</li>
-                  </ul>
-                </div>
-                
-                {/* Discussion Points */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-medium text-blue-800 mb-2">Discussion Points</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Why are we using AREA not perimeter?</li>
-                    <li>• What happens if it's not a right angle?</li>
-                    <li>• Why is c always the longest side?</li>
-                    <li>• Can you predict the hypotenuse from a² + b²?</li>
-                    <li>• What real-world shapes use right angles?</li>
-                  </ul>
-                </div>
-                
-                {/* Common Misconceptions */}
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <h4 className="font-medium text-red-800 mb-2">Common Misconceptions</h4>
-                  <ul className="text-sm text-red-700 space-y-1">
-                    <li>• "Just add the two sides to get the third" — No! We're adding SQUARES</li>
-                    <li>• "The hypotenuse is any side" — It's always opposite the right angle</li>
-                    <li>• "Works for all triangles" — Only RIGHT-angled triangles</li>
-                    <li>• Forgetting to square root at the end</li>
-                  </ul>
-                </div>
-                
-                {/* Historical Context */}
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <h4 className="font-medium text-purple-800 mb-2">Historical Context</h4>
-                  <ul className="text-sm text-purple-700 space-y-1">
-                    <li>• Babylonians knew this 1000+ years before Pythagoras!</li>
-                    <li>• Ancient Egyptians used 3-4-5 rope triangles to build pyramids</li>
-                    <li>• The Chinese "Gōu gǔ theorem" predates Greek proof</li>
-                    <li>• Over 400 different proofs exist today</li>
-                  </ul>
-                </div>
-                
-                {/* Extension Ideas */}
-                <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                  <h4 className="font-medium text-indigo-800 mb-2">Extension Ideas</h4>
-                  <ul className="text-sm text-indigo-700 space-y-1">
-                    <li>• Find Pythagorean triples: (3,4,5), (5,12,13), (8,15,17)...</li>
-                    <li>• 3D distance: add z² to the formula</li>
-                    <li>• Prove using similar triangles</li>
-                    <li>• Link to coordinate geometry (distance formula)</li>
-                  </ul>
-                </div>
+          {/* Main toggles */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h3 className="font-semibold text-gray-700 mb-3">Display</h3>
+            <div className="flex flex-wrap gap-2">
+              <ToggleChip active={showSquares} onClick={() => setShowSquares(!showSquares)} label="Squares" color="purple" />
+              <ToggleChip active={showFormula} onClick={() => setShowFormula(!showFormula)} label="Formula" color="gray" />
+            </div>
+          </div>
+          
+          {/* Area label toggles */}
+          {showSquares && (
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="font-semibold text-gray-700 mb-3">Area Labels</h3>
+              <div className="flex flex-wrap gap-2">
+                <ToggleChip active={showALabel} onClick={() => setShowALabel(!showALabel)} label="a²" color="red" />
+                <ToggleChip active={showBLabel} onClick={() => setShowBLabel(!showBLabel)} label="b²" color="blue" />
+                <ToggleChip active={showCLabel} onClick={() => setShowCLabel(!showCLabel)} label="c²" color="green" />
               </div>
             </div>
           )}
+          
+          {/* Side length toggles */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h3 className="font-semibold text-gray-700 mb-3">Side Lengths</h3>
+            <div className="flex flex-wrap gap-2">
+              <ToggleChip active={showSideA} onClick={() => setShowSideA(!showSideA)} label="a" color="gray" />
+              <ToggleChip active={showSideB} onClick={() => setShowSideB(!showSideB)} label="b" color="gray" />
+              <ToggleChip active={showSideC} onClick={() => setShowSideC(!showSideC)} label="c" color="gray" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Panel - Visualization */}
+        <div className="lg:col-span-2">
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200" style={{ minHeight: '400px' }}>
+            <PythagorasJSXGraph 
+              base={base} 
+              height={height}
+              showSquares={showSquares}
+              showALabel={showALabel}
+              showBLabel={showBLabel}
+              showCLabel={showCLabel}
+              showSideA={showSideA}
+              showSideB={showSideB}
+              showSideC={showSideC}
+              showFormula={showFormula}
+            />
+          </div>
+          
+          {/* Relationship Box */}
+          <div className="mt-4 bg-gradient-to-r from-purple-50 to-green-50 p-4 rounded-lg border border-purple-200">
+            <h4 className="font-semibold text-gray-700 mb-2">The Relationship</h4>
+            <div className="flex items-center justify-center gap-4 text-lg">
+              <span className="text-red-600 font-bold">{showALabel ? areas.base : '?'}</span>
+              <span className="text-gray-500">+</span>
+              <span className="text-blue-600 font-bold">{showBLabel ? areas.height : '?'}</span>
+              <span className="text-gray-500">=</span>
+              <span className="text-green-600 font-bold">{showCLabel ? areas.hypotenuse : '?'}</span>
+            </div>
+            <div className="text-center mt-2 text-sm text-gray-600">
+              <MathDisplay math={`a^2 + b^2 = c^2 \\quad \\Rightarrow \\quad ${base}^2 + ${height}^2 = ${hypotenuse}^2`} displayMode={false} />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </LearnSectionBase>
   );
 };
 
