@@ -1,9 +1,10 @@
 // src/content/topics/trigonometry-i/sohcahtoa2/StarterSection.jsx
+// V2.0 - Uses SVG components for visualizations
 import React from 'react';
 import _ from 'lodash';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
-import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
-import IsoscelesTriangle from '../../../../components/math/shapes/triangles/IsoscelesTriangle';
+import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
+import IsoscelesTriangleSVG from '../../../../components/math/visualizations/IsoscelesTriangleSVG';
 import { sohcahtoaGenerators } from '../../../../generators/geometry/sohcahtoaGenerators';
 import { pythagorasGenerators } from '../../../../generators/geometry/pythagorasGenerators';
 import { symbolPuzzleGenerators } from '../../../../generators/puzzles/symbolPuzzleGenerators';
@@ -11,49 +12,28 @@ import SymbolPuzzleDisplay from '../../../../components/math/puzzles/SymbolPuzzl
 
 /**
  * Generate a SOHCAHTOA side-finding question for "Last Lesson"
- * Mixed questions using sin/cos/tan to find sides
+ * Only side-finding questions (students haven't learned angles yet)
  */
 const generateSohcahtoaSideQuestion = () => {
-  // 50% chance of finding a side, 50% chance of finding angle (since this is transition to angle lesson)
-  const findAngle = Math.random() > 0.5;
-  
-  if (findAngle) {
-    // Generate angle-finding question (preview of this lesson)
-    const generatedQuestion = sohcahtoaGenerators.generateFindMissingAngleTrig({
-      sectionType: 'starter',
-      difficulty: 'easy'
-    });
-    
-    return {
-      question: generatedQuestion.questionText || generatedQuestion.question,
-      answer: generatedQuestion.answer,
-      visualization: (
-        <RightTriangle 
-          {...generatedQuestion.visualization} 
-          sectionType="starter"
-          orientation="default"
-        />
-      )
-    };
-  } else {
-    // Generate side-finding question (review of last lesson)
-    const generatedQuestion = sohcahtoaGenerators.generateFindMissingSideTrig({
-      sectionType: 'starter',
-      difficulty: 'easy'
-    });
-    
-    return {
-      question: generatedQuestion.questionText || generatedQuestion.question,
-      answer: generatedQuestion.answer,
-      visualization: (
-        <RightTriangle 
-          {...generatedQuestion.visualization} 
-          sectionType="starter"
-          orientation="default"
-        />
-      )
-    };
-  }
+  // Generate side-finding question (review of last lesson)
+  const generatedQuestion = sohcahtoaGenerators.generateFindMissingSideTrig({
+    sectionType: 'starter',
+    difficulty: 'easy'
+  });
+
+  return {
+    question: generatedQuestion.questionText || generatedQuestion.question,
+    answer: generatedQuestion.answer,
+    visualization: (
+      <RightTriangleSVG
+        config={{
+          ...generatedQuestion.visualization,
+          orientation: 'default' // Keep orientation consistent in starter
+        }}
+        showAnswer={false}
+      />
+    )
+  };
 };
 
 /**
@@ -63,21 +43,23 @@ const generateSohcahtoaSideQuestion = () => {
 const generateMixedPythagorasQuestion = () => {
   // Randomly decide whether to find the hypotenuse or a leg
   const findHypotenuse = Math.random() > 0.5;
-  
+
   if (findHypotenuse) {
     const generatedQuestion = pythagorasGenerators.generateFindHypotenuse({
       sectionType: 'starter',
       difficulty: 'easy'
     });
-    
+
     return {
       question: generatedQuestion.questionText || generatedQuestion.question,
       answer: generatedQuestion.answer,
       visualization: (
-        <RightTriangle 
-          {...generatedQuestion.visualization} 
-          sectionType="starter"
-          orientation="default"
+        <RightTriangleSVG
+          config={{
+            ...generatedQuestion.visualization,
+            orientation: 'default' // Keep orientation consistent in starter
+          }}
+          showAnswer={false}
         />
       )
     };
@@ -86,15 +68,17 @@ const generateMixedPythagorasQuestion = () => {
       sectionType: 'starter',
       difficulty: 'easy'
     });
-    
+
     return {
       question: generatedQuestion.questionText || generatedQuestion.question,
       answer: generatedQuestion.answer,
       visualization: (
-        <RightTriangle 
-          {...generatedQuestion.visualization} 
-          sectionType="starter"
-          orientation="default"
+        <RightTriangleSVG
+          config={{
+            ...generatedQuestion.visualization,
+            orientation: 'default' // Keep orientation consistent in starter
+          }}
+          showAnswer={false}
         />
       )
     };
@@ -110,15 +94,17 @@ const generateIsoscelesAreaQuestion = () => {
     sectionType: 'starter',
     difficulty: 'easy'
   });
-  
+
   return {
     question: generatedQuestion.questionText || generatedQuestion.question,
     answer: generatedQuestion.answer,
     visualization: (
-      <IsoscelesTriangle 
-        {...generatedQuestion.visualization} 
-        sectionType="starter"
-        orientation="default"
+      <IsoscelesTriangleSVG
+        config={{
+          ...generatedQuestion.visualization,
+          orientation: 'default' // Keep orientation consistent in starter
+        }}
+        showAnswer={false}
       />
     )
   };

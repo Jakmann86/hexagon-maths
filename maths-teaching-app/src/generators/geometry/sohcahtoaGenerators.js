@@ -635,6 +635,176 @@ const generateForExamplesTab = (tabIndex, options = {}) => {
 };
 
 // ============================================================
+// ANGLE OF ELEVATION/DEPRESSION GENERATOR
+// ============================================================
+
+/**
+ * Generate a real-world angle of elevation or depression problem
+ *
+ * @param {Object} options - Configuration options
+ * @param {string} options.type - 'elevation' | 'depression' | 'random'
+ * @param {string} options.difficulty - 'easy' | 'medium' | 'hard'
+ * @param {string} options.units - 'm' | 'cm' | 'km'
+ * @returns {Object} Question data object with real-world context
+ */
+const generateAngleOfElevationDepression = (options = {}) => {
+  const {
+    type = 'random',
+    difficulty = 'medium',
+    units = 'm'
+  } = options;
+
+  // Real-world scenarios
+  const scenarios = {
+    elevation: [
+      {
+        context: 'A person standing {distance} {units} from the base of a building looks up at the top.',
+        object: 'building',
+        heightRange: [20, 50],
+        distanceRange: [30, 60]
+      },
+      {
+        context: 'A drone is flying {height} {units} directly above a point on the ground. A photographer is standing {distance} {units} away from that point.',
+        object: 'drone',
+        heightRange: [60, 100],
+        distanceRange: [50, 80]
+      },
+      {
+        context: 'A ladder is placed {distance} {units} from the base of a wall and reaches {height} {units} up the wall.',
+        object: 'ladder top',
+        heightRange: [4, 8],
+        distanceRange: [2, 4]
+      },
+      {
+        context: 'A person is flying a kite. The horizontal distance from the person to the point directly below the kite is {distance} {units}. The kite is {height} {units} above the ground.',
+        object: 'kite',
+        heightRange: [30, 50],
+        distanceRange: [25, 45]
+      }
+    ],
+    depression: [
+      {
+        context: 'From the top of a {height} {units} tall lighthouse, a keeper spots a boat {distance} {units} from the base of the lighthouse.',
+        object: 'boat',
+        heightRange: [25, 40],
+        distanceRange: [40, 60]
+      },
+      {
+        context: 'A bird sits on top of a {height} {units} tall tree and looks down at a cat sitting {distance} {units} from the base of the tree.',
+        object: 'cat',
+        heightRange: [12, 20],
+        distanceRange: [10, 18]
+      },
+      {
+        context: 'From the top of a {height} {units} cliff, a hiker looks down at a tent {distance} {units} from the base of the cliff.',
+        object: 'tent',
+        heightRange: [35, 55],
+        distanceRange: [40, 70]
+      }
+    ]
+  };
+
+  // Determine type
+  const actualType = type === 'random' ? _.sample(['elevation', 'depression']) : type;
+  const scenario = _.sample(scenarios[actualType]);
+
+  // Generate dimensions based on difficulty
+  let height, distance;
+
+  if (difficulty === 'easy') {
+    // Use nice numbers - multiples of 5
+    height = _.random(scenario.heightRange[0], scenario.heightRange[1]);
+    height = Math.round(height / 5) * 5;
+    distance = _.random(scenario.distanceRange[0], scenario.distanceRange[1]);
+    distance = Math.round(distance / 5) * 5;
+  } else {
+    // Any integer
+    height = _.random(scenario.heightRange[0], scenario.heightRange[1]);
+    distance = _.random(scenario.distanceRange[0], scenario.distanceRange[1]);
+  }
+
+  // Calculate the angle using inverse tan (we have opposite and adjacent)
+  const angleRad = Math.atan(height / distance);
+  const angle = roundTo(angleRad * 180 / Math.PI, 1);
+
+  // Calculate ratio
+  const ratio = roundTo(height / distance, 3);
+
+  // Fill in the context string with actual values
+  const contextText = scenario.context
+    .replace('{height}', height)
+    .replace('{distance}', distance)
+    .replace(/{units}/g, units);
+
+  // Build solution steps
+  const solution = [
+    {
+      explanation: 'Draw a right-angled triangle with the given measurements',
+      formula: actualType === 'elevation'
+        ? '\\text{Angle of elevation is measured from horizontal upwards}'
+        : '\\text{Angle of depression is measured from horizontal downwards}'
+    },
+    {
+      explanation: `Identify the sides: opposite = ${height}\\text{ ${units}}, adjacent = ${distance}\\text{ ${units}}`,
+      formula: '\\text{We have O and A, so use } \\tan'
+    },
+    {
+      explanation: 'Write the tan ratio',
+      formula: `\\tan(\\theta) = \\frac{\\text{opposite}}{\\text{adjacent}} = \\frac{${height}}{${distance}}`
+    },
+    {
+      explanation: 'Calculate the ratio',
+      formula: `\\tan(\\theta) = ${ratio}`
+    },
+    {
+      explanation: 'Apply the inverse tan function',
+      formula: `\\theta = \\tan^{-1}(${ratio})`
+    },
+    {
+      explanation: 'Calculate using a calculator (in degree mode)',
+      formula: `\\theta = ${angle}°`
+    }
+  ];
+
+  // Create hints
+  const hints = [
+    `Draw a diagram showing the ${actualType === 'elevation' ? 'upward' : 'downward'} angle`,
+    `The vertical distance is ${height} ${units} and the horizontal distance is ${distance} ${units}`,
+    'You have opposite and adjacent - which inverse trig function uses these?',
+    'Remember to use tan⁻¹, not tan'
+  ];
+
+  return {
+    type: 'angle-elevation-depression',
+    title: `${actualType === 'elevation' ? 'Angle of Elevation' : 'Angle of Depression'}`,
+    questionText: `${contextText}\n\nFind the angle of ${actualType}.`,
+    visualization: {
+      type: 'right-triangle',
+      base: distance,
+      height: height,
+      hypotenuse: roundTo(Math.sqrt(height * height + distance * distance), 1),
+      angle: angle,
+      showAngle: false,
+      unknownAngle: true,
+      anglePosition: 'bottom-right',
+      labels: {
+        base: `${distance} ${units}`,
+        height: `${height} ${units}`,
+        angle: '?'
+      },
+      showRightAngle: true,
+      orientation: 'default',
+      units: units
+    },
+    answer: `${angle}°`,
+    solution: solution,
+    hints: hints,
+    context: actualType, // 'elevation' or 'depression'
+    scenario: scenario.object
+  };
+};
+
+// ============================================================
 // EXPORTS
 // ============================================================
 
@@ -646,15 +816,16 @@ export const sohcahtoaGenerators = {
   generateCalculatorPractice,
   generateExactValue,
   generateExactTrigValues, // Alias
-  
+  generateAngleOfElevationDepression,
+
   // Diagnostic generators
   generateTriangleLabelingQuestion,
   generateTrigCalculatorQuestion,
-  
+
   // Utility generators
   generateRandom,
   generateForExamplesTab,
-  
+
   // Constants
   COMMON_ANGLES,
   SPECIAL_ANGLES,
