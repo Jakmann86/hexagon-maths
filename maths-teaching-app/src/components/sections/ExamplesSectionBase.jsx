@@ -1,10 +1,11 @@
 // src/components/sections/ExamplesSectionBase.jsx
-// V1.0 - Gold Standard Base Component
+// V1.1 - Added WorksheetButtons at bottom
 // Orange theme with darker header (bg-orange-600)
 // 1, 2, 3 tab buttons for different example types
 // Two-column layout: visualization (left) + blank working space (right)
 // Small refresh button in visualization corner
 // Solution steps revealed when showAnswers=true
+// Worksheet download buttons at very end (teacher mode only)
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
@@ -12,6 +13,7 @@ import { useUI } from '../../context/UIContext';
 import MathDisplay from '../common/MathDisplay';
 import ContentRenderer from '../common/ContentRenderer';
 import TeachingNotesPanel from './TeachingNotesPanel';
+import WorksheetButtons from '../../worksheets/components/WorksheetButtons';
 
 /**
  * ExamplesSectionBase - Reusable worked examples component
@@ -28,6 +30,7 @@ import TeachingNotesPanel from './TeachingNotesPanel';
  * @param {string} props.className - Additional CSS classes
  * @param {string} props.currentTopic - Current topic ID
  * @param {number} props.currentLessonId - Current lesson ID
+ * @param {Object} props.worksheetConfig - Optional worksheet configuration override
  */
 const ExamplesSectionBase = ({
   tabs = [
@@ -42,7 +45,8 @@ const ExamplesSectionBase = ({
   subtitle = 'Step-by-step solutions to guide your working',
   className = '',
   currentTopic,
-  currentLessonId
+  currentLessonId,
+  worksheetConfig = null
 }) => {
   const { showAnswers } = useUI();
   
@@ -67,6 +71,19 @@ const ExamplesSectionBase = ({
     }
   }, [activeTab, regenerateKey, generateExample]);
 
+  // Collect all examples for worksheet generation
+  const allExamples = useMemo(() => {
+    if (!generateExample) return [];
+    
+    return tabs.map(tab => {
+      try {
+        return generateExample(tab.id);
+      } catch {
+        return null;
+      }
+    }).filter(Boolean);
+  }, [regenerateKey, generateExample, tabs]);
+
   // Handlers
   const handleRegenerate = useCallback(() => {
     setRegenerateKey(prev => prev + 1);
@@ -87,6 +104,17 @@ const ExamplesSectionBase = ({
     }
     return teachingNotes;
   }, [teachingNotes, activeTab]);
+
+  // Build worksheet config from props or defaults
+  const resolvedWorksheetConfig = useMemo(() => {
+    if (worksheetConfig) return worksheetConfig;
+    
+    return {
+      title: defaultTitle,
+      topic: currentTopic,
+      lessonId: currentLessonId,
+    };
+  }, [worksheetConfig, defaultTitle, currentTopic, currentLessonId]);
 
   // Render visualization
   const renderExampleVisualization = () => {
@@ -219,6 +247,12 @@ const ExamplesSectionBase = ({
           {showAnswers && resolvedTeachingNotes && (
             <TeachingNotesPanel teachingNotes={resolvedTeachingNotes} />
           )}
+
+          {/* Worksheet Download Buttons - always visible at bottom */}
+          <WorksheetButtons 
+            currentExamples={allExamples}
+            worksheetConfig={resolvedWorksheetConfig}
+          />
         </div>
       </div>
     </div>
