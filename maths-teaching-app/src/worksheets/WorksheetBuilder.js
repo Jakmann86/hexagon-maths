@@ -1,26 +1,27 @@
 // src/worksheets/WorksheetBuilder.js
-// V2.0 - Connected to real generators
-// Orchestrates worksheet generation using pythagorasGenerators
+// V3.0 - Uses dedicated worksheet generators
+// 
+// Practice Sheet: 12 questions over 2 pages + answer sheet
+// Worked Examples: 3 per page, blank then answers
 
 import PDFGenerator from './pdf/PDFGenerator';
 import { renderRightTriangle, renderIsoscelesTriangle } from './renderers/TriangleRenderer';
 import { renderCoordinateGrid } from './renderers/CoordinateRenderer';
+import { renderContextDiagram } from './renderers/ContextRenderer';
+import { pythagorasWorksheetGenerators } from './generators/pythagorasWorksheetGenerators';
 
-/**
- * Generate a test worksheet to verify the pipeline works
- * Downloads a simple PDF with text questions
- */
+// ============================================================
+// GENERATE TEST WORKSHEET (for testing pipeline)
+// ============================================================
+
 export const generateTestWorksheet = () => {
   const pdf = new PDFGenerator();
-  
   pdf.addHeader("Pythagoras' Theorem", "Test Worksheet");
   pdf.addFormulaHeader();
   
   const testQuestions = [
     { text: 'Find the hypotenuse: a = 3 cm, b = 4 cm', answer: '5 cm' },
     { text: 'Find the hypotenuse: a = 5 cm, b = 12 cm', answer: '13 cm' },
-    { text: 'Find the missing side: c = 10 cm, a = 6 cm', answer: '8 cm' },
-    { text: 'Find the missing side: c = 13 cm, b = 5 cm', answer: '12 cm' },
   ];
   
   testQuestions.forEach((q, i) => {
@@ -31,234 +32,129 @@ export const generateTestWorksheet = () => {
   return true;
 };
 
-/**
- * Generate worked examples worksheet from current examples
- * Creates ONE PDF with blank pages first, then answer pages
- * 
- * @param {Object} config - Worksheet configuration
- * @param {Array} examples - Array of example objects from generators
- */
+// ============================================================
+// GENERATE WORKED EXAMPLES
+// Page 1: 3 examples (blank)
+// Page 2: 3 examples (with answers)
+// ============================================================
+
 export const generateWorkedExamples = async (config, examples) => {
   const { title = "Pythagoras' Theorem", topic = 'pythagoras' } = config;
   
   const pdf = new PDFGenerator();
   
-  // === SECTION 1: BLANK WORKSHEETS ===
+  // === PAGE 1: BLANK ===
   pdf.addHeader(title, 'Worked Examples');
   pdf.addFormulaHeader();
   
-  for (let i = 0; i < examples.length; i++) {
+  for (let i = 0; i < Math.min(examples.length, 3); i++) {
     const example = examples[i];
     if (example) {
-      await addExampleToPdf(pdf, i + 1, example, false); // No answers
+      await addWorkedExampleToPdf(pdf, i + 1, example, false);
     }
   }
   
-  // === SECTION 2: WITH ANSWERS ===
-  pdf.addNewSection(); // Adds page break with section divider
+  // === PAGE 2: WITH ANSWERS ===
+  pdf.addNewSection();
   pdf.addHeader(title, 'Worked Examples — ANSWERS');
   pdf.addFormulaHeader();
   
-  for (let i = 0; i < examples.length; i++) {
+  for (let i = 0; i < Math.min(examples.length, 3); i++) {
     const example = examples[i];
     if (example) {
-      await addExampleToPdf(pdf, i + 1, example, true); // With answers
+      await addWorkedExampleToPdf(pdf, i + 1, example, true);
     }
   }
   
   pdf.save(`${topic}_worked_examples.pdf`);
-  
   return true;
 };
 
-/**
- * Generate practice worksheet with 12 questions + answer page
- * Mix of question types: find hypotenuse, find shorter side, isosceles
- * 
- * @param {Object} config - Worksheet configuration  
- * @param {Object} generators - Generator object (e.g., pythagorasGenerators)
- */
-export const generatePracticeWorksheet = async (config, generators) => {
+// ============================================================
+// GENERATE PRACTICE WORKSHEET
+// Page 1: Questions 1-6 (2x3 grid) - Basic
+// Page 2: Questions 7-12 (2x3 grid) - Application & Challenge
+// Page 3: Answer sheet
+// ============================================================
+
+export const generatePracticeWorksheet = async (config) => {
   const { title = "Pythagoras' Theorem", topic = 'pythagoras' } = config;
   
   const pdf = new PDFGenerator();
+  
+  // Generate 12 questions using worksheet generators
+  const questions = pythagorasWorksheetGenerators.generatePracticeWorksheet();
+  
+  // === PAGE 1: Questions 1-6 (Basic) ===
   pdf.addHeader(title, 'Practice Questions');
   pdf.addFormulaHeader();
   
-  // Generate 12 questions with variety
-  const questions = [];
-  
-  // Question distribution:
-  // Q1-4: Find hypotenuse (easy to medium)
-  // Q5-8: Find shorter side (easy to medium)  
-  // Q9-10: Isosceles (medium)
-  // Q11-12: Mixed/harder
-  
-  const questionTypes = [
-    { type: 'hypotenuse', difficulty: 'easy' },
-    { type: 'hypotenuse', difficulty: 'easy' },
-    { type: 'hypotenuse', difficulty: 'medium' },
-    { type: 'hypotenuse', difficulty: 'medium' },
-    { type: 'shorter', difficulty: 'easy' },
-    { type: 'shorter', difficulty: 'easy' },
-    { type: 'shorter', difficulty: 'medium' },
-    { type: 'shorter', difficulty: 'medium' },
-    { type: 'isosceles', difficulty: 'medium' },
-    { type: 'isosceles', difficulty: 'medium' },
-    { type: 'hypotenuse', difficulty: 'hard' },
-    { type: 'shorter', difficulty: 'hard' },
-  ];
-  
-  for (let i = 0; i < 12; i++) {
-    try {
-      const { type, difficulty } = questionTypes[i];
-      let question;
-      
-      if (generators) {
-        // Use real generators
-        switch (type) {
-          case 'hypotenuse':
-            question = generators.generateFindHypotenuse({ difficulty, allowDecimals: difficulty !== 'easy' });
-            break;
-          case 'shorter':
-            question = generators.generateFindMissingSide({ difficulty, allowDecimals: difficulty !== 'easy' });
-            break;
-          case 'isosceles':
-            question = generators.generateIsoscelesArea({ difficulty });
-            break;
-          default:
-            question = generators.generateFindHypotenuse({ difficulty });
-        }
-      } else {
-        // Fallback: create simple question objects
-        question = createFallbackQuestion(i, type, difficulty);
-      }
-      
-      questions.push(question);
-      
-    } catch (err) {
-      console.error(`Error generating question ${i + 1}:`, err);
-      questions.push(createFallbackQuestion(i, 'hypotenuse', 'easy'));
-    }
+  const page1Questions = questions.slice(0, 6);
+  for (let i = 0; i < page1Questions.length; i++) {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    await pdf.addPracticeQuestion(i + 1, page1Questions[i], col, row, renderVisualization);
   }
   
-  // Add questions to PDF (2 columns, 3 rows per page = 6 per page)
-  for (let i = 0; i < questions.length; i++) {
-    const question = questions[i];
-    
-    // New page after every 6 questions
-    if (i > 0 && i % 6 === 0) {
-      pdf.addNewSection();
-      pdf.addHeader(title, 'Practice Questions (continued)');
-    }
-    
-    // Add question with diagram
-    await addPracticeQuestionToPdf(pdf, i + 1, question);
-  }
-  
-  // Add answer page
+  // === PAGE 2: Questions 7-12 (Application & Challenge) ===
   pdf.addNewSection();
-  pdf.addAnswerPage(questions);
+  pdf.addHeader('Application & Challenge', 'Apply Pythagoras to real-world problems');
+  
+  const page2Questions = questions.slice(6, 12);
+  for (let i = 0; i < page2Questions.length; i++) {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    await pdf.addPracticeQuestion(i + 7, page2Questions[i], col, row, renderVisualization);
+  }
+  
+  // === PAGE 3: Answer Sheet ===
+  pdf.addNewSection();
+  pdf.addAnswerSheet(questions);
   
   pdf.save(`${topic}_practice.pdf`);
-  
   return true;
 };
 
-/**
- * Helper: Create fallback question if generators fail
- */
-const createFallbackQuestion = (index, type, difficulty) => {
-  const triples = [[3, 4, 5], [5, 12, 13], [6, 8, 10], [8, 15, 17]];
-  const [a, b, c] = triples[index % triples.length];
-  
-  if (type === 'hypotenuse') {
-    return {
-      questionText: `Find the hypotenuse of a right-angled triangle with sides ${a} cm and ${b} cm.`,
-      answer: `${c} cm`,
-      visualization: { type: 'right-triangle', base: a, height: b, unknownSide: 'hypotenuse', units: 'cm' }
-    };
-  } else {
-    return {
-      questionText: `Find the missing side of a right-angled triangle with hypotenuse ${c} cm and one side ${a} cm.`,
-      answer: `${b} cm`,
-      visualization: { type: 'right-triangle', base: a, height: b, hypotenuse: c, unknownSide: 'height', units: 'cm' }
-    };
-  }
-};
+// ============================================================
+// HELPER: Add worked example to PDF
+// ============================================================
 
-/**
- * Helper: Add a practice question to PDF (compact layout)
- */
-const addPracticeQuestionToPdf = async (pdf, number, question) => {
-  const questionText = question.questionText || question.question || `Question ${number}`;
-  
-  // Compact question box
-  pdf.addQuestionWithDiagram(number, questionText, null);
-  
-  // Add diagram if exists
-  if (question.visualization) {
-    const svgString = renderVisualization(question.visualization);
-    if (svgString) {
-      const diagramX = pdf.doc.internal.pageSize.getWidth() - 12 - 55;
-      const diagramY = pdf.currentY - 45;
-      await pdf.addSVGImage(svgString, diagramX, diagramY, 50, 40);
-    }
-  }
-};
-
-/**
- * Helper: Add a single example to PDF with diagram
- */
-const addExampleToPdf = async (pdf, number, example, showAnswer) => {
+const addWorkedExampleToPdf = async (pdf, number, example, showAnswer) => {
   const questionText = example.questionText || example.question || `Example ${number}`;
+  const answer = showAnswer ? cleanLatex(example.answer) : null;
+  const solution = showAnswer ? example.solution : null;
   
-  // Check if we need a new page (estimate height needed)
-  const estimatedHeight = showAnswer ? 100 : 70;
-  pdf.checkNewPage(estimatedHeight);
-  
-  // Add question number and text
-  pdf.addQuestionWithDiagram(
-    number, 
-    questionText, 
-    showAnswer ? cleanLatex(example.answer) : null
+  await pdf.addWorkedExample(
+    number,
+    questionText,
+    answer,
+    example.visualization,
+    solution,
+    renderVisualization
   );
-  
-  // Render and add diagram if visualization exists
-  if (example.visualization) {
-    const svgString = renderVisualization(example.visualization);
-    if (svgString) {
-      const diagramX = pdf.doc.internal.pageSize.getWidth() - 12 - 55; // Right side
-      const diagramY = pdf.currentY - 45; // Align with question
-      await pdf.addSVGImage(svgString, diagramX, diagramY, 50, 40);
-    }
-  }
-  
-  // If showing answers, add solution steps
-  if (showAnswer && example.solution && example.solution.length > 0) {
-    pdf.addSolutionSteps(example.solution);
-  }
 };
 
-/**
- * Helper: Clean LaTeX for PDF display
- * Removes complex LaTeX that jsPDF can't render
- */
+// ============================================================
+// HELPER: Clean LaTeX for PDF display
+// ============================================================
+
 const cleanLatex = (latex) => {
   if (!latex) return '';
   
   return latex
-    .replace(/\\text\{([^}]+)\}/g, '$1')  // \text{cm} → cm
-    .replace(/\\\\/g, '')                   // Remove double backslashes
-    .replace(/\^2/g, '²')                   // ^2 → ²
-    .replace(/\^3/g, '³')                   // ^3 → ³
-    .replace(/\\sqrt\{([^}]+)\}/g, '√($1)') // \sqrt{x} → √(x)
-    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)'); // \frac{a}{b} → (a/b)
+    .replace(/\\text\{([^}]+)\}/g, '$1')
+    .replace(/\\\\/g, '')
+    .replace(/\^2/g, '²')
+    .replace(/\^3/g, '³')
+    .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+    .replace(/\\times/g, '×');
 };
 
-/**
- * Render visualization to SVG string based on type
- */
+// ============================================================
+// RENDER VISUALIZATION TO SVG
+// ============================================================
+
 export const renderVisualization = (viz) => {
   if (!viz) return null;
   
@@ -272,6 +168,7 @@ export const renderVisualization = (viz) => {
         height: viz.height,
         hypotenuse: viz.hypotenuse,
         unknownSide: viz.unknownSide,
+        labels: viz.labels,
         orientation: viz.orientation || 'default',
         units: viz.units || 'cm',
       });
@@ -279,23 +176,54 @@ export const renderVisualization = (viz) => {
     case 'isosceles':
       return renderIsoscelesTriangle({
         base: viz.base,
-        equalSide: viz.legLength || viz.equalSide,
+        equalSide: viz.equalSide || viz.legLength,
         height: viz.height,
+        showHeight: viz.showHeight !== false,
+        labels: viz.labels,
         units: viz.units || 'cm',
       });
     
     case 'coordinate-grid':
     case 'coordinates':
       return renderCoordinateGrid({
-        pointA: viz.point1 || viz.pointA,
-        pointB: viz.point2 || viz.pointB,
+        pointA: viz.pointA || viz.point1,
+        pointB: viz.pointB || viz.point2,
+        labelA: viz.labelA,
+        labelB: viz.labelB,
+      });
+    
+    case 'rectangle-diagonal':
+      return renderContextDiagram({
+        type: 'rectangle-diagonal',
+        width: viz.width,
+        height: viz.height,
+        context: viz.context,
+      });
+    
+    case 'ladder':
+      return renderContextDiagram({
+        type: 'ladder',
+        ladderLength: viz.ladderLength,
+        distanceFromWall: viz.distanceFromWall,
+        wallHeight: viz.wallHeight,
+      });
+    
+    case 'navigation':
+      return renderContextDiagram({
+        type: 'navigation',
+        eastDistance: viz.eastDistance,
+        northDistance: viz.northDistance,
       });
     
     default:
       console.warn(`Unknown visualization type: ${type}`);
-      return null;
+      return renderRightTriangle({ base: 3, height: 4, unknownSide: 'hypotenuse' });
   }
 };
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 export default {
   generateTestWorksheet,

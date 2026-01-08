@@ -140,6 +140,7 @@ const renderLabel = (text, position, fontSize = 11) => {
  * @param {number} config.height - Height length
  * @param {number} config.hypotenuse - Hypotenuse length
  * @param {string} config.unknownSide - Which side is unknown: 'base', 'height', or 'hypotenuse'
+ * @param {Object} config.labels - Custom labels { base, height, hypotenuse }
  * @param {string} config.orientation - Triangle orientation
  * @param {number} config.width - SVG width
  * @param {number} config.svgHeight - SVG height
@@ -152,25 +153,29 @@ export const renderRightTriangle = ({
   height = 4,
   hypotenuse = 5,
   unknownSide = 'hypotenuse',
+  labels: customLabels = null,
   orientation = 'default',
-  width = 200,
-  svgHeight = 150,
+  width = 180,
+  svgHeight = 160,
   showRightAngle = true,
   units = 'cm',
 }) => {
+  // Calculate hypotenuse if not provided
+  const calcHyp = hypotenuse || Math.round(Math.sqrt(base*base + height*height) * 10) / 10;
+  
   // Calculate points
   const points = calculateTrianglePoints(base, height, orientation, width, svgHeight);
   const { rightAngle, baseEnd, top } = points;
   
-  // Generate labels
-  const labels = {
-    base: unknownSide === 'base' ? '?' : `${base} ${units}`,
-    height: unknownSide === 'height' ? '?' : `${height} ${units}`,
-    hypotenuse: unknownSide === 'hypotenuse' ? '?' : `${hypotenuse} ${units}`,
+  // Use custom labels if provided, otherwise generate from values
+  const labels = customLabels || {
+    base: unknownSide === 'base' ? 'x' : `${base} ${units}`,
+    height: unknownSide === 'height' ? 'x' : `${height} ${units}`,
+    hypotenuse: unknownSide === 'hypotenuse' ? 'x' : `${calcHyp} ${units}`,
   };
   
   // Calculate label positions
-  const labelPositions = calculateLabelPositions(points, base, height, hypotenuse);
+  const labelPositions = calculateLabelPositions(points, base, height, calcHyp);
   
   // Build SVG
   return `
@@ -179,6 +184,7 @@ export const renderRightTriangle = ({
       height="${svgHeight}" 
       viewBox="0 0 ${width} ${svgHeight}"
       xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid meet"
     >
       <!-- Background -->
       <rect width="${width}" height="${svgHeight}" fill="#f8fafc"/>
@@ -208,10 +214,11 @@ export const renderRightTriangle = ({
 export const renderIsoscelesTriangle = ({
   base = 10,
   equalSide = 13,
-  height = null, // Calculated if not provided
-  unknownSide = 'height',
-  width = 200,
-  svgHeight = 150,
+  height = null,
+  showHeight = true,
+  labels: customLabels = null,
+  width = 180,
+  svgHeight = 160,
   units = 'cm',
 }) => {
   const padding = 20;
@@ -235,10 +242,12 @@ export const renderIsoscelesTriangle = ({
   const rightX = leftX + scaledBase;
   const baseY = apexY + scaledHeight;
   
-  // Labels
-  const baseLabel = `${base} ${units}`;
-  const sideLabel = `${equalSide} ${units}`;
-  const heightLabel = unknownSide === 'height' ? 'h = ?' : `${calculatedHeight} ${units}`;
+  // Use custom labels if provided
+  const labels = customLabels || {
+    base: `${base} ${units}`,
+    equalSide: `${equalSide} ${units}`,
+    height: showHeight ? 'h = ?' : ''
+  };
   
   return `
     <svg 
@@ -246,6 +255,7 @@ export const renderIsoscelesTriangle = ({
       height="${svgHeight}" 
       viewBox="0 0 ${width} ${svgHeight}"
       xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid meet"
     >
       <!-- Background -->
       <rect width="${width}" height="${svgHeight}" fill="#f8fafc"/>
@@ -276,9 +286,9 @@ export const renderIsoscelesTriangle = ({
       />
       
       <!-- Labels -->
-      <text x="${width / 2}" y="${baseY + 15}" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#374151">${baseLabel}</text>
-      <text x="${leftX - 8}" y="${(apexY + baseY) / 2}" text-anchor="end" font-family="Helvetica" font-size="10" fill="#374151">${sideLabel}</text>
-      <text x="${apexX + 8}" y="${(apexY + baseY) / 2}" text-anchor="start" font-family="Helvetica" font-size="10" fill="#374151">${heightLabel}</text>
+      <text x="${width / 2}" y="${baseY + 15}" text-anchor="middle" font-family="Helvetica" font-size="10" fill="#374151">${labels.base}</text>
+      <text x="${leftX - 8}" y="${(apexY + baseY) / 2}" text-anchor="end" font-family="Helvetica" font-size="10" fill="#374151">${labels.equalSide}</text>
+      ${labels.height ? `<text x="${apexX + 8}" y="${(apexY + baseY) / 2}" text-anchor="start" font-family="Helvetica" font-size="10" fill="#374151">${labels.height}</text>` : ''}
     </svg>
   `.trim();
 };

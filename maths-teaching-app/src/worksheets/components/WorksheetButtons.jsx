@@ -36,7 +36,7 @@ const WorksheetButtons = ({
         await import('../WorksheetBuilder');
       
       if (type === 'worked-examples') {
-        // Generate both blank and filled versions using current examples
+        // Generate worked examples using current examples from app
         if (currentExamples && currentExamples.length > 0) {
           await generateWorkedExamples(worksheetConfig, currentExamples);
         } else {
@@ -44,9 +44,8 @@ const WorksheetButtons = ({
           generateTestWorksheet();
         }
       } else if (type === 'practice') {
-        // Generate practice sheet - would need generator function passed in
-        // For now, use test worksheet
-        generateTestWorksheet();
+        // Generate practice sheet using worksheet generators (no app generators needed)
+        await generatePracticeWorksheet(worksheetConfig);
       }
       
       setLastGenerated(type);
