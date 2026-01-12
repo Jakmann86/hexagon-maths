@@ -1,14 +1,15 @@
 // src/worksheets/generators/WorkedExamplesPDF.js
-// V1.2 - Label adjustments + KaTeX SVG rendering for formulas
+// V3.0 - Uses MathJax SVG output + svg2pdf.js for proper math rendering
 //
-// Output:
-// - Page 1: All 3 examples BLANK (lines for students)
-// - Page 2: All 3 examples WITH ANSWERS (filled solutions)
+// REQUIRES: 
+//   npm install mathjax-full svg2pdf.js
+//
+// MathJax outputs pure SVG (paths, not foreignObject) which svg2pdf can handle
 //
 // Place this file in: src/worksheets/generators/WorkedExamplesPDF.js
 
-import jsPDF from 'jspdf';
-import katex from 'katex';
+import { jsPDF } from 'jspdf';
+import 'svg2pdf.js';
 import { PYTHAGORAS_WORKED_EXAMPLES } from '../data/pythagorasWorkedExamples';
 
 // ============================================================
@@ -17,12 +18,10 @@ import { PYTHAGORAS_WORKED_EXAMPLES } from '../data/pythagorasWorkedExamples';
 
 const A4_WIDTH = 210;
 const A4_HEIGHT = 297;
-const MARGIN_TOP = 15;
-const MARGIN_BOTTOM = 20;
+const MARGIN_TOP = 13.5;
 const MARGIN_SIDE = 15;
 const CONTENT_WIDTH = A4_WIDTH - 2 * MARGIN_SIDE;
 
-// Colors as RGB arrays for jsPDF
 const COLORS = {
   blue: [59, 130, 246],
   darkGrey: [55, 65, 81],
@@ -39,152 +38,278 @@ const COLORS = {
 };
 
 // ============================================================
-// KATEX SVG RENDERING
+// MATHJAX INITIALIZATION
 // ============================================================
 
-/**
- * Render LaTeX to SVG string using KaTeX
- * @param {string} latex - LaTeX string
- * @param {Object} options - KaTeX options
- * @returns {string} SVG string
- */
-function latexToSvg(latex, options = {}) {
-  try {
-    const html = katex.renderToString(latex, {
-      throwOnError: false,
-      output: 'html',
-      displayMode: options.displayMode || false,
-      ...options,
-    });
-    return html;
-  } catch (e) {
-    console.warn('KaTeX render error:', e);
-    return latex; // Fallback to plain text
-  }
-}
+let mathjaxReady = false;
+let MathJaxInstance = null;
 
 /**
- * Render KaTeX to SVG and convert to image data URL
- * This creates an off-screen element, renders KaTeX, then converts to canvas
- * @param {string} latex - LaTeX string
- * @param {number} fontSize - Font size in pixels
- * @returns {Promise<{dataUrl: string, width: number, height: number}>}
+ * Initialize MathJax for SVG output (browser version)
  */
-async function latexToImage(latex, fontSize = 14) {
-  return new Promise((resolve) => {
-    // Create container
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.top = '-9999px';
-    container.style.fontSize = `${fontSize}px`;
-    container.style.color = '#374151';
-    container.style.backgroundColor = 'transparent';
-    container.style.padding = '2px';
-    document.body.appendChild(container);
-    
-    // Render KaTeX
-    try {
-      katex.render(latex, container, {
-        throwOnError: false,
-        output: 'html',
-        displayMode: false,
-      });
-    } catch (e) {
-      container.textContent = latex;
-    }
-    
-    // Use html2canvas or manual SVG approach
-    // For simplicity, we'll use a foreignObject SVG approach
-    const rect = container.getBoundingClientRect();
-    const width = Math.ceil(rect.width) + 4;
-    const height = Math.ceil(rect.height) + 4;
-    
-    // Create SVG with foreignObject
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('width', width);
-    svg.setAttribute('height', height);
-    svg.setAttribute('xmlns', svgNS);
-    
-    const foreignObject = document.createElementNS(svgNS, 'foreignObject');
-    foreignObject.setAttribute('width', '100%');
-    foreignObject.setAttribute('height', '100%');
-    
-    const div = document.createElement('div');
-    div.innerHTML = container.innerHTML;
-    div.style.fontSize = `${fontSize}px`;
-    div.style.color = '#374151';
-    div.style.fontFamily = 'KaTeX_Main, Times New Roman, serif';
-    foreignObject.appendChild(div);
-    svg.appendChild(foreignObject);
-    
-    // Convert to data URL
-    const svgString = new XMLSerializer().serializeToString(svg);
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = width * 2; // 2x for retina
-      canvas.height = height * 2;
-      const ctx = canvas.getContext('2d');
-      ctx.scale(2, 2);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      
-      document.body.removeChild(container);
-      
-      resolve({
-        dataUrl: canvas.toDataURL('image/png'),
-        width: width,
-        height: height,
-      });
+async function initMathJax() {
+  if (mathjaxReady && MathJaxInstance) {
+    return MathJaxInstance;
+  }
+
+  // Check if MathJax is already loaded globally
+  if (window.MathJax && window.MathJax.tex2svg) {
+    MathJaxInstance = window.MathJax;
+    mathjaxReady = true;
+    return MathJaxInstance;
+  }
+
+  // Load MathJax from CDN if not present
+  return new Promise((resolve, reject) => {
+    // Configure MathJax before loading
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      },
+      svg: {
+        fontCache: 'local',
+        scale: 1,
+        mtextInheritFont: true,  // Use document font for text
+        merrorInheritFont: true,
+        mathmlSpacing: false,
+        skipAttributes: {},
+        exFactor: 0.5,
+        displayAlign: 'left',
+        displayIndent: '0',
+      },
+      startup: {
+        ready: () => {
+          window.MathJax.startup.defaultReady();
+          MathJaxInstance = window.MathJax;
+          mathjaxReady = true;
+          resolve(MathJaxInstance);
+        }
+      }
     };
-    img.onerror = () => {
-      document.body.removeChild(container);
-      resolve(null);
-    };
-    img.src = url;
+
+    // Load the script
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+    script.async = true;
+    script.onerror = () => reject(new Error('Failed to load MathJax'));
+    document.head.appendChild(script);
   });
 }
 
 /**
- * Simple text fallback for environments without DOM (or when KaTeX fails)
- * Converts common LaTeX to Unicode
+ * Convert LaTeX to SVG element using MathJax
+ * @param {string} latex - LaTeX string
+ * @param {boolean} display - Display mode (block) vs inline
+ * @returns {Promise<SVGElement|null>}
  */
-function latexToUnicode(latex) {
-  return latex
-    .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
-    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
-    .replace(/\\times/g, '×')
-    .replace(/\\div/g, '÷')
-    .replace(/\\pm/g, '±')
-    .replace(/\\leq/g, '≤')
-    .replace(/\\geq/g, '≥')
-    .replace(/\\neq/g, '≠')
-    .replace(/\^2/g, '²')
-    .replace(/\^3/g, '³')
-    .replace(/\\text\{([^}]+)\}/g, '$1')
-    .replace(/\\_/g, '_')
-    .replace(/\\,/g, ' ')
-    .replace(/−/g, '−'); // Ensure proper minus sign
+async function latexToSvg(latex, display = false) {
+  try {
+    const MJ = await initMathJax();
+    
+    // Convert LaTeX to SVG
+    const wrapper = MJ.tex2svg(latex, { display });
+    const svg = wrapper.querySelector('svg');
+    
+    if (!svg) {
+      console.warn('MathJax produced no SVG for:', latex);
+      return null;
+    }
+
+    // Clone the SVG so we can manipulate it
+    const clonedSvg = svg.cloneNode(true);
+    
+    // Ensure it has proper namespace
+    clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    
+    // Reduce stroke width for lighter appearance
+    const paths = clonedSvg.querySelectorAll('path');
+    paths.forEach(path => {
+      const currentStroke = path.getAttribute('stroke-width');
+      if (currentStroke) {
+        path.setAttribute('stroke-width', String(parseFloat(currentStroke) * 0.7));
+      }
+      // Also slightly reduce the path thickness by adjusting transform scale
+      const transform = path.getAttribute('transform');
+      if (!transform) {
+        path.setAttribute('transform', 'scale(0.95, 1)');
+      }
+    });
+    
+    return clonedSvg;
+  } catch (e) {
+    console.warn('MathJax conversion error:', e);
+    return null;
+  }
+}
+
+/**
+ * Add LaTeX formula to PDF at specified position
+ * @param {jsPDF} doc - jsPDF document
+ * @param {string} latex - LaTeX string
+ * @param {number} x - X position in mm
+ * @param {number} y - Y position in mm  
+ * @param {Object} options - Options (scale, color, maxWidth)
+ * @returns {Promise<{width: number, height: number}>}
+ */
+async function addMathToPdf(doc, latex, x, y, options = {}) {
+  const {
+    scale = 0.5,
+    maxWidth = 50,
+    color = '#374151',
+  } = options;
+
+  const svg = await latexToSvg(latex, false);
+  
+  if (!svg) {
+    // Fallback to plain text
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(55, 65, 81);
+    doc.text(latex, x, y);
+    return { width: 20, height: 4 };
+  }
+
+  // Get SVG dimensions
+  const viewBox = svg.getAttribute('viewBox');
+  let svgWidth = parseFloat(svg.getAttribute('width')) || 100;
+  let svgHeight = parseFloat(svg.getAttribute('height')) || 20;
+  
+  // If dimensions are in ex units, convert approximately
+  const widthStr = svg.getAttribute('width') || '';
+  const heightStr = svg.getAttribute('height') || '';
+  
+  if (widthStr.includes('ex')) {
+    svgWidth = parseFloat(widthStr) * 8; // ~8px per ex
+  }
+  if (heightStr.includes('ex')) {
+    svgHeight = parseFloat(heightStr) * 8;
+  }
+
+  // Calculate scaled dimensions in mm
+  const widthMm = Math.min(svgWidth * scale * 0.264583, maxWidth); // px to mm
+  const heightMm = svgHeight * scale * 0.264583;
+
+  // Add SVG to document body temporarily (svg2pdf needs it in DOM)
+  svg.style.position = 'absolute';
+  svg.style.left = '-9999px';
+  svg.style.top = '-9999px';
+  document.body.appendChild(svg);
+
+  try {
+    await doc.svg(svg, {
+      x: x,
+      y: y - heightMm * 0.8, // Adjust for baseline
+      width: widthMm,
+      height: heightMm,
+    });
+  } catch (e) {
+    console.warn('svg2pdf error:', e);
+    // Fallback
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(latex, x, y);
+  } finally {
+    // Clean up
+    if (svg.parentNode) {
+      svg.parentNode.removeChild(svg);
+    }
+  }
+
+  return { width: widthMm, height: heightMm };
+}
+
+// ============================================================
+// HEXAGON LOGO SVG
+// ============================================================
+
+/**
+ * Draw the Hexagon Maths logo using SVG
+ * @param {jsPDF} doc - jsPDF document
+ * @param {number} x - X position in mm
+ * @param {number} y - Y position in mm
+ * @param {number} size - Size in mm
+ */
+async function drawHexagonLogo(doc, x, y, size) {
+  const logoSvg = `
+    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer hex segments -->
+      <path d="M100,100 L100,8 L180,54 Z" fill="#ef4444"/>
+      <path d="M100,100 L180,54 L180,146 Z" fill="#f97316"/>
+      <path d="M100,100 L180,146 L100,192 Z" fill="#eab308"/>
+      <path d="M100,100 L100,192 L20,146 Z" fill="#22c55e"/>
+      <path d="M100,100 L20,146 L20,54 Z" fill="#3b82f6"/>
+      <path d="M100,100 L20,54 L100,8 Z" fill="#8b5cf6"/>
+      
+      <!-- Outer hex outline -->
+      <polygon points="100,8 180,54 180,146 100,192 20,146 20,54" fill="none" stroke="#1e293b" stroke-width="2" opacity="0.2"/>
+      
+      <!-- White hexagon ring -->
+      <polygon points="100,26 164,64 164,136 100,174 36,136 36,64" fill="white"/>
+      
+      <!-- Inner hex segments -->
+      <path d="M100,100 L100,40 L152,70 Z" fill="#ef4444"/>
+      <path d="M100,100 L152,70 L152,130 Z" fill="#f97316"/>
+      <path d="M100,100 L152,130 L100,160 Z" fill="#eab308"/>
+      <path d="M100,100 L100,160 L48,130 Z" fill="#22c55e"/>
+      <path d="M100,100 L48,130 L48,70 Z" fill="#3b82f6"/>
+      <path d="M100,100 L48,70 L100,40 Z" fill="#8b5cf6"/>
+      
+      <!-- White center HEXAGON -->
+      <polygon points="100,58 136,79 136,121 100,142 64,121 64,79" fill="white"/>
+      
+      <!-- Center hex outline -->
+      <polygon points="100,58 136,79 136,121 100,142 64,121 64,79" fill="none" stroke="#1e293b" stroke-width="1" opacity="0.1"/>
+      
+      <!-- Text - HEXAGON -->
+      <text x="100" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="15" fill="#1e293b">HEXAGON</text>
+      <text x="100" y="114" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="15" fill="#1e293b">MATHS</text>
+    </svg>
+  `;
+  
+  // Parse SVG string to DOM element
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(logoSvg.trim(), 'image/svg+xml');
+  const svgElement = svgDoc.documentElement;
+  
+  // Add to DOM temporarily
+  svgElement.style.position = 'absolute';
+  svgElement.style.left = '-9999px';
+  svgElement.style.top = '-9999px';
+  document.body.appendChild(svgElement);
+  
+  try {
+    await doc.svg(svgElement, {
+      x: x,
+      y: y,
+      width: size,
+      height: size,
+    });
+  } catch (e) {
+    console.warn('Logo SVG error, using fallback:', e);
+    // Fallback: draw a simple colored circle with M
+    doc.setFillColor(...COLORS.blue);
+    doc.circle(x + size/2, y + size/2, size/2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(size * 0.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('M', x + size/2, y + size/2 + size*0.15, { align: 'center' });
+  } finally {
+    if (svgElement.parentNode) {
+      svgElement.parentNode.removeChild(svgElement);
+    }
+  }
 }
 
 // ============================================================
 // MAIN EXPORT FUNCTION
 // ============================================================
 
-/**
- * Generate the complete worked examples PDF
- * 
- * @param {Object} config - Configuration options
- * @param {string} config.topic - Topic name for filename (default: "pythagoras")
- * @returns {Promise<void>} - Downloads the PDF
- */
 export async function generateStaticWorkedExamplesPDF(config = {}) {
   const { topic = 'pythagoras' } = config;
+  
+  // Initialize MathJax first
+  await initMathJax();
   
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   
@@ -195,7 +320,6 @@ export async function generateStaticWorkedExamplesPDF(config = {}) {
   doc.addPage();
   await drawPage(doc, PYTHAGORAS_WORKED_EXAMPLES, true);
   
-  // Save
   doc.save(`${topic}_worked_examples.pdf`);
 }
 
@@ -206,23 +330,11 @@ export async function generateStaticWorkedExamplesPDF(config = {}) {
 async function drawPage(doc, examples, showAnswers) {
   let y = MARGIN_TOP;
   
-  // Header
-  y = drawHeader(doc, y, showAnswers);
-  
-  // Formula box
+  y = await drawHeader(doc, y, showAnswers);
   y = await drawFormulaBox(doc, y);
   
-  // Examples
   for (const example of examples) {
     y = await drawExample(doc, example, y, showAnswers);
-  }
-  
-  // Page number - only on page 2 (answers)
-  if (showAnswers) {
-    doc.setTextColor(180, 180, 180);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Page 2', A4_WIDTH / 2, A4_HEIGHT - 10, { align: 'center' });
   }
 }
 
@@ -230,101 +342,59 @@ async function drawPage(doc, examples, showAnswers) {
 // HEADER
 // ============================================================
 
-function drawHeader(doc, y, showAnswers) {
-  // Logo circle with M
-  doc.setFillColor(...COLORS.blue);
-  doc.circle(MARGIN_SIDE + 6, y + 5, 6, 'F');
-  doc.setTextColor(...COLORS.white);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('M', MARGIN_SIDE + 6, y + 6.5, { align: 'center' });
+async function drawHeader(doc, y, showAnswers) {
+  // Draw the hexagon logo using SVG
+  await drawHexagonLogo(doc, MARGIN_SIDE, y - 1, 14);
   
-  // Title
   doc.setTextColor(...COLORS.darkGrey);
   doc.setFontSize(18);
-  doc.text('Worked Examples', MARGIN_SIDE + 16, y + 4);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Worked Examples', MARGIN_SIDE + 17, y + 5);
+
+doc.setTextColor(...COLORS.blue);
+doc.setFontSize(10);
+doc.setFont('helvetica', 'normal');
+const subtitle = showAnswers ? 'ANSWERS' : "Pythagoras' Theorem";
+doc.text(subtitle, MARGIN_SIDE + 17, y + 10);
   
-  // Subtitle
-  doc.setTextColor(...COLORS.blue);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  const subtitle = showAnswers ? 'ANSWERS' : "Pythagoras' Theorem";
-  doc.text(subtitle, MARGIN_SIDE + 16, y + 11);
-  
-  // Name field
   doc.setTextColor(...COLORS.darkGrey);
   doc.text('Name: _______________________', A4_WIDTH - MARGIN_SIDE - 55, y + 6);
   
-  return y + 20;
+  return y + 18;
 }
 
 // ============================================================
-// FORMULA BOX - With KaTeX rendering
+// FORMULA BOX - With MathJax
 // ============================================================
 
 async function drawFormulaBox(doc, y) {
-  // Yellow box background
   doc.setFillColor(...COLORS.yellowBg);
   doc.setDrawColor(...COLORS.yellowBorder);
   doc.setLineWidth(0.5);
   doc.roundedRect(MARGIN_SIDE, y, CONTENT_WIDTH, 14, 2, 2, 'FD');
   
-  // Main label
   doc.setTextColor(...COLORS.darkGrey);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text("Pythagoras' Theorem:", MARGIN_SIDE + 4, y + 5);
+  doc.text("Pythagoras' Theorem:", MARGIN_SIDE + 4, y + 5.5);
   
-  // Try to render formulas with KaTeX, fallback to Unicode
-  const useKatex = typeof document !== 'undefined';
-  
-  if (useKatex) {
-    try {
-      // Main formula: a² + b² = c²
-      const mainFormula = await latexToImage('a^2 + b^2 = c^2', 12);
-      if (mainFormula) {
-        doc.addImage(mainFormula.dataUrl, 'PNG', MARGIN_SIDE + 46, y + 1, mainFormula.width * 0.25, mainFormula.height * 0.25);
-      } else {
-        throw new Error('KaTeX render failed');
-      }
-      
-      // Rearranged: a² = c² − b²
-      const formula2 = await latexToImage('a^2 = c^2 - b^2', 10);
-      if (formula2) {
-        doc.addImage(formula2.dataUrl, 'PNG', MARGIN_SIDE + 88, y + 1.5, formula2.width * 0.22, formula2.height * 0.22);
-      }
-      
-      // Rearranged: b² = c² − a²
-      const formula3 = await latexToImage('b^2 = c^2 - a^2', 10);
-      if (formula3) {
-        doc.addImage(formula3.dataUrl, 'PNG', MARGIN_SIDE + 128, y + 1.5, formula3.width * 0.22, formula3.height * 0.22);
-      }
-    } catch (e) {
-      // Fallback to text
-      doc.setFont('helvetica', 'bold');
-      doc.text('a² + b² = c²', MARGIN_SIDE + 48, y + 5);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text('a² = c² − b²', MARGIN_SIDE + 90, y + 5);
-      doc.text('b² = c² − a²', MARGIN_SIDE + 130, y + 5);
-    }
-  } else {
-    // Fallback for non-browser environments
+  // Main formula with MathJax - aligned to y + 5.5 baseline
+  try {
+    await addMathToPdf(doc, 'a^2 + b^2 = c^2', MARGIN_SIDE + 46, y + 5.5, { scale: 0.65 });
+    await addMathToPdf(doc, 'a^2 = c^2 - b^2', MARGIN_SIDE + 93, y + 5.5, { scale: 0.65 });
+    await addMathToPdf(doc, 'b^2 = c^2 - a^2', MARGIN_SIDE + 135, y + 5.5, { scale: 0.65 });
+  } catch (e) {
+    // Fallback
     doc.setFont('helvetica', 'bold');
-    doc.text('a² + b² = c²', MARGIN_SIDE + 48, y + 5);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('a² = c² − b²', MARGIN_SIDE + 90, y + 5);
-    doc.text('b² = c² − a²', MARGIN_SIDE + 130, y + 5);
+    doc.text('a\u00B2 + b\u00B2 = c\u00B2', MARGIN_SIDE + 48, y + 5.5);
   }
   
-  // Note about c
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.midGrey);
   doc.setFont('helvetica', 'italic');
   doc.text('c = hypotenuse (longest side, opposite the right angle)', MARGIN_SIDE + 4, y + 11);
   
-  return y + 20;
+  return y + 18;
 }
 
 // ============================================================
@@ -336,12 +406,10 @@ async function drawExample(doc, example, startY, showAnswers) {
   const diagramWidth = 62;
   const workingWidth = CONTENT_WIDTH - diagramWidth - 6;
   
-  // Outer border
   doc.setDrawColor(...COLORS.lightGrey);
   doc.setLineWidth(0.3);
   doc.roundedRect(MARGIN_SIDE, startY, CONTENT_WIDTH, boxHeight, 2, 2, 'S');
   
-  // Question number badge
   doc.setFillColor(...COLORS.blue);
   doc.circle(MARGIN_SIDE + 6, startY + 6, 4, 'F');
   doc.setTextColor(...COLORS.white);
@@ -349,7 +417,6 @@ async function drawExample(doc, example, startY, showAnswers) {
   doc.setFont('helvetica', 'bold');
   doc.text(String(example.number), MARGIN_SIDE + 6, startY + 7.5, { align: 'center' });
   
-  // Question text
   doc.setTextColor(...COLORS.darkGrey);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -359,16 +426,12 @@ async function drawExample(doc, example, startY, showAnswers) {
   const contentY = startY + 15;
   const contentHeight = boxHeight - 18;
   
-  // LEFT: Diagram area (grey background)
   doc.setFillColor(...COLORS.diagramBg);
   doc.setDrawColor(...COLORS.lightGrey);
   doc.setLineWidth(0.2);
   doc.roundedRect(MARGIN_SIDE + 2, contentY, diagramWidth, contentHeight, 1, 1, 'FD');
-  
-  // Draw the diagram
   drawDiagram(doc, example.visualization, MARGIN_SIDE + 2, contentY, diagramWidth, contentHeight);
   
-  // RIGHT: Working area (white background)
   const workingX = MARGIN_SIDE + diagramWidth + 6;
   doc.setFillColor(...COLORS.white);
   doc.roundedRect(workingX, contentY, workingWidth, contentHeight, 1, 1, 'FD');
@@ -379,11 +442,11 @@ async function drawExample(doc, example, startY, showAnswers) {
     drawBlankWorking(doc, workingX, contentY, workingWidth, contentHeight);
   }
   
-  return startY + boxHeight + 5;
+  return startY + boxHeight + 4;
 }
 
 // ============================================================
-// DIAGRAM DRAWING - Adjusted label positions
+// DIAGRAM DRAWING
 // ============================================================
 
 function drawDiagram(doc, viz, x, y, w, h) {
@@ -392,77 +455,61 @@ function drawDiagram(doc, viz, x, y, w, h) {
   const labels = viz.labels || {};
   
   if (viz.type === 'isosceles') {
-    // Isosceles triangle
     const triW = 35;
     const triH = 32;
     
-    // Triangle fill and stroke
     doc.setFillColor(...COLORS.isoscelesFill);
     doc.setDrawColor(30, 41, 59);
     doc.setLineWidth(1);
     
-    // Triangle points
     const apex = [cx, cy - triH / 2 + 5];
     const left = [cx - triW / 2, cy + triH / 2];
     const right = [cx + triW / 2, cy + triH / 2];
     
     doc.triangle(apex[0], apex[1], left[0], left[1], right[0], right[1], 'FD');
     
-    // Height line (dashed)
     doc.setDrawColor(...COLORS.midGrey);
     doc.setLineWidth(0.5);
     doc.setLineDashPattern([2, 2], 0);
     doc.line(cx, apex[1], cx, left[1]);
     doc.setLineDashPattern([], 0);
     
-    // Right angle marker at base
     doc.setLineWidth(0.5);
     doc.line(cx - 4, left[1], cx - 4, left[1] - 4);
     doc.line(cx - 4, left[1] - 4, cx, left[1] - 4);
     
-    // Labels - BOLDER, slant side moved RIGHT
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLORS.labelColor);
-    doc.text(labels.base || '', cx, left[1] + 9, { align: 'center' });
-    // Equal side label - moved right (was left[0] - 5, now left[0] - 2)
-    doc.text(labels.equalSide || '', left[0] - 2, cy, { align: 'right' });
+    doc.text(labels.base || '', cx, left[1] + 6, { align: 'center' });
+    // Equal side label - moved further right (was -2, now +1)
+    doc.text(labels.equalSide || '', left[0] + 4, cy, { align: 'right' });
     
   } else {
-    // Right triangle (default)
     const triW = 32;
     const triH = 28;
     
-    // Triangle fill and stroke
     doc.setFillColor(...COLORS.triangleFill);
     doc.setDrawColor(30, 41, 59);
     doc.setLineWidth(1);
     
-    // Triangle points (right angle at bottom-left)
     const rightAngle = [cx - triW / 2, cy + triH / 2 - 5];
     const baseEnd = [cx + triW / 2, cy + triH / 2 - 5];
     const top = [cx - triW / 2, cy - triH / 2];
     
     doc.triangle(rightAngle[0], rightAngle[1], baseEnd[0], baseEnd[1], top[0], top[1], 'FD');
     
-    // Right angle marker
     doc.setDrawColor(...COLORS.midGrey);
     doc.setLineWidth(0.5);
     doc.line(rightAngle[0] + 5, rightAngle[1], rightAngle[0] + 5, rightAngle[1] - 5);
     doc.line(rightAngle[0] + 5, rightAngle[1] - 5, rightAngle[0], rightAngle[1] - 5);
     
-    // Labels - BOLDER, adjusted positions
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...COLORS.labelColor);
-    
-    // Base label (bottom)
-    doc.text(labels.base || '', (rightAngle[0] + baseEnd[0]) / 2, rightAngle[1] + 9, { align: 'center' });
-    
-    // Height/vertical label - moved slightly right (was -5, now -3)
+    doc.text(labels.base || '', (rightAngle[0] + baseEnd[0]) / 2, rightAngle[1] + 6, { align: 'center' });
     doc.text(labels.height || '', rightAngle[0] - 3, (rightAngle[1] + top[1]) / 2, { align: 'right' });
     
-    // Hypotenuse label - moved up and left
     const hypX = (baseEnd[0] + top[0]) / 2 + 2;
     const hypY = (baseEnd[1] + top[1]) / 2 - 2;
     doc.text(labels.hypotenuse || '', hypX, hypY, { align: 'left' });
@@ -470,51 +517,41 @@ function drawDiagram(doc, viz, x, y, w, h) {
 }
 
 // ============================================================
-// WORKING AREA - FILLED (for answers page) - With KaTeX
+// WORKING AREA - FILLED (with MathJax)
 // ============================================================
 
 async function drawFilledWorking(doc, example, x, y, w) {
   let cy = y + 5;
   const sx = x + 3;
-  const formulaX = sx + 52;
+  const formulaX = sx + 50;
   
-  const useKatex = typeof document !== 'undefined';
-  
-  // "Working:" header
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.midGrey);
   doc.text('Working:', sx, cy);
   cy += 4;
   
-  // Solution steps
   for (let i = 0; i < example.working.length; i++) {
     const step = example.working[i];
     
-    // Step number and explanation
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLORS.midGrey);
     doc.text(`${step.step}. ${step.explanation}`, sx, cy);
     
-    // Formula - try KaTeX, fallback to Unicode
-    if (useKatex && step.latex) {
+    // Render formula with MathJax if latex available
+    if (step.latex) {
       try {
-        const formulaImg = await latexToImage(step.latex, 10);
-        if (formulaImg) {
-          doc.addImage(formulaImg.dataUrl, 'PNG', formulaX, cy - 2.5, formulaImg.width * 0.2, formulaImg.height * 0.2);
-        } else {
-          throw new Error('KaTeX failed');
-        }
+        await addMathToPdf(doc, step.latex, formulaX, cy + 0.5, { scale: 0.5 });
       } catch (e) {
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...COLORS.darkGrey);
-        doc.text(latexToUnicode(step.formula), formulaX, cy);
+        doc.text(step.formula, formulaX, cy);
       }
     } else {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...COLORS.darkGrey);
-      doc.text(latexToUnicode(step.formula), formulaX, cy);
+      doc.text(step.formula, formulaX, cy);
     }
     
     cy += 5;
@@ -522,18 +559,27 @@ async function drawFilledWorking(doc, example, x, y, w) {
   
   cy += 2;
   
-  // Calculator method
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.midGrey);
   doc.text('Calculator:', sx, cy);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...COLORS.darkGrey);
-  doc.text(latexToUnicode(example.calculatorMethod), sx + 20, cy);
+  
+  if (example.calculatorLatex) {
+    try {
+      await addMathToPdf(doc, example.calculatorLatex, sx + 20, cy + 0.5, { scale: 0.48 });
+    } catch (e) {
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.darkGrey);
+      doc.text(example.calculatorMethod, sx + 20, cy);
+    }
+  } else {
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...COLORS.darkGrey);
+    doc.text(example.calculatorMethod, sx + 20, cy);
+  }
   
   cy += 5;
   
-  // Answer (green)
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.midGrey);
   doc.text('Answer:', sx, cy);
@@ -542,7 +588,7 @@ async function drawFilledWorking(doc, example, x, y, w) {
 }
 
 // ============================================================
-// WORKING AREA - BLANK (for student page)
+// WORKING AREA - BLANK
 // ============================================================
 
 function drawBlankWorking(doc, x, y, w, h) {
@@ -550,14 +596,12 @@ function drawBlankWorking(doc, x, y, w, h) {
   const sx = x + 3;
   const lineEnd = x + w - 5;
   
-  // "Working:" header
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.midGrey);
   doc.text('Working:', sx, cy);
   cy += 5;
   
-  // 5 blank lines for working
   doc.setDrawColor(220, 220, 220);
   doc.setLineWidth(0.2);
   for (let i = 0; i < 5; i++) {
@@ -567,7 +611,6 @@ function drawBlankWorking(doc, x, y, w, h) {
   
   cy += 2;
   
-  // Calculator prompt with line
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.midGrey);
@@ -576,13 +619,12 @@ function drawBlankWorking(doc, x, y, w, h) {
   
   cy += 6;
   
-  // Answer prompt with line
   doc.text('Answer:', sx, cy);
   doc.line(sx + 16, cy, lineEnd, cy);
 }
 
 // ============================================================
-// NAMED EXPORT FOR BACKWARDS COMPATIBILITY
+// EXPORT
 // ============================================================
 
 export default generateStaticWorkedExamplesPDF;
