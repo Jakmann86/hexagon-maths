@@ -1,4 +1,4 @@
-// src/data/curriculum.js - Updated with Statistics I (Week 5)
+// src/data/curriculum.js - Updated with worksheetKey for worksheet generation
 export const curriculum = {
     'Trigonometry I': {
         title: 'Trigonometry I: Theory of Right-Angled Triangles',
@@ -6,6 +6,7 @@ export const curriculum = {
             {
                 id: 1,
                 title: "Find Missing Sides Using Pythagoras' Theorem",
+                worksheetKey: 'pythagoras',
                 sections: {
                     starter: 'pythagoras/StarterSection',
                     diagnostic: 'pythagoras/DiagnosticSection',
@@ -17,6 +18,7 @@ export const curriculum = {
             {
                 id: 2,
                 title: "Find Missing Sides Using SOHCAHTOA",
+                worksheetKey: 'sohcahtoa',
                 sections: {
                     starter: 'sohcahtoa1/StarterSection',
                     diagnostic: 'sohcahtoa1/DiagnosticSection',
@@ -28,6 +30,7 @@ export const curriculum = {
             {
                 id: 3,
                 title: "Find Missing Angles Using Trigonometry",
+                worksheetKey: 'sohcahtoa-angles',
                 sections: {
                     starter: 'sohcahtoa2/StarterSection',
                     diagnostic: 'sohcahtoa2/DiagnosticSection',
@@ -39,6 +42,7 @@ export const curriculum = {
             {
                 id: 4,
                 title: "3D Pythagoras & Applications",
+                worksheetKey: '3d-pythagoras',
                 sections: {
                     starter: '3d-trig/StarterSection',
                     diagnostic: '3d-trig/DiagnosticSection',
@@ -55,6 +59,7 @@ export const curriculum = {
             {
                 id: 1,
                 title: "Expanding Double Brackets",
+                worksheetKey: 'expanding-brackets',
                 sections: {
                     starter: 'expanding-brackets/StarterSection',
                     diagnostic: 'expanding-brackets/DiagnosticSection',
@@ -66,6 +71,7 @@ export const curriculum = {
             {
                 id: 2,
                 title: "Solving Equations with Unknown on Both Sides",
+                worksheetKey: 'linear-equations',
                 sections: {
                     starter: 'linear-equations/StarterSection',
                     diagnostic: 'linear-equations/DiagnosticSection',
@@ -77,6 +83,7 @@ export const curriculum = {
             {
                 id: 3,
                 title: "Solving Simultaneous Equations",
+                worksheetKey: 'simultaneous-equations',
                 sections: {
                     starter: 'simultaneous-equations/StarterSection',
                     diagnostic: 'simultaneous-equations/DiagnosticSection',
@@ -88,6 +95,7 @@ export const curriculum = {
             {
                 id: 4,
                 title: "Negative and Fractional Indices",
+                worksheetKey: 'indices',
                 sections: {
                     starter: 'indices/StarterSection',
                     diagnostic: 'indices/DiagnosticSection',
@@ -104,6 +112,7 @@ export const curriculum = {
             {
                 id: 1,
                 title: "Converting Recurring Decimals to Fractions",
+                worksheetKey: 'recurring-decimals',
                 sections: {
                     starter: 'recurring-decimals/StarterSection',
                     diagnostic: 'recurring-decimals/DiagnosticSection',
@@ -115,6 +124,7 @@ export const curriculum = {
             {
                 id: 2,
                 title: "Factorising Quadratics",
+                worksheetKey: 'factorising-quadratics',
                 sections: {
                     starter: 'factorising-quadratics/StarterSection',
                     diagnostic: 'factorising-quadratics/DiagnosticSection',
@@ -126,6 +136,7 @@ export const curriculum = {
             {
                 id: 3,
                 title: "Solving Quadratic Simultaneous Equations",
+                worksheetKey: 'quadratic-simultaneous',
                 sections: {
                     starter: 'quadratic-simultaneous/StarterSection',
                     diagnostic: 'quadratic-simultaneous/DiagnosticSection',
@@ -137,6 +148,7 @@ export const curriculum = {
             {
                 id: 4,
                 title: "Re-arranging Formulae",
+                worksheetKey: 'rearranging-formulae',
                 sections: {
                     starter: 'rearranging-formula/StarterSection',
                     diagnostic: 'rearranging-formula/DiagnosticSection',
@@ -153,6 +165,7 @@ export const curriculum = {
             {
                 id: 1,
                 title: "Triangles and Basic Angle Facts",
+                worksheetKey: 'basic-angles',
                 sections: {
                     starter: 'basic-angles/StarterSection',
                     diagnostic: 'basic-angles/DiagnosticSection',
@@ -164,6 +177,7 @@ export const curriculum = {
             {
                 id: 2,
                 title: "Angles in Parallel Lines",
+                worksheetKey: 'parallel-lines',
                 sections: {
                     starter: 'parallel-lines/StarterSection',
                     diagnostic: 'parallel-lines/DiagnosticSection',
@@ -175,6 +189,7 @@ export const curriculum = {
             {
                 id: 3,
                 title: "Interior Angles of a Polygon",
+                worksheetKey: 'interior-angles',
                 sections: {
                     starter: 'interior-angles/StarterSection',
                     diagnostic: 'interior-angles/DiagnosticSection',
@@ -186,6 +201,7 @@ export const curriculum = {
             {
                 id: 4,
                 title: "Exterior Angles of a Polygon",
+                worksheetKey: 'exterior-angles',
                 sections: {
                     starter: 'exterior-angles/StarterSection',
                     diagnostic: 'exterior-angles/DiagnosticSection',
@@ -202,6 +218,7 @@ export const curriculum = {
             {
                 id: 1,
                 title: "Solving Problems with Mean Average",
+                worksheetKey: 'mean-average',
                 sections: {
                     starter: 'averages/StarterSection',
                     diagnostic: 'averages/DiagnosticSection',
@@ -213,6 +230,7 @@ export const curriculum = {
             {
                 id: 2,
                 title: "Finding Medians and Modes",
+                worksheetKey: 'median-mode',
                 sections: {
                     starter: 'median-mode/StarterSection',
                     diagnostic: 'median-mode/DiagnosticSection',
@@ -224,6 +242,7 @@ export const curriculum = {
             {
                 id: 3,
                 title: "Working with Grouped Data",
+                worksheetKey: 'grouped-data',
                 sections: {
                     starter: 'grouped-data/StarterSection',
                     diagnostic: 'grouped-data/DiagnosticSection',
@@ -235,6 +254,7 @@ export const curriculum = {
             {
                 id: 4,
                 title: "Estimated Mean from Frequency Tables",
+                worksheetKey: 'frequency-tables',
                 sections: {
                     starter: 'frequency-tables/StarterSection',
                     diagnostic: 'frequency-tables/DiagnosticSection',

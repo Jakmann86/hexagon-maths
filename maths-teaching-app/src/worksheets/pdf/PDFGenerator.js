@@ -1,5 +1,5 @@
 // src/worksheets/pdf/PDFGenerator.js
-// V2.0 - Full PDF generation with diagrams and solutions
+// V2.1 - Added SOHCAHTOA formula header
 // Uses jsPDF for client-side PDF creation
 
 import jsPDF from 'jspdf';
@@ -87,7 +87,7 @@ class PDFGenerator {
     this.currentY += 18;
   }
 
-  // Add formula reference box
+  // Add Pythagoras formula reference box
   addFormulaHeader(formulas = null) {
     const boxHeight = 14;
     
@@ -132,6 +132,57 @@ class PDFGenerator {
       'c = hypotenuse (longest side, opposite the right angle)',
       MARGINS.LEFT + 4,
       this.currentY + 11
+    );
+    
+    this.currentY += boxHeight + 6;
+  }
+
+  // Add SOHCAHTOA formula reference box
+  addTrigFormulaHeader() {
+    const boxHeight = 16;
+    
+    // Background - light purple
+    this.doc.setFillColor(243, 232, 255); // Purple-100
+    this.doc.roundedRect(
+      MARGINS.LEFT, 
+      this.currentY, 
+      this.contentWidth, 
+      boxHeight, 
+      2, 2, 'F'
+    );
+    
+    // Border - purple
+    this.doc.setDrawColor(139, 92, 246); // Purple-500
+    this.doc.setLineWidth(0.5);
+    this.doc.roundedRect(
+      MARGINS.LEFT, 
+      this.currentY, 
+      this.contentWidth, 
+      boxHeight, 
+      2, 2, 'S'
+    );
+    
+    // Label
+    this.doc.setTextColor(COLORS.darkGrey);
+    this.doc.setFontSize(10);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.text('SOHCAHTOA:', MARGINS.LEFT + 4, this.currentY + 5);
+    
+    // Formulas
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setFontSize(9);
+    this.doc.text('sin θ = opp / hyp', MARGINS.LEFT + 38, this.currentY + 5);
+    this.doc.text('cos θ = adj / hyp', MARGINS.LEFT + 85, this.currentY + 5);
+    this.doc.text('tan θ = opp / adj', MARGINS.LEFT + 132, this.currentY + 5);
+    
+    // Hint
+    this.doc.setFont('helvetica', 'italic');
+    this.doc.setFontSize(8);
+    this.doc.setTextColor(COLORS.secondary);
+    this.doc.text(
+      'opp = opposite    adj = adjacent    hyp = hypotenuse',
+      MARGINS.LEFT + 4,
+      this.currentY + 12
     );
     
     this.currentY += boxHeight + 6;

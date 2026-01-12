@@ -171,6 +171,10 @@ export const renderVisualization = (viz) => {
         labels: viz.labels,
         orientation: viz.orientation || 'default',
         units: viz.units || 'cm',
+        // SOHCAHTOA angle support
+        showAngle: viz.showAngle || false,
+        angle: viz.angle || null,
+        anglePosition: viz.anglePosition || 'bottom-right',
       });
     
     case 'isosceles':

@@ -1,5 +1,5 @@
 // src/components/sections/ExamplesSectionBase.jsx
-// V1.1 - Added WorksheetButtons at bottom
+// V1.2 - Uses worksheetKey from curriculum.js for worksheet generation
 // Orange theme with darker header (bg-orange-600)
 // 1, 2, 3 tab buttons for different example types
 // Two-column layout: visualization (left) + blank working space (right)
@@ -14,6 +14,7 @@ import MathDisplay from '../common/MathDisplay';
 import ContentRenderer from '../common/ContentRenderer';
 import TeachingNotesPanel from './TeachingNotesPanel';
 import WorksheetButtons from '../../worksheets/components/WorksheetButtons';
+import { curriculum } from '../../data/curriculum';
 
 /**
  * ExamplesSectionBase - Reusable worked examples component
@@ -28,7 +29,7 @@ import WorksheetButtons from '../../worksheets/components/WorksheetButtons';
  * @param {string} props.defaultTitle - Default section title
  * @param {string} props.subtitle - Section subtitle
  * @param {string} props.className - Additional CSS classes
- * @param {string} props.currentTopic - Current topic ID
+ * @param {string} props.currentTopic - Current topic name (e.g., "Trigonometry I")
  * @param {number} props.currentLessonId - Current lesson ID
  * @param {Object} props.worksheetConfig - Optional worksheet configuration override
  */
@@ -105,13 +106,18 @@ const ExamplesSectionBase = ({
     return teachingNotes;
   }, [teachingNotes, activeTab]);
 
-  // Build worksheet config from props or defaults
+  // Build worksheet config from props or curriculum lookup
   const resolvedWorksheetConfig = useMemo(() => {
     if (worksheetConfig) return worksheetConfig;
     
+    // Look up worksheetKey from curriculum
+    const topicData = curriculum[currentTopic];
+    const lessonData = topicData?.lessons.find(l => l.id === currentLessonId);
+    const worksheetKey = lessonData?.worksheetKey;
+    
     return {
-      title: defaultTitle,
-      topic: currentTopic,
+      title: lessonData?.title || defaultTitle,
+      topic: worksheetKey,  // This is the key that maps to generators/index.js
       lessonId: currentLessonId,
     };
   }, [worksheetConfig, defaultTitle, currentTopic, currentLessonId]);

@@ -1,7 +1,7 @@
 // src/worksheets/renderers/TriangleRenderer.js
 // Static SVG generation for right-angled triangles
 // Used for PDF generation - no React state/interactivity
-// V1.0
+// V2.0 - Added angle arc support for SOHCAHTOA
 
 /**
  * Calculate triangle points based on dimensions and orientation
@@ -92,9 +92,90 @@ const renderRightAngleMarker = (points, size = 10) => {
 };
 
 /**
+ * Create arc path for angle marker at a vertex
+ * Matches the logic from RightTriangleSVG.jsx in the app
+ */
+const createArcPath = (vertex, point1, point2, radius) => {
+  // Calculate angles from vertex to each point
+  const angle1 = Math.atan2(point1.y - vertex.y, point1.x - vertex.x);
+  const angle2 = Math.atan2(point2.y - vertex.y, point2.x - vertex.x);
+  
+  // Calculate the difference
+  let diff = angle2 - angle1;
+  
+  // Normalize to get the smaller arc (interior angle)
+  if (diff > Math.PI) diff -= 2 * Math.PI;
+  if (diff < -Math.PI) diff += 2 * Math.PI;
+  
+  // Determine sweep direction
+  const sweepFlag = diff > 0 ? 1 : 0;
+  
+  const start = {
+    x: vertex.x + Math.cos(angle1) * radius,
+    y: vertex.y + Math.sin(angle1) * radius
+  };
+  const end = {
+    x: vertex.x + Math.cos(angle2) * radius,
+    y: vertex.y + Math.sin(angle2) * radius
+  };
+  
+  // Calculate midpoint angle for label positioning
+  const midAngle = angle1 + diff / 2;
+  
+  return {
+    arcPath: `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 ${sweepFlag} ${end.x} ${end.y}`,
+    sectorPath: `M ${vertex.x} ${vertex.y} L ${start.x} ${start.y} A ${radius} ${radius} 0 0 ${sweepFlag} ${end.x} ${end.y} Z`,
+    labelX: vertex.x + Math.cos(midAngle) * (radius + 14),
+    labelY: vertex.y + Math.sin(midAngle) * (radius + 14)
+  };
+};
+
+/**
+ * Render angle arc at specified vertex
+ */
+const renderAngleArc = (points, anglePosition, angleLabel, radius = 22) => {
+  let vertex, adjacentPoint1, adjacentPoint2;
+  
+  // Determine which vertex has the angle based on anglePosition
+  if (anglePosition === 'bottom-right' || anglePosition === 'base') {
+    // Angle at the baseEnd vertex (the acute angle at bottom-right)
+    vertex = points.baseEnd;
+    adjacentPoint1 = points.rightAngle; // Along the base
+    adjacentPoint2 = points.top; // Along the hypotenuse
+  } else if (anglePosition === 'top-left' || anglePosition === 'top') {
+    // Angle at the top vertex
+    vertex = points.top;
+    adjacentPoint1 = points.rightAngle; // Along the height
+    adjacentPoint2 = points.baseEnd; // Along the hypotenuse
+  } else {
+    // Default to bottom-right
+    vertex = points.baseEnd;
+    adjacentPoint1 = points.rightAngle;
+    adjacentPoint2 = points.top;
+  }
+  
+  const arc = createArcPath(vertex, adjacentPoint1, adjacentPoint2, radius);
+  
+  return `
+    <path d="${arc.sectorPath}" fill="#8b5cf6" fill-opacity="0.2" />
+    <path d="${arc.arcPath}" fill="none" stroke="#7c3aed" stroke-width="2" />
+    <text 
+      x="${arc.labelX}" 
+      y="${arc.labelY}" 
+      text-anchor="middle" 
+      dominant-baseline="middle" 
+      font-family="Helvetica, Arial, sans-serif"
+      font-size="11" 
+      font-weight="600"
+      fill="#1e293b"
+    >${angleLabel}</text>
+  `;
+};
+
+/**
  * Calculate label positions for each side
  */
-const calculateLabelPositions = (points, base, height, hypotenuse) => {
+const calculateLabelPositions = (points) => {
   const { rightAngle, baseEnd, top } = points;
   
   return {
@@ -120,6 +201,7 @@ const calculateLabelPositions = (points, base, height, hypotenuse) => {
  * Render a text label
  */
 const renderLabel = (text, position, fontSize = 11) => {
+  if (!text) return '';
   return `
     <text 
       x="${position.x}" 
@@ -146,6 +228,9 @@ const renderLabel = (text, position, fontSize = 11) => {
  * @param {number} config.svgHeight - SVG height
  * @param {boolean} config.showRightAngle - Whether to show right angle marker
  * @param {string} config.units - Unit label (default 'cm')
+ * @param {boolean} config.showAngle - Whether to show angle arc (for SOHCAHTOA)
+ * @param {number} config.angle - Angle value in degrees
+ * @param {string} config.anglePosition - Where the angle is: 'bottom-right' or 'top-left'
  * @returns {string} SVG string
  */
 export const renderRightTriangle = ({
@@ -159,6 +244,9 @@ export const renderRightTriangle = ({
   svgHeight = 160,
   showRightAngle = true,
   units = 'cm',
+  showAngle = false,
+  angle = null,
+  anglePosition = 'bottom-right',
 }) => {
   // Calculate hypotenuse if not provided
   const calcHyp = hypotenuse || Math.round(Math.sqrt(base*base + height*height) * 10) / 10;
@@ -175,7 +263,10 @@ export const renderRightTriangle = ({
   };
   
   // Calculate label positions
-  const labelPositions = calculateLabelPositions(points, base, height, calcHyp);
+  const labelPositions = calculateLabelPositions(points);
+  
+  // Build angle label
+  const angleLabel = angle ? `${angle}°` : '';
   
   // Build SVG
   return `
@@ -199,6 +290,9 @@ export const renderRightTriangle = ({
       
       <!-- Right angle marker -->
       ${showRightAngle ? renderRightAngleMarker(points) : ''}
+      
+      <!-- Angle arc (for SOHCAHTOA) -->
+      ${showAngle && angle ? renderAngleArc(points, anglePosition, angleLabel) : ''}
       
       <!-- Labels -->
       ${renderLabel(labels.base, labelPositions.base)}
