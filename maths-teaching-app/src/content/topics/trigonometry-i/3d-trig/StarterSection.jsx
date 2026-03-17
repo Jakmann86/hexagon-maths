@@ -1,99 +1,57 @@
-// src/content/topics/trigonometry-i/pythagoras/StarterSection.jsx
+// src/content/topics/trigonometry-i/3d-trig/StarterSection.jsx
+// 3D Trigonometry Starter Section - V2.1
+// Uses V2 generators directly - no manual JSX wrapping needed
+
 import React from 'react';
-import _ from 'lodash';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
-import Square from '../../../../components/math/shapes/quadrilaterals/Square';
-import RightTriangle from '../../../../components/math/shapes/triangles/RightTriangle';
-import { squareGenerators } from '../../../../generators/geometry/squareGenerators';
-import { triangleGenerators } from '../../../../generators/geometry/triangleGenerators';
+import { sohcahtoaGenerators } from '../../../../generators/geometry/sohcahtoaGenerators';
+import { equationGenerators } from '../../../../generators/algebra/equationGenerators';
 import { numberPuzzleGenerators } from '../../../../generators/puzzles/numberPuzzles';
 
-/**
- * StarterSection component for Pythagoras lesson
- * Uses Pattern 2 architecture:
- * 1. Generators produce configuration objects
- * 2. Section converts configurations to components
- */
+const questionGenerators = [
+  // Last Lesson: SOHCAHTOA 2 - finding missing angles using inverse trig
+  () => {
+    const { questionText, ...rest } = sohcahtoaGenerators.generateFindAngle({ difficulty: 'easy' });
+    return { question: questionText, ...rest };
+  },
+
+  // Last Week: SOHCAHTOA 1 - finding missing sides using trig ratios
+  () => {
+    const { questionText, ...rest } = sohcahtoaGenerators.generateFindMissingSideTrig({ difficulty: 'easy' });
+    return { question: questionText, ...rest };
+  },
+
+  // Last Topic: Linear equations with unknowns on both sides (Algebra I)
+  () => equationGenerators.generateLinearEquationBothSidesStarter({ sectionType: 'starter' }),
+
+  // Last Year: Number puzzle
+  () => numberPuzzleGenerators.numberPuzzle1()
+];
+
+const sectionConfig = {
+  sections: ['lastLesson', 'lastWeek', 'lastTopic', 'lastYear'],
+  titles: {
+    lastLesson: 'Last Lesson',
+    lastWeek: 'Last Week',
+    lastTopic: 'Last Topic',
+    lastYear: 'Last Year'
+  },
+  subtitles: {
+    lastLesson: 'SOHCAHTOA: Find the Angle',
+    lastWeek: 'SOHCAHTOA: Find the Side',
+    lastTopic: 'Linear Equations',
+    lastYear: 'Number Puzzle'
+  }
+};
+
 const StarterSection = ({ currentTopic, currentLessonId }) => {
-  // Create generator functions for each section type
-  const questionGenerators = [
-    // Last Lesson: Square area and perimeter
-    () => {
-      // Get configuration from generator
-      const question = squareGenerators.describeSquare({ units: 'cm' });
-
-      // Force default orientation for starter consistency + clean positioning
-      question.visualization = (
-        <Square
-          {...question.visualization}
-          sectionType="starter"
-          orientation="default"  // ← Force default for starters
-        />
-      );
-
-      return question;
-    },
-
-    // Last Week: Triangle area 
-    () => {
-      // Get configuration from generator with starter context
-      const question = triangleGenerators.triangleArea({
-        units: 'cm',
-        sectionContext: { sectionType: 'starter' }  // Pass starter context
-      });
-
-      // Force default orientation for starter consistency + clean positioning
-      question.visualization = (
-        <RightTriangle
-          {...question.visualization}
-          sectionType="starter"
-          orientation="default"  // ← Force default for starters
-        />
-      );
-
-      return question;
-    },
-
-    // Last Topic: Naming quadrilaterals
-    () => ({
-      question: "Name all the quadrilaterals (4-sided shapes):",
-      answer: `Square: Equal sides, all 90° angles
-Rectangle: Opposite sides equal, all angles 90°
-Rhombus: All sides equal, opposite angles equal
-Parallelogram: Opposite sides parallel & equal
-Trapezium/Trapezoid: Exactly one pair of parallel sides
-Kite: Two pairs of adjacent sides equal`,
-      difficulty: 'text'
-    }),
-
-    // Last Year: Number puzzle
-    () => numberPuzzleGenerators.numberPuzzle1()
-  ];
-
-  // Custom rendering function for question visualizations
-  const renderQuestionContent = (questionData, questionType) => {
-    // If there's no visualization data, return null
-    if (!questionData.visualization) return null;
-
-    // If the visualization is already a React element
-    if (React.isValidElement(questionData.visualization)) {
-      // Default rendering for components
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          {questionData.visualization}
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   return (
     <StarterSectionBase
       questionGenerators={questionGenerators}
-      renderQuestionContent={renderQuestionContent}
+      sectionConfig={sectionConfig}
       currentTopic={currentTopic}
       currentLessonId={currentLessonId}
+      className="mb-8"
     />
   );
 };
