@@ -1,4 +1,5 @@
 // src/content/topics/algebra-i/linear-equations/ChallengeSection.jsx
+
 // Linear Equations Challenge Section - V4.0 (Thin Wrapper)
 // Uses ChallengeSectionBase with topic-specific generator
 

@@ -1,150 +1,59 @@
 // src/content/topics/trigonometry-i/sohcahtoa1/StarterSection.jsx
-// SOHCAHTOA Starter Section - V2.0
-// Uses StarterSectionBase with RightTriangleSVG (not JSXGraph)
+// SOHCAHTOA 1 Starter Section - V2.1
+// Uses V2 generators directly - no manual JSX wrapping needed
 
-import React from 'react';
-import _ from 'lodash';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
-import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
 import { pythagorasGenerators } from '../../../../generators/geometry/pythagorasGenerators';
 import { triangleGenerators } from '../../../../generators/geometry/triangleGenerators';
 import { numberPuzzleGenerators } from '../../../../generators/puzzles/numberPuzzles';
 
-/**
- * StarterSection component for SOHCAHTOA lesson
- * Uses Pattern 2 architecture:
- * 1. Generators produce configuration objects
- * 2. Section converts configurations to SVG components
- */
+const questionGenerators = [
+  // Last Lesson: Pythagoras - find the hypotenuse
+  () => {
+    const { questionText, ...rest } = pythagorasGenerators.generateFindHypotenuse({ difficulty: 'easy', units: 'cm' });
+    return { question: questionText, ...rest, visualization: { ...rest.visualization, orientation: 'default' } };
+  },
+
+  // Last Week: Pythagoras - find a missing side
+  () => {
+    const { questionText, ...rest } = pythagorasGenerators.generateFindMissingSide({ difficulty: 'easy', units: 'cm' });
+    return { question: questionText, ...rest, visualization: { ...rest.visualization, orientation: 'default' } };
+  },
+
+  // Last Topic: Triangle - find side length from area (Geometry I)
+  () => {
+    const q = triangleGenerators.triangleLengthFromArea({ units: 'cm' });
+    return { ...q, visualization: { ...q.visualization, orientation: 'default' } };
+  },
+
+  // Last Year: Number puzzle
+  () => numberPuzzleGenerators.numberPuzzle1()
+];
+
+const sectionConfig = {
+  sections: ['lastLesson', 'lastWeek', 'lastTopic', 'lastYear'],
+  titles: {
+    lastLesson: 'Last Lesson',
+    lastWeek: 'Last Week',
+    lastTopic: 'Last Topic',
+    lastYear: 'Last Year'
+  },
+  subtitles: {
+    lastLesson: 'Pythagoras: Find Hypotenuse',
+    lastWeek: 'Pythagoras: Find Missing Side',
+    lastTopic: 'Triangle Area',
+    lastYear: 'Number Puzzle'
+  }
+};
+
 const StarterSection = ({ currentTopic, currentLessonId }) => {
-  
-  // Create generator functions for each section type
-  const questionGenerators = [
-    // Last Lesson: Find hypotenuse using Pythagoras
-    () => {
-      const question = pythagorasGenerators.generateFindHypotenuse({
-        sectionType: 'starter',
-        difficulty: 'easy',
-        units: 'cm'
-      });
-
-      // Convert visualization config to RightTriangleSVG (Pattern 2)
-      if (question.visualization) {
-        const vizConfig = question.visualization;
-        question.visualization = (
-          <RightTriangleSVG
-            config={{
-              base: vizConfig.base,
-              height: vizConfig.height,
-              hypotenuse: vizConfig.hypotenuse,
-              labels: {
-                base: `${vizConfig.base} cm`,
-                height: `${vizConfig.height} cm`,
-                hypotenuse: '?' // Unknown - this is what we're finding
-              },
-              showRightAngle: true,
-              orientation: 'default',
-              units: 'cm'
-            }}
-            showAnswer={false}
-          />
-        );
-      }
-
-      return question;
-    },
-
-    // Last Week: Find missing side using Pythagoras
-    () => {
-      const question = pythagorasGenerators.generateFindMissingSide({
-        sectionType: 'starter',
-        difficulty: 'medium',
-        units: 'cm'
-      });
-
-      // Convert visualization config to RightTriangleSVG (Pattern 2)
-      if (question.visualization) {
-        const vizConfig = question.visualization;
-        const unknownSide = vizConfig.unknownSide;
-        
-        question.visualization = (
-          <RightTriangleSVG
-            config={{
-              base: vizConfig.base,
-              height: vizConfig.height,
-              hypotenuse: vizConfig.hypotenuse,
-              unknownSide: unknownSide,
-              labels: {
-                base: unknownSide === 'base' ? '?' : `${vizConfig.base} cm`,
-                height: unknownSide === 'height' ? '?' : `${vizConfig.height} cm`,
-                hypotenuse: unknownSide === 'hypotenuse' ? '?' : `${vizConfig.hypotenuse} cm`
-              },
-              showRightAngle: true,
-              orientation: 'default',
-              units: 'cm'
-            }}
-            showAnswer={false}
-          />
-        );
-      }
-
-      return question;
-    },
-
-    // Last Topic: Find side length from area
-    () => {
-      const question = triangleGenerators.triangleLengthFromArea({
-        units: 'cm'
-      });
-
-      // Convert visualization config to RightTriangleSVG (Pattern 2)
-      if (question.visualization) {
-        const vizConfig = question.visualization;
-        question.visualization = (
-          <RightTriangleSVG
-            config={{
-              base: vizConfig.base,
-              height: vizConfig.height,
-              unknownSide: vizConfig.unknownSide,
-              labels: vizConfig.labels,
-              showRightAngle: true,
-              orientation: 'default',
-              units: 'cm'
-            }}
-            showAnswer={false}
-          />
-        );
-      }
-
-      return question;
-    },
-
-    // Last Year: Number puzzle (no visualization needed)
-    () => numberPuzzleGenerators.numberPuzzle1()
-  ];
-
-  // Custom rendering function for question visualizations
-  const renderQuestionContent = (questionData, questionType) => {
-    if (!questionData.visualization) return null;
-
-    // If the visualization is already a React element (Pattern 2 conversion)
-    if (React.isValidElement(questionData.visualization)) {
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          {questionData.visualization}
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   return (
     <StarterSectionBase
       questionGenerators={questionGenerators}
-      renderQuestionContent={renderQuestionContent}
+      sectionConfig={sectionConfig}
       currentTopic={currentTopic}
       currentLessonId={currentLessonId}
+      className="mb-8"
     />
   );
 };

@@ -2,7 +2,6 @@
 // 3D Trigonometry Starter Section - V2.1
 // Uses V2 generators directly - no manual JSX wrapping needed
 
-import React from 'react';
 import StarterSectionBase from '../../../../components/sections/StarterSectionBase';
 import { sohcahtoaGenerators } from '../../../../generators/geometry/sohcahtoaGenerators';
 import { equationGenerators } from '../../../../generators/algebra/equationGenerators';
@@ -12,13 +11,13 @@ const questionGenerators = [
   // Last Lesson: SOHCAHTOA 2 - finding missing angles using inverse trig
   () => {
     const { questionText, ...rest } = sohcahtoaGenerators.generateFindAngle({ difficulty: 'easy' });
-    return { question: questionText, ...rest };
+    return { question: questionText, ...rest, visualization: { ...rest.visualization, orientation: 'default' } };
   },
 
   // Last Week: SOHCAHTOA 1 - finding missing sides using trig ratios
   () => {
     const { questionText, ...rest } = sohcahtoaGenerators.generateFindMissingSideTrig({ difficulty: 'easy' });
-    return { question: questionText, ...rest };
+    return { question: questionText, ...rest, visualization: { ...rest.visualization, orientation: 'default' } };
   },
 
   // Last Topic: Linear equations with unknowns on both sides (Algebra I)
