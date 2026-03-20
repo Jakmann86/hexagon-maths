@@ -4,6 +4,7 @@
 // Uses DiagnosticSectionBase with RightTriangleSVG
 
 import React from 'react';
+import _ from 'lodash';
 import DiagnosticSectionBase from '../../../../components/sections/DiagnosticSectionBase';
 import RightTriangleSVG from '../../../../components/math/visualizations/RightTriangleSVG';
 import sohcahtoaGenerators from '../../../../generators/geometry/sohcahtoaGenerators';
@@ -27,8 +28,6 @@ const QUESTION_TYPES = [
     label: '2',
     title: 'Choosing the Correct Ratio',
     generator: () => {
-      // Generate a question about which ratio to use (sin, cos, or tan)
-      const _ = require('lodash');
       const scenarios = [
         { given: ['opposite', 'hypotenuse'], ratio: 'sin', latex: '\\sin' },
         { given: ['adjacent', 'hypotenuse'], ratio: 'cos', latex: '\\cos' },
@@ -38,27 +37,12 @@ const QUESTION_TYPES = [
       const scenario = _.sample(scenarios);
       const [side1, side2] = scenario.given;
 
-      // Create options
-      const allRatios = [
-        { value: 'sin', latex: 'sin', label: 'sin' },
-        { value: 'cos', latex: 'cos', label: 'cos' },
-        { value: 'tan', latex: 'tan', label: 'tan' }
-      ];
-
-      const options = allRatios.map(r => ({
-        value: r.value,
-        latex: r.label,
-        isCorrect: r.value === scenario.ratio
-      }));
-
       return {
-        type: 'choosing-ratio',
-        title: 'Choosing the Correct Ratio',
-        question: `You know the ${side1} and ${side2} of a right-angled triangle. Which ratio connects these two sides?`,
+        questionDisplay: `You know the ${side1} and ${side2} of a right-angled triangle. Which inverse ratio do you use to find the angle?`,
         visualization: null,
-        options: options,
-        correctValue: scenario.ratio,
-        explanation: `${scenario.latex} = \\frac{\\text{${side1}}}{\\text{${side2}}}`
+        options: ['sin', 'cos', 'tan'],
+        correctAnswer: scenario.ratio,
+        explanation: `${scenario.latex}^{-1}\\left(\\frac{\\text{${side1}}}{\\text{${side2}}}\\right)`
       };
     }
   }

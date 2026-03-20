@@ -212,6 +212,23 @@ export const curriculum = {
             }
         ]
     },
+    'Number II': {
+        title: 'Number II: Surds and Irrational Numbers',
+        lessons: [
+            {
+                id: 1,
+                title: "What is a Surd? Simplifying Surds",
+                worksheetKey: 'surds',
+                sections: {
+                    starter: 'surds/StarterSection',
+                    diagnostic: 'surds/DiagnosticSection',
+                    learn: 'surds/LearnSection',
+                    examples: 'surds/ExamplesSection',
+                    challenge: 'surds/ChallengeSection'
+                }
+            }
+        ]
+    },
     'Statistics I': {
         title: 'Statistics I: Averages and Grouped Data',
         lessons: [

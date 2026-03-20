@@ -183,20 +183,36 @@ const generateTriangleLabelingQuestion = (options = {}) => {
  * For Diagnostic section - tests calculator skills
  */
 const generateTrigCalculatorQuestion = (options = {}) => {
-  const { sectionType = 'diagnostic' } = options;
-  
+  const { sectionType = 'diagnostic', inverse = false } = options;
+
   const func = _.sample(['sin', 'cos', 'tan']);
   const angle = _.sample(COMMON_ANGLES);
   const value = roundTo(getTrigValue(func, angle), 3);
-  
-  // Generate plausible wrong answers
+
+  if (inverse) {
+    // Inverse trig: given the ratio, find the angle
+    const wrongAngles = _.sampleSize(COMMON_ANGLES.filter(a => a !== angle), 3);
+    return {
+      questionDisplay: {
+        text: `Use your calculator to find:`,
+        math: `${func}^{-1}(${value})`
+      },
+      correctAnswer: `${angle}°`,
+      options: _.shuffle([`${angle}°`, ...wrongAngles.map(a => `${a}°`)]),
+      explanation: `${func}⁻¹(${value}) = ${angle}°. Use the shift/${func} button on your calculator (in degree mode).`,
+      visualization: null,
+      metadata: { type: 'sohcahtoa', subType: 'inverse-calculator', trigFunc: func, angle, value }
+    };
+  }
+
+  // Forward trig: given the angle, find the ratio
   const wrongAnswers = [
     roundTo(value + 0.1, 3),
     roundTo(value - 0.1, 3),
     roundTo(1 - value, 3),
     roundTo(value * 2, 3)
   ].filter(v => v > 0 && v !== value);
-  
+
   return {
     questionDisplay: {
       text: `Use your calculator to find:`,
@@ -205,16 +221,8 @@ const generateTrigCalculatorQuestion = (options = {}) => {
     correctAnswer: `${value}`,
     options: _.shuffle([`${value}`, ...wrongAnswers.slice(0, 3).map(v => `${v}`)]),
     explanation: `${func}(${angle}°) = ${value}. Make sure your calculator is in DEGREE mode.`,
-    
-    visualization: null, // No visualization for calculator questions
-    
-    metadata: {
-      type: 'sohcahtoa',
-      subType: 'calculator',
-      trigFunc: func,
-      angle,
-      value
-    }
+    visualization: null,
+    metadata: { type: 'sohcahtoa', subType: 'calculator', trigFunc: func, angle, value }
   };
 };
 
